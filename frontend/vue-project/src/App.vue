@@ -1,85 +1,75 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import {ref, onMounted} from 'vue'
+
+// 所有账单数据
+const bills = ref([])
+
+// 从后端加载账单
+const loadBills = async () => {
+  const res = await fetch('http://127.0.0.1:8000/bills')
+  const data = await res.json()
+  bills.value = data
+}
+
+const addBill = async () => {
+  const newBill = {
+    name: "测试账单",
+    amount: 100,
+    type: 'expense',
+    date: new Date().toISOString().slice(0, 10)
+  }
+  const res = await fetch('http://127.0.0.1:8000/bills', {
+    method: 'POST',
+    headers: {'Content-Type': "application/json"},
+    body: JSON.stringify(newBill)
+  })
+  const saved = await res.json()
+  bills.value.push(saved)
+}
+
+const deleteBill = async (id) => {
+  try {
+
+    const res = await fetch(`http://127.0.0.1:8000/bills/${id}`, {method: "DELETE"})
+    if(res.ok) {
+      bills.value = bills.value.filter(b => b.id != id)
+    } else {
+      const error = await res.json()
+      alert("删除失败：" + error.detail)
+    }
+  } catch (error) {
+    console.error("删除请求失败：", error)
+    alert("网络错误，删除失败")
+  }
+}
+
+onMounted(() => {
+  loadBills()
+})
+
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+  <div class="max-w-2xl mx-auto p-4">
+    <h1 class="text-2xl font-bold text-center mb-6">📝 账单管理器</h1>
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
+    <button @click="addBill" class="bg-blue-600 text-white px-4 py-2 rounded mb-4">
+      + 添加测试账单
+    </button>
 
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
-  <RouterView />
+    <ul class="space-y-2">
+      <li v-for="bill in bills" :key="bill.id"
+          class="flex justify-between items-center p-3 border rounded bg-white">
+        <span>
+          {{ bill.name }} - ¥{{ bill.amount }}
+          <em class="text-gray-500 text-sm">({{ bill.type === 'income' ? '收入' : '支出' }})</em>
+        </span>
+        <button @click="deleteBill(bill.id)" class="text-red-500 hover:text-red-700">🗑️</button>
+      </li>
+    </ul>
+  </div>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
-}
-</style>
+  /* 可以稍后用 Tailwind 或 CSS 美化 */
+  </style>
