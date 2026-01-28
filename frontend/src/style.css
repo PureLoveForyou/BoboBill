@@ -1,2 +1,8 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+/* 路由链接激活状态 */
+.router-link-active {
+  background-color: hsl(var(--bc) / 0.1);
+  font-weight: 600;
+}
