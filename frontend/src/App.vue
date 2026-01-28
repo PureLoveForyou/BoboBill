@@ -1,26 +1,28 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
-import Navbar from './components/Navbar.vue'
 </script>
 
 <template>
-  <Navbar />
-  <div class="container mx-auto p-4">
-    <router-view />
+  <div class="drawer lg:drawer-open">
+    <input id="sidebar-drawer" type="checkbox" class="drawer-toggle" />
+    <div class="drawer-content flex flex-col">
+      <!-- Page content here -->
+      <label for="sidebar-drawer" class="btn btn-primary drawer-button lg:hidden">Open sidebar</label>
+      <slot />
+    </div>
+    <div class="drawer-side">
+      <label for="sidebar-drawer" class="drawer-overlay"></label>
+      <ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
+        <!-- Sidebar content here -->
+        <li class="mb-4">
+          <h1 class="text-xl font-bold">BoboBill</h1>
+        </li>
+        <li>
+          <router-link to="/dashboard">Dashboard</router-link>
+        </li>
+        <li>
+          <router-link to="/settings">Settings</router-link>
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
-</style>
