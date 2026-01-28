@@ -3,7 +3,7 @@ import Dashboard from '../pages/Dashboard.vue'
 import Settings from '../pages/Settings.vue'
 
 const routes = [
-    { path: './dashboard', component: Dashboard },
+    { path: '/dashboard', component: Dashboard },
     { path: '/settings', component: Settings }
 ]
 
