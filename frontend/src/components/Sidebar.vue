@@ -35,18 +35,18 @@ const toggleTheme = () => {
       
       <!-- 主题切换 -->
       <li class="mt-auto pt-4 border-t border-base-300">
-        <div class="flex items-center justify-between">
+        <div 
+          @click="toggleTheme"
+          class="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-base-300 transition-colors"
+          :title="currentTheme === 'dark' ? '切换到浅色模式' : '切换到深色模式'"
+        >
           <span class="text-sm opacity-70">主题</span>
-          <button 
-            @click="toggleTheme" 
-            class="btn btn-sm btn-ghost" 
-            :title="currentTheme === 'dark' ? '切换到浅色模式' : '切换到深色模式'"
-          >
-            <span v-if="currentTheme === 'dark'" class="text-lg">🌙 深色</span>
-            <span v-else class="text-lg">☀️ 浅色</span>
-          </button>
+          <span class="text-lg">
+            <span v-if="currentTheme === 'dark'">🌙 深色</span>
+            <span v-else>☀️ 浅色</span>
+          </span>
         </div>
-        <div class="text-xs opacity-50 mt-1">
+        <div class="text-xs opacity-50 mt-1 px-2">
           当前: {{ currentTheme }}
         </div>
       </li>
