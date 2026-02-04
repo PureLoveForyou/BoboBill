@@ -27,14 +27,9 @@ export function getCurrentTheme() {
 
 /**
  * 设置主题
- * @param {string} theme 'light' 或 'dark'
+ * @param {string} theme 任意 daisyui 主题名
  */
 export function setTheme(theme) {
-  // 只允许 light 或 dark
-  if (theme !== 'light' && theme !== 'dark') {
-    theme = 'light'
-  }
-  
   // 保存到localStorage
   localStorage.setItem(THEME_STORAGE_KEY, theme)
   
