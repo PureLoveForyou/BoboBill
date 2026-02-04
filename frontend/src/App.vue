@@ -2,6 +2,7 @@
 import { useRouter } from 'vue-router'
 import { ref, watch, onMounted } from 'vue'
 import { initTheme, toggleDarkLight, getCurrentTheme } from './utils/theme.js'
+import Sidebar from './components/Sidebar.vue'
 
 const router = useRouter()
 const currentTheme = ref('light')
@@ -35,6 +36,7 @@ watch(() => router.currentRoute.value.path, () => {
 <template>
   <div class="drawer lg:drawer-open">
     <input id="sidebar-drawer" type="checkbox" class="drawer-toggle" />
+    
     <div class="drawer-content flex flex-col">
       <!-- 移动端固定导航栏 -->
       <div class="sticky top-0 z-10 lg:hidden">
@@ -59,32 +61,8 @@ watch(() => router.currentRoute.value.path, () => {
         <router-view />
       </div>
     </div>
-    <div class="drawer-side">
-      <label for="sidebar-drawer" class="drawer-overlay"></label>
-      <ul class="menu p-4 w-60 min-h-full bg-base-200 text-base-content">
-        <!-- Sidebar content here -->
-        <li class="mb-4">
-          <h1 class="text-xl font-bold">BoboBill</h1>
-        </li>
-        <li>
-          <router-link to="/dashboard">Dashboard</router-link>
-        </li>
-        <li>
-          <router-link to="/settings">Settings</router-link>
-        </li>
-        <li class="mt-auto pt-4 border-t border-base-300">
-          <div class="flex items-center justify-between">
-            <span class="text-sm opacity-70">主题</span>
-            <button @click="toggleTheme" class="btn btn-sm btn-ghost" :title="currentTheme === 'dark' ? '切换到浅色模式' : '切换到深色模式'">
-              <span v-if="currentTheme === 'dark'" class="text-lg">🌙 深色</span>
-              <span v-else class="text-lg">☀️ 浅色</span>
-            </button>
-          </div>
-          <div class="text-xs opacity-50 mt-1">
-            当前: {{ currentTheme }}
-          </div>
-        </li>
-      </ul>
-    </div>
+    
+    <!-- 侧边栏组件 -->
+    <Sidebar />
   </div>
 </template>
