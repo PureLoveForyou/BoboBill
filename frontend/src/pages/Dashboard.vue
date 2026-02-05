@@ -266,6 +266,70 @@ const generateMockData = (type, range) => {
     { title: '期间结余', value: `¥${(incomeData.reduce((a, b) => a + b, 0) - totalExpense.value).toLocaleString()}`, desc: '结余率 73%', icon: 'balance', trend: 'neutral', type: 'balance' },
     { title: '账单笔数', value: String(Math.floor(Math.random() * 50 + 20)), desc: '较上期 +12%', icon: 'count', trend: 'up', type: 'neutral' },
   ]
+
+  // 根据报表类型生成周期对比数据
+  if (type === '周报') {
+    // 周报：显示最近几周对比
+    generateComparisonData([
+      { label: '前3周' }, { label: '前2周' }, { label: '上周' },
+      { label: '本周' }
+    ])
+  } else if (type === '月报') {
+    // 月报：显示最近几月对比
+    const currentMonth = start.month() + 1 // 1-12
+    const comparisons = []
+    for (let i = 3; i >= 0; i--) {
+      let month = currentMonth - i
+      if (month <= 0) {
+        month += 12
+      }
+      comparisons.push({ label: `${month}月` })
+    }
+    generateComparisonData(comparisons)
+  } else if (type === '季报') {
+    // 季报：显示季度对比
+    const quarterNames = ['第一季度', '第二季度', '第三季度', '第四季度']
+    generateComparisonData(quarterNames.map(q => ({ label: q })))
+  } else if (type === '年报') {
+    // 年报：显示最近几年对比
+    const currentYear = start.year()
+    generateComparisonData([
+      { label: `${currentYear - 3}年` }, { label: `${currentYear - 2}年` },
+      { label: `${currentYear - 1}年` }, { label: `${currentYear}年` }
+    ])
+  } else if (type === '自定义') {
+    // 自定义范围：根据天数决定对比维度
+    if (days <= 14) {
+      // 14天以内：按天对比，最多显示7天
+      const dayCount = Math.min(days, 7)
+      const comparisons = []
+      for (let i = dayCount; i >= 1; i--) {
+        comparisons.push({ label: `前${i}天` })
+      }
+      generateComparisonData(comparisons)
+    } else if (days <= 60) {
+      // 60天以内：按周对比
+      const weekCount = Math.min(Math.ceil(days / 7), 6)
+      const comparisons = []
+      for (let i = weekCount; i >= 1; i--) {
+        comparisons.push({ label: `前${i}周` })
+      }
+      generateComparisonData(comparisons)
+    } else {
+      // 超过60天：按月对比
+      const monthCount = Math.min(Math.ceil(days / 30), 6)
+      const currentMonth = start.month() + 1
+      const comparisons = []
+      for (let i = monthCount - 1; i >= 0; i--) {
+        let month = currentMonth - i
+        if (month <= 0) {
+          month += 12
+        }
+        comparisons.push({ label: `${month}月` })
+      }
+      generateComparisonData(comparisons)
+    }
+  }
 }
 
 // 生成对比数据
@@ -281,9 +345,10 @@ const generateComparisonData = (comparisons) => {
 
 // 初始化
 onMounted(() => {
+  // 初始化时默认使用周报对比
   generateComparisonData([
-    { label: '第1周' }, { label: '第2周' }, { label: '第3周' },
-    { label: '第4周' }, { label: '第5周' }, { label: '第6周' }
+    { label: '前3周' }, { label: '前2周' }, { label: '上周' },
+    { label: '本周' }
   ])
 })
 </script>
