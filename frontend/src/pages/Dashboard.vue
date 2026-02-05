@@ -358,18 +358,18 @@ onMounted(() => {
 
         <!-- 分类统计图 -->
         <div class="card bg-base-200">
-          <div class="card-body">
+          <div class="card-body py-4">
             <!-- Tab 切换 -->
             <div class="tabs tabs-boxed mb-4">
               <a
-                class="tab"
+                class="tab text-lg font-bold"
                 :class="{ 'tab-active': categoryType === 'expense' }"
                 @click="categoryType = 'expense'"
               >
                 支出分类
               </a>
               <a
-                class="tab"
+                class="tab text-lg font-bold"
                 :class="{ 'tab-active': categoryType === 'income' }"
                 @click="categoryType = 'income'"
               >
