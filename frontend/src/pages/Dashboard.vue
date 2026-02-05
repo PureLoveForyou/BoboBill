@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import VueApexCharts from 'vue3-apexcharts'
 import TimeFilter from '../components/TimeFilter.vue'
 import dayjs from 'dayjs'
+import { getCurrentTheme } from '../utils/theme'
 
 // 统计卡片数据（预留 API 接口）
 const stats = ref([
@@ -18,7 +19,9 @@ const trendSeries = ref([
   { name: '支出', data: [] }
 ])
 
-const trendOptions = computed(() => ({
+const trendOptions = computed(() => {
+  const textColor = getTextColor()
+  return {
   chart: {
     type: 'area',
     fontFamily: 'inherit',
@@ -40,7 +43,9 @@ const trendOptions = computed(() => ({
   xaxis: {
     categories: trendCategories.value,
     labels: {
-      style: { colors: 'hsl(var(--bc))' },
+      style: {
+        colors: Array(50).fill(textColor)
+      },
       rotate: 0,
       hideOverlappingLabels: true,
       trim: false,
@@ -49,13 +54,15 @@ const trendOptions = computed(() => ({
   },
   yaxis: {
     labels: {
-      style: { colors: 'hsl(var(--bc))' },
+      style: {
+        colors: Array(50).fill(textColor)
+      },
       formatter: (value) => '¥' + (value / 1000) + 'k'
     }
   },
-  grid: { borderColor: 'hsl(var(--b3))', padding: { top: 0 } },
+  grid: { borderColor: currentTheme.value === 'dark' ? '#374151' : '#e5e7eb', padding: { top: 0 } },
   legend: {
-    labels: { colors: 'hsl(var(--bc))' },
+    labels: { colors: textColor },
     position: 'top',
     horizontalAlign: 'right',
     offsetY: -5,
@@ -68,7 +75,7 @@ const trendOptions = computed(() => ({
     },
     y: { formatter: (value) => '¥' + value.toLocaleString() }
   }
-}))
+}})
 
 // 趋势图X轴标签
 const trendCategories = ref([])
@@ -90,7 +97,9 @@ const categoryLabels = computed(() => categoryType.value === 'expense' ? expense
 const totalExpense = ref(0)
 const totalIncome = ref(0)
 
-const categoryOptions = computed(() => ({
+const categoryOptions = computed(() => {
+  const textColor = getTextColor()
+  return {
   chart: {
     type: 'donut',
     fontFamily: 'inherit'
@@ -105,9 +114,18 @@ const categoryOptions = computed(() => ({
         size: '65%',
         labels: {
           show: true,
+          name: {
+            show: true,
+            color: textColor
+          },
+          value: {
+            show: true,
+            color: textColor
+          },
           total: {
             show: true,
             label: categoryType.value === 'expense' ? '总支出' : '总收入',
+            color: textColor,
             formatter: () => '¥' + (categoryType.value === 'expense' ? totalExpense.value : totalIncome.value).toLocaleString()
           }
         }
@@ -117,7 +135,7 @@ const categoryOptions = computed(() => ({
   dataLabels: { enabled: false },
   legend: {
     position: 'bottom',
-    labels: { colors: 'hsl(var(--bc))' }
+    labels: { colors: textColor }
   },
   tooltip: {
     theme: 'dark',
@@ -129,7 +147,7 @@ const categoryOptions = computed(() => ({
       }
     }
   }
-}))
+}})
 
 // 柱状图配置（对比图）
 const comparisonSeries = ref([
@@ -137,7 +155,9 @@ const comparisonSeries = ref([
   { name: '支出', data: [] }
 ])
 
-const comparisonOptions = computed(() => ({
+const comparisonOptions = computed(() => {
+  const textColor = getTextColor()
+  return {
   chart: {
     type: 'bar',
     fontFamily: 'inherit',
@@ -155,17 +175,17 @@ const comparisonOptions = computed(() => ({
   dataLabels: { enabled: false },
   xaxis: {
     categories: comparisonCategories.value,
-    labels: { style: { colors: 'hsl(var(--bc))' } }
+    labels: { style: { colors: Array(50).fill(textColor) } }
   },
   yaxis: {
     labels: {
-      style: { colors: 'hsl(var(--bc))' },
+      style: { colors: Array(50).fill(textColor) },
       formatter: (value) => '¥' + (value / 1000) + 'k'
     }
   },
-  grid: { borderColor: 'hsl(var(--b3))' },
+  grid: { borderColor: currentTheme.value === 'dark' ? '#374151' : '#e5e7eb' },
   legend: {
-    labels: { colors: 'hsl(var(--bc))' },
+    labels: { colors: textColor },
     position: 'top',
     horizontalAlign: 'right',
     offsetY: -5,
@@ -175,9 +195,20 @@ const comparisonOptions = computed(() => ({
     theme: 'dark',
     y: { formatter: (value) => '¥' + value.toLocaleString() }
   }
-}))
+}})
 
 const comparisonCategories = ref([])
+
+// 当前主题
+const currentTheme = ref(getCurrentTheme())
+
+// 获取文本颜色（根据主题）
+const getTextColor = () => currentTheme.value === 'dark' ? '#ffffff' : '#1f2937'
+
+// 监听主题变化
+window.addEventListener('themechange', (e) => {
+  currentTheme.value = e.detail.theme
+})
 
 // 时间筛选变化处理
 const onTimeFilterChange = (data) => {
