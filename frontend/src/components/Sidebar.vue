@@ -29,55 +29,67 @@ const isActive = (path) => route.path === path
 <template>
   <div class="drawer-side">
     <label for="sidebar-drawer" class="drawer-overlay"></label>
-    <div class="m-4 w-60 min-h-[calc(100vh-2rem)] bg-base-100 text-base-content flex flex-col rounded-3xl shadow-xl overflow-hidden">
+    <div class="m-4 w-64 min-h-[calc(100vh-2rem)] bg-base-100/80 backdrop-blur-xl text-base-content flex flex-col rounded-[28px] shadow-[0_8px_32px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden border border-white/20">
       
       <!-- Logo 区域 -->
-      <div class="bg-gradient-to-br from-primary to-primary-content p-6 pb-8">
-        <h1 class="text-2xl font-bold text-base-100">BoboBill</h1>
-        <p class="text-xs text-base-100 opacity-80 mt-1">账单管理系统</p>
+      <div class="p-6 pb-4">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/30 relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent"></div>
+            <svg class="w-6 h-6 text-base-100 relative z-10" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 1.5l-9 4.5 9 4.5 9-4.5-9-4.5zM3 10.5l9 4.5 9-4.5M3 15l9 4.5 9-4.5"/>
+            </svg>
+          </div>
+          <div class="flex flex-col">
+            <h1 class="text-xl font-bold text-base-content tracking-tight">BoboBill</h1>
+            <p class="text-xs text-base-content/60 font-medium tracking-wide mt-0.5">账单管理系统</p>
+          </div>
+        </div>
+        <div class="mt-6 h-px bg-gradient-to-r from-base-200 via-base-200/50 to-transparent"></div>
       </div>
 
       <!-- 导航区域 -->
-      <div class="flex-1 p-4">
-        <nav class="flex flex-col gap-2">
+      <div class="flex-1 px-5 py-2">
+        <nav class="flex flex-col gap-1">
           <router-link
             v-for="item in navItems"
             :key="item.path"
             :to="item.path"
-            class="flex items-center gap-3 p-3 rounded-xl transition-all duration-200"
+            class="flex items-center gap-3 px-4 py-3 rounded-[14px] transition-all duration-250 ease-out group relative overflow-hidden"
             :class="isActive(item.path)
-              ? 'bg-primary text-primary-foreground font-semibold shadow-md ring-2 ring-primary/30'
-              : 'hover:bg-base-200 text-base-content'"
+              ? 'bg-gradient-to-r from-primary/95 to-primary/90 text-base-100 font-semibold shadow-lg shadow-primary/25'
+              : 'hover:bg-base-200/60 text-base-content/70 hover:text-base-content'"
           >
-            <svg class="w-5 h-5 flex-shrink-0 transition-colors duration-200" viewBox="0 0 24 24" fill="currentColor"
-              :class="isActive(item.path) ? 'text-primary' : 'text-base-content'">
+            <svg class="w-5 h-5 flex-shrink-0 transition-all duration-250" viewBox="0 0 24 24" fill="currentColor"
+              :class="isActive(item.path) ? 'scale-110' : 'group-hover:scale-105'">
               <path :d="item.icon" />
             </svg>
-            <span class="font-medium">{{ item.label }}</span>
+            <span class="font-medium tracking-tight">{{ item.label }}</span>
+            <div v-if="isActive(item.path)" class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent"></div>
           </router-link>
         </nav>
       </div>
 
       <!-- 主题切换区域 -->
-      <div class="p-4 border-t border-base-200">
+      <div class="px-5 pb-5 pt-2">
         <div 
           @click="toggleTheme"
-          class="flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-200 hover:bg-base-200"
+          class="flex items-center justify-between px-4 py-3 rounded-[14px] cursor-pointer transition-all duration-250 ease-out hover:bg-base-200/60 group"
           :title="currentTheme === 'dark' ? '切换到浅色模式' : '切换到深色模式'"
         >
           <div class="flex items-center gap-3">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+            <svg class="w-5 h-5 transition-all duration-250 group-hover:scale-105" viewBox="0 0 24 24" fill="currentColor">
               <path v-if="currentTheme === 'dark'" d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 007.92 12.446A9 9 0 1112 3z"/>
               <path v-else d="M12 18a6 6 0 11 0-12 6 6 0 010 12zm0-2a4 4 0 100-8 4 4 0 000 8zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414L7.05 5.636 5.636 7.05 3.515 4.93zM16.95 18.364l1.414-1.414 2.121 2.121-1.414 1.414-2.121-2.121zm2.121-14.85l1.414 1.415-2.121 2.121-1.414-1.414 2.121-2.121zM5.636 16.95l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM23 11v2h-3v-2h3zM4 11v2H1v-2h3z"/>
             </svg>
-            <span class="font-medium text-base-content">{{ currentTheme === 'dark' ? '深色模式' : '浅色模式' }}</span>
+            <span class="font-medium text-base-content/70 group-hover:text-base-content tracking-tight">{{ currentTheme === 'dark' ? '深色模式' : '浅色模式' }}</span>
           </div>
           <div class="relative">
-            <div class="w-12 h-6 rounded-full transition-colors duration-200" 
-              :class="currentTheme === 'dark' ? 'bg-primary' : 'bg-base-300'">
+            <div class="w-12 h-6.5 rounded-full transition-all duration-250 ease-out shadow-inner" 
+              :class="currentTheme === 'dark' ? 'bg-primary shadow-primary/40' : 'bg-base-300'">
             </div>
-            <div class="absolute top-1 w-4 h-4 rounded-full bg-base-100 transition-all duration-200 shadow-sm"
-              :class="currentTheme === 'dark' ? 'left-7' : 'left-1'">
+            <div class="absolute top-0.75 w-5 h-5 rounded-full bg-base-100 transition-all duration-250 ease-out shadow-md"
+              :class="currentTheme === 'dark' ? 'left-6.5 scale-110' : 'left-0.75'">
             </div>
           </div>
         </div>
