@@ -385,64 +385,106 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4">
+  <div class="p-6 lg:p-8 max-w-[1600px] mx-auto">
     <!-- 页面标题 -->
-    <div class="mb-4">
-      <h1 class="text-2xl font-bold">Dashboard</h1>
-      <p class="text-sm opacity-60 mt-1">数据概览与统计</p>
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold tracking-tight">Dashboard</h1>
+      <p class="text-sm text-base-content/60 mt-2 font-medium">数据概览与统计</p>
     </div>
 
     <!-- 时间筛选 -->
     <TimeFilter @change="onTimeFilterChange" />
 
     <!-- 统计卡片 -->
-    <div class="grid gap-3 sm:gap-4 my-6" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
-      <div v-for="(stat, index) in stats" :key="index" class="stat bg-base-200 rounded-box">
-        <!-- 图标 -->
-        <div class="stat-figure" :class="stat.type === 'expense' ? 'text-error' : stat.type === 'income' ? 'text-success' : 'text-primary'">
-          <!-- 支出图标 -->
-          <svg v-if="stat.icon === 'expense'" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <!-- 收入图标 -->
-          <svg v-else-if="stat.icon === 'income'" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          <!-- 结余图标 -->
-          <svg v-else-if="stat.icon === 'balance'" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-          </svg>
-          <!-- 账单数图标 -->
-          <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-        </div>
-        <!-- 标题 -->
-        <div class="stat-title opacity-70">{{ stat.title }}</div>
-        <!-- 数值 -->
-        <div class="stat-value text-2xl">{{ stat.value }}</div>
-        <!-- 描述 -->
-        <div class="stat-desc">
-          <span :class="{
+    <div class="grid gap-5 my-8" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+      <div 
+        v-for="(stat, index) in stats" 
+        :key="index" 
+        class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-base-100 via-base-100 to-base-200/50 border border-base-200/50 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-base-300/20 hover:-translate-y-1"
+      >
+        <div class="absolute inset-0 bg-gradient-to-br opacity-5" :class="{
+          'from-error to-error/50': stat.type === 'expense',
+          'from-success to-success/50': stat.type === 'income',
+          'from-info to-info/50': stat.type === 'balance',
+          'from-primary to-primary/50': stat.type === 'neutral'
+        }"></div>
+        
+        <div class="relative p-6">
+          <!-- 图标 -->
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-14 h-14 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110" :class="{
+              'bg-gradient-to-br from-error/20 to-error/5 text-error': stat.type === 'expense',
+              'bg-gradient-to-br from-success/20 to-success/5 text-success': stat.type === 'income',
+              'bg-gradient-to-br from-info/20 to-info/5 text-info': stat.type === 'balance',
+              'bg-gradient-to-br from-primary/20 to-primary/5 text-primary': stat.type === 'neutral'
+            }">
+              <!-- 支出图标 -->
+              <svg v-if="stat.icon === 'expense'" xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <!-- 收入图标 -->
+              <svg v-else-if="stat.icon === 'income'" xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              <!-- 结余图标 -->
+              <svg v-else-if="stat.icon === 'balance'" xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+              </svg>
+              <!-- 账单数图标 -->
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            
+            <!-- 趋势指示器 -->
+            <div v-if="stat.trend !== 'neutral'" class="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold" :class="{
+              'bg-success/10 text-success': stat.type === 'income',
+              'bg-error/10 text-error': stat.type === 'expense',
+              'bg-info/10 text-info': stat.type === 'balance'
+            }">
+              <svg v-if="stat.trend === 'up'" class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+              </svg>
+              <svg v-else class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+            </div>
+          </div>
+          
+          <!-- 标题 -->
+          <div class="text-sm font-medium text-base-content/60 mb-2">{{ stat.title }}</div>
+          
+          <!-- 数值 -->
+          <div class="text-3xl font-bold tracking-tight mb-2">{{ stat.value }}</div>
+          
+          <!-- 描述 -->
+          <div class="text-sm font-medium" :class="{
             'text-success': stat.type === 'income',
             'text-error': stat.type === 'expense',
             'text-info': stat.type === 'balance',
-            'text-base-content': stat.type === 'neutral'
+            'text-base-content/60': stat.type === 'neutral'
           }">
             {{ stat.desc }}
-          </span>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 图表区域 -->
-    <div class="grid gap-4">
+    <div class="grid gap-6">
       <!-- 上排：折线图 + 饼图 -->
-      <div class="grid gap-4 lg:grid-cols-2">
+      <div class="grid gap-6 lg:grid-cols-2">
         <!-- 收支趋势图 -->
-        <div class="card bg-base-200">
-          <div class="card-body">
-            <h2 class="card-title text-lg">收支趋势</h2>
+        <div class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-base-100 via-base-100 to-base-200/30 border border-base-200/50 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-base-300/20">
+          <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="text-xl font-bold tracking-tight">收支趋势</h2>
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                </svg>
+              </div>
+            </div>
             <VueApexCharts
               type="area"
               height="300"
@@ -453,25 +495,40 @@ onMounted(() => {
         </div>
 
         <!-- 分类统计图 -->
-        <div class="card bg-base-200">
-          <div class="card-body py-4">
+        <div class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-base-100 via-base-100 to-base-200/30 border border-base-200/50 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-base-300/20">
+          <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="text-xl font-bold tracking-tight">分类统计</h2>
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                </svg>
+              </div>
+            </div>
+            
             <!-- Tab 切换 -->
-            <div class="tabs tabs-boxed mb-4">
-              <a
-                class="tab text-lg font-bold"
-                :class="{ 'tab-active': categoryType === 'expense' }"
+            <div class="flex gap-2 mb-6 p-1.5 bg-base-200/50 rounded-2xl">
+              <button
+                class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300"
+                :class="categoryType === 'expense' 
+                  ? 'bg-base-100 text-base-content shadow-sm' 
+                  : 'text-base-content/60 hover:text-base-content'"
                 @click="categoryType = 'expense'"
               >
                 支出分类
-              </a>
-              <a
-                class="tab text-lg font-bold"
-                :class="{ 'tab-active': categoryType === 'income' }"
+              </button>
+              <button
+                class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300"
+                :class="categoryType === 'income' 
+                  ? 'bg-base-100 text-base-content shadow-sm' 
+                  : 'text-base-content/60 hover:text-base-content'"
                 @click="categoryType = 'income'"
               >
                 收入分类
-              </a>
+              </button>
             </div>
+            
             <VueApexCharts
               type="donut"
               height="250"
@@ -483,9 +540,16 @@ onMounted(() => {
       </div>
 
       <!-- 下排：柱状图对比 -->
-      <div class="card bg-base-200">
-        <div class="card-body">
-          <h2 class="card-title text-lg">周期对比</h2>
+      <div class="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-base-100 via-base-100 to-base-200/30 border border-base-200/50 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-base-300/20">
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold tracking-tight">周期对比</h2>
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+              <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+          </div>
           <VueApexCharts
             type="bar"
             height="300"
