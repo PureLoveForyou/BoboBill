@@ -3,6 +3,9 @@ import { ref, computed, watch } from 'vue'
 import dayjs from 'dayjs'
 import weekOfYear from 'dayjs/plugin/weekOfYear'
 import isBetween from 'dayjs/plugin/isBetween'
+import { VueDatePicker } from '@vuepic/vue-datepicker'
+import '@vuepic/vue-datepicker/dist/main.css'
+import ModernSelect from './ModernSelect.vue'
 
 dayjs.extend(weekOfYear)
 dayjs.extend(isBetween)
@@ -22,15 +25,14 @@ const selectedMonth = ref(currentMonth.value)
 const selectedQuarter = ref(currentQuarter.value)
 
 // 自定义日期范围
-const customStartDate = ref(dayjs().subtract(30, 'day').format('YYYY-MM-DD'))
-const customEndDate = ref(dayjs().format('YYYY-MM-DD'))
+const customDateRange = ref([dayjs().subtract(30, 'day').toDate(), dayjs().toDate()])
 const showCustomPicker = ref(false)
 
 // 数据选项
-const years = Array.from({ length: 5 }, (_, i) => dayjs().year() - i)
-const weeks = Array.from({ length: 53 }, (_, i) => i + 1)
-const months = Array.from({ length: 12 }, (_, i) => i + 1)
-const quarters = [1, 2, 3, 4]
+const years = Array.from({ length: 5 }, (_, i) => ({ value: dayjs().year() - i, label: `${dayjs().year() - i}年` }))
+const weeks = Array.from({ length: 53 }, (_, i) => ({ value: i + 1, label: `${i + 1}` }))
+const months = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: `${i + 1}月` }))
+const quarters = [1, 2, 3, 4].map(q => ({ value: q, label: `Q${q}` }))
 
 // 计算属性：当前选中的时间范围
 const timeRange = computed(() => {
@@ -72,13 +74,16 @@ const timeRange = computed(() => {
       }
     }
     case '自定义': {
-      const start = dayjs(customStartDate.value)
-      const end = dayjs(customEndDate.value)
+      if (!customDateRange.value || customDateRange.value.length !== 2) {
+        return { start: '', end: '', label: '' }
+      }
+      const start = dayjs(customDateRange.value[0])
+      const end = dayjs(customDateRange.value[1])
       const days = end.diff(start, 'day') + 1
       return {
-        start: customStartDate.value,
-        end: customEndDate.value,
-        label: `${customStartDate.value} ~ ${customEndDate.value} (${days}天)`
+        start: start.format('YYYY-MM-DD'),
+        end: end.format('YYYY-MM-DD'),
+        label: `${start.format('YYYY-MM-DD')} ~ ${end.format('YYYY-MM-DD')} (${days}天)`
       }
     }
     default:
@@ -183,10 +188,13 @@ const switchReportType = (type) => {
 
 // 自定义日期确认
 const confirmCustomRange = () => {
-  if (dayjs(customStartDate.value).isAfter(dayjs(customEndDate.value))) {
-    const temp = customStartDate.value
-    customStartDate.value = customEndDate.value
-    customEndDate.value = temp
+  if (!customDateRange.value || customDateRange.value.length !== 2) return
+  
+  const start = dayjs(customDateRange.value[0])
+  const end = dayjs(customDateRange.value[1])
+  
+  if (start.isAfter(end)) {
+    customDateRange.value = [customDateRange.value[1], customDateRange.value[0]]
   }
   showCustomPicker.value = false
 }
@@ -195,7 +203,7 @@ const confirmCustomRange = () => {
 const emit = defineEmits(['change'])
 
 // 监听变化
-watch([selectedReportType, selectedYear, selectedMonth, selectedWeek, selectedQuarter, customStartDate, customEndDate], () => {
+watch([selectedReportType, selectedYear, selectedMonth, selectedWeek, selectedQuarter, customDateRange], () => {
   emit('change', {
     type: selectedReportType.value,
     range: timeRange.value,
@@ -205,95 +213,187 @@ watch([selectedReportType, selectedYear, selectedMonth, selectedWeek, selectedQu
 </script>
 
 <template>
-  <div class="bg-base-200 rounded-box p-4">
-    <!-- 报表类型 Tab -->
-    <div class="tabs tabs-boxed mb-4">
-      <a
-        v-for="type in reportTypes"
-        :key="type"
-        class="tab"
-        :class="{ 'tab-active': selectedReportType === type }"
-        @click="switchReportType(type)"
-      >
-        {{ type }}
-      </a>
+  <div class="relative rounded-3xl bg-gradient-to-br from-base-100 via-base-100 to-base-200/30 border border-base-200/50 backdrop-blur-sm shadow-sm" style="z-index: 100;">
+    <!-- 报表类型分段控制器 -->
+    <div class="p-6 pb-4">
+      <div class="flex gap-1.5 p-1.5 bg-base-200/50 rounded-2xl">
+        <button
+          v-for="type in reportTypes"
+          :key="type"
+          class="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300"
+          :class="selectedReportType === type 
+            ? 'bg-base-100 text-base-content shadow-sm' 
+            : 'text-base-content/60 hover:text-base-content'"
+          @click="switchReportType(type)"
+        >
+          {{ type }}
+        </button>
+      </div>
     </div>
 
     <!-- 时间选择器 -->
-    <div v-if="!showCustomPicker" class="flex items-center gap-4">
-      <!-- 周报选择 -->
-      <template v-if="selectedReportType === '周报'">
-        <div class="flex items-center gap-2">
-          <select v-model="selectedYear" class="select select-bordered select-sm">
-            <option v-for="year in years" :key="year" :value="year">{{ year }}年</option>
-          </select>
-          <span>第</span>
-          <select v-model="selectedWeek" class="select select-bordered select-sm w-20">
-            <option v-for="week in weeks" :key="week" :value="week">{{ week }}</option>
-          </select>
-          <span>周</span>
-        </div>
-      </template>
+    <div v-if="!showCustomPicker" class="px-6 pb-6">
+      <div class="flex items-center justify-between gap-4">
+        <!-- 周报选择 -->
+        <template v-if="selectedReportType === '周报'">
+          <div class="flex items-center gap-3">
+            <ModernSelect
+              v-model="selectedYear"
+              :options="years"
+              class="w-32"
+            />
+            <span class="text-base-content/60 font-medium">第</span>
+            <ModernSelect
+              v-model="selectedWeek"
+              :options="weeks"
+              class="w-20"
+            />
+            <span class="text-base-content/60 font-medium">周</span>
+          </div>
+        </template>
 
-      <!-- 月报选择 -->
-      <template v-else-if="selectedReportType === '月报'">
-        <div class="flex items-center gap-2">
-          <select v-model="selectedYear" class="select select-bordered select-sm">
-            <option v-for="year in years" :key="year" :value="year">{{ year }}年</option>
-          </select>
-          <select v-model="selectedMonth" class="select select-bordered select-sm">
-            <option v-for="month in months" :key="month" :value="month">{{ month }}月</option>
-          </select>
-        </div>
-      </template>
+        <!-- 月报选择 -->
+        <template v-else-if="selectedReportType === '月报'">
+          <div class="flex items-center gap-3">
+            <ModernSelect
+              v-model="selectedYear"
+              :options="years"
+              class="w-32"
+            />
+            <ModernSelect
+              v-model="selectedMonth"
+              :options="months"
+              class="w-24"
+            />
+          </div>
+        </template>
 
-      <!-- 季报选择 -->
-      <template v-else-if="selectedReportType === '季报'">
-        <div class="flex items-center gap-2">
-          <select v-model="selectedYear" class="select select-bordered select-sm">
-            <option v-for="year in years" :key="year" :value="year">{{ year }}年</option>
-          </select>
-          <select v-model="selectedQuarter" class="select select-bordered select-sm">
-            <option v-for="quarter in quarters" :key="quarter" :value="quarter">Q{{ quarter }}</option>
-          </select>
-        </div>
-      </template>
+        <!-- 季报选择 -->
+        <template v-else-if="selectedReportType === '季报'">
+          <div class="flex items-center gap-3">
+            <ModernSelect
+              v-model="selectedYear"
+              :options="years"
+              class="w-32"
+            />
+            <ModernSelect
+              v-model="selectedQuarter"
+              :options="quarters"
+              class="w-24"
+            />
+          </div>
+        </template>
 
-      <!-- 年报选择 -->
-      <template v-else-if="selectedReportType === '年报'">
-        <div class="flex items-center gap-2">
-          <select v-model="selectedYear" class="select select-bordered select-sm">
-            <option v-for="year in years" :key="year" :value="year">{{ year }}年</option>
-          </select>
-        </div>
-      </template>
+        <!-- 年报选择 -->
+        <template v-else-if="selectedReportType === '年报'">
+          <div class="flex items-center gap-3">
+            <ModernSelect
+              v-model="selectedYear"
+              :options="years"
+              class="w-32"
+            />
+          </div>
+        </template>
 
-      <!-- 显示当前选中的时间范围 -->
-      <div class="text-sm font-medium text-primary">
-        {{ timeRange.label }}
+        <!-- 显示当前选中的时间范围 -->
+        <div class="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-xl">
+          <svg class="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span class="text-sm font-semibold text-primary">{{ timeRange.label }}</span>
+        </div>
       </div>
     </div>
 
     <!-- 自定义日期范围选择器 -->
-    <div v-else class="flex flex-col gap-3">
-      <div class="flex items-center gap-4">
-        <div class="flex-1">
-          <label class="label">
-            <span class="label-text">开始日期</span>
+    <div v-else class="px-6 pb-6">
+      <div class="flex flex-col gap-4">
+        <div>
+          <label class="label pb-2">
+            <span class="label-text font-semibold text-base-content/70">选择日期范围</span>
           </label>
-          <input v-model="customStartDate" type="date" class="input input-bordered w-full" />
+          <VueDatePicker
+            v-model="customDateRange"
+            range
+            :enable-time-picker="false"
+            :format="'yyyy-MM-dd'"
+            :preview-format="'yyyy-MM-dd'"
+            placeholder="选择开始和结束日期"
+            class="modern-datepicker"
+            :clearable="false"
+            :transitions="true"
+          />
         </div>
-        <div class="flex-1">
-          <label class="label">
-            <span class="label-text">结束日期</span>
-          </label>
-          <input v-model="customEndDate" type="date" class="input input-bordered w-full" />
+        <div class="flex justify-end gap-3 pt-2">
+          <button @click="showCustomPicker = false" class="btn btn-ghost btn-sm rounded-xl px-6 font-semibold hover:bg-base-200/50 transition-all">取消</button>
+          <button @click="confirmCustomRange" class="btn btn-primary btn-sm rounded-xl px-6 font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all">确认</button>
         </div>
-      </div>
-      <div class="flex justify-end gap-2">
-        <button @click="showCustomPicker = false" class="btn btn-ghost btn-sm">取消</button>
-        <button @click="confirmCustomRange" class="btn btn-primary btn-sm">确认</button>
       </div>
     </div>
   </div>
 </template>
+
+<style>
+.modern-datepicker {
+  --dp-font-family: inherit;
+  --dp-border-radius: 12px;
+  --dp-input-padding: 12px 16px;
+  --dp-font-size: 14px;
+  --dp-border-color: rgba(0, 0, 0, 0.05);
+  --dp-border-color-hover: rgba(0, 0, 0, 0.1);
+  --dp-primary-color: hsl(var(--p));
+  --dp-primary-text-color: hsl(var(--pc));
+}
+
+.modern-datepicker .dp__input {
+  border: 1px solid var(--dp-border-color);
+  border-radius: var(--dp-border-radius);
+  background: hsl(var(--b1));
+  transition: all 0.3s ease;
+}
+
+.modern-datepicker .dp__input:hover {
+  border-color: var(--dp-border-color-hover);
+}
+
+.modern-datepicker .dp__input:focus {
+  outline: none;
+  border-color: var(--dp-primary-color);
+  box-shadow: 0 0 0 3px rgba(var(--p), 0.1);
+}
+
+.dp__menu {
+  border-radius: 16px !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1) !important;
+  font-family: inherit !important;
+}
+
+.dp__calendar_header {
+  font-weight: 600;
+}
+
+.dp__cell_inner {
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+}
+
+.dp__cell_inner:hover {
+  background: rgba(var(--p), 0.1) !important;
+}
+
+.dp__cell_inner.dp__cell_active {
+  background: var(--dp-primary-color) !important;
+  color: var(--dp-primary-text-color) !important;
+}
+
+.dp__range_start,
+.dp__range_end {
+  background: var(--dp-primary-color) !important;
+  color: var(--dp-primary-text-color) !important;
+}
+
+.dp__range_between {
+  background: rgba(var(--p), 0.1) !important;
+}
+</style>

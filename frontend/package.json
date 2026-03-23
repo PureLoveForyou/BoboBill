@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vuepic/vue-datepicker": "^12.1.0",
     "apexcharts": "^5.3.6",
     "dayjs": "^1.11.19",
     "vue": "^3.5.24",
