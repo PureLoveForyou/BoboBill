@@ -10,10 +10,12 @@ import re
 from datetime import datetime
 from openpyxl import load_workbook
 
-if not os.path.exists("db.json"):
-    open("db.json", "w").close()
+if not os.path.exists("database"):
+    os.makedirs("database")
+if not os.path.exists("database/db.json"):
+    open("database/db.json", "w").close()
 
-db = TinyDB("db.json")
+db = TinyDB("database/db.json")
 Bill = Query()
 
 app = FastAPI(
