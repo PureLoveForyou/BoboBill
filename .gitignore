@@ -322,3 +322,8 @@ docs/_book
 test/
 
 # End of https://www.toptal.com/developers/gitignore/api/vue,python,node
+
+# BoboBill specific
+testFile/
+backend/db.json
+backend/venv/

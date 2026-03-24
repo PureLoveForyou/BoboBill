@@ -1,6 +1,8 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { getCurrentTheme } from '../utils/theme'
+
+const API_BASE = 'http://localhost:8000'
 
 const currentTheme = ref(getCurrentTheme())
 
@@ -12,28 +14,17 @@ const importType = ref(null)
 const isDragging = ref(false)
 const uploadedFile = ref(null)
 const isUploading = ref(false)
-const importHistory = ref([
-  { id: 1, platform: 'wechat', count: 128, date: '2024-01-15', status: 'success' },
-  { id: 2, platform: 'alipay', count: 86, date: '2024-01-10', status: 'success' },
-  { id: 3, platform: 'wechat', count: 45, date: '2024-01-05', status: 'success' },
-])
+const uploadResult = ref(null)
+const importHistory = ref([])
 
-const bills = ref([
-  { id: 1, name: '美团外卖', amount: -35.50, category: '餐饮', date: '2024-01-20', platform: 'wechat' },
-  { id: 2, name: '滴滴出行', amount: -28.00, category: '交通', date: '2024-01-20', platform: 'alipay' },
-  { id: 3, name: '工资收入', amount: 15000.00, category: '工资', date: '2024-01-19', platform: 'bank' },
-  { id: 4, name: '京东购物', amount: -299.00, category: '购物', date: '2024-01-19', platform: 'wechat' },
-  { id: 5, name: '星巴克', amount: -42.00, category: '餐饮', date: '2024-01-18', platform: 'alipay' },
-  { id: 6, name: '地铁充值', amount: -100.00, category: '交通', date: '2024-01-18', platform: 'wechat' },
-  { id: 7, name: '理财收益', amount: 156.80, category: '投资', date: '2024-01-17', platform: 'alipay' },
-  { id: 8, name: '超市购物', amount: -186.50, category: '购物', date: '2024-01-17', platform: 'wechat' },
-])
+const bills = ref([])
+const isLoading = ref(false)
 
 const searchQuery = ref('')
 const selectedCategory = ref('all')
 const selectedPlatform = ref('all')
 
-const categories = ['all', '餐饮', '交通', '购物', '工资', '投资', '娱乐', '医疗', '其他']
+const categories = ['all', '餐饮', '交通', '购物', '工资', '投资', '娱乐', '医疗', '转账', '其他']
 const platforms = ['all', 'wechat', 'alipay', 'bank']
 
 const filteredBills = computed(() => {
@@ -49,6 +40,20 @@ const platformInfo = {
   wechat: { name: '微信', icon: '💚', color: 'from-green-500 to-green-600' },
   alipay: { name: '支付宝', icon: '💙', color: 'from-blue-500 to-blue-600' },
   bank: { name: '银行卡', icon: '💛', color: 'from-yellow-500 to-yellow-600' }
+}
+
+const fetchBills = async () => {
+  isLoading.value = true
+  try {
+    const response = await fetch(`${API_BASE}/bills`)
+    if (response.ok) {
+      bills.value = await response.json()
+    }
+  } catch (error) {
+    console.error('获取账单失败:', error)
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const handleDragOver = (e) => {
@@ -75,20 +80,71 @@ const handleFileSelect = (e) => {
   }
 }
 
-const startImport = () => {
+const startImport = async () => {
   if (!uploadedFile.value || !importType.value) return
+  
   isUploading.value = true
-  setTimeout(() => {
+  uploadResult.value = null
+  
+  const formData = new FormData()
+  formData.append('file', uploadedFile.value)
+  formData.append('platform', importType.value)
+  
+  try {
+    const response = await fetch(`${API_BASE}/bills/upload`, {
+      method: 'POST',
+      body: formData
+    })
+    
+    const result = await response.json()
+    
+    if (response.ok) {
+      uploadResult.value = {
+        type: 'success',
+        message: result.message
+      }
+      
+      importHistory.value.unshift({
+        id: Date.now(),
+        platform: importType.value,
+        count: result.success,
+        date: new Date().toLocaleDateString('zh-CN'),
+        status: 'success'
+      })
+      
+      await fetchBills()
+      
+      uploadedFile.value = null
+      importType.value = null
+    } else {
+      uploadResult.value = {
+        type: 'error',
+        message: result.detail || '导入失败，请检查文件格式'
+      }
+    }
+  } catch (error) {
+    uploadResult.value = {
+      type: 'error',
+      message: '网络错误，请确保后端服务已启动'
+    }
+    console.error('上传失败:', error)
+  } finally {
     isUploading.value = false
-    uploadedFile.value = null
-    importType.value = null
-  }, 2000)
+  }
 }
 
 const formatAmount = (amount) => {
   const absAmount = Math.abs(amount)
   return amount >= 0 ? `+¥${absAmount.toFixed(2)}` : `-¥${absAmount.toFixed(2)}`
 }
+
+const clearResult = () => {
+  uploadResult.value = null
+}
+
+onMounted(() => {
+  fetchBills()
+})
 </script>
 
 <template>
@@ -96,6 +152,29 @@ const formatAmount = (amount) => {
     <div class="mb-10">
       <h1 class="text-3xl font-bold tracking-tight">账单</h1>
       <p class="text-sm text-base-content/50 mt-2 font-medium">导入和管理您的账单数据</p>
+    </div>
+
+    <div
+      v-if="uploadResult"
+      class="mb-6 p-4 rounded-2xl flex items-center justify-between animate-[fadeIn_0.3s_ease-out]"
+      :class="uploadResult.type === 'success' 
+        ? 'bg-success/10 border border-success/20 text-success' 
+        : 'bg-error/10 border border-error/20 text-error'"
+    >
+      <div class="flex items-center gap-3">
+        <svg v-if="uploadResult.type === 'success'" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span class="font-medium">{{ uploadResult.message }}</span>
+      </div>
+      <button @click="clearResult" class="p-1 hover:opacity-70 transition-opacity">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
     </div>
 
     <div class="grid gap-8 lg:grid-cols-5">
@@ -146,7 +225,7 @@ const formatAmount = (amount) => {
                 <input
                   type="file"
                   @change="handleFileSelect"
-                  accept=".csv,.xlsx,.xls"
+                  accept=".csv,.CSV,.xlsx,.xls"
                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
                 <div class="p-8 text-center">
@@ -161,7 +240,7 @@ const formatAmount = (amount) => {
                   <p v-else class="text-sm text-primary font-medium">
                     {{ uploadedFile.name }}
                   </p>
-                  <p class="text-xs text-base-content/30 mt-2">支持 CSV、Excel 格式</p>
+                  <p class="text-xs text-base-content/30 mt-2">支持 CSV、Excel 格式（微信账单）</p>
                 </div>
               </div>
 
@@ -185,7 +264,7 @@ const formatAmount = (amount) => {
             </div>
           </div>
 
-          <div class="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-base-100/90 via-base-100/80 to-base-200/30 backdrop-blur-2xl border border-white/10 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
+          <div v-if="importHistory.length > 0" class="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-base-100/90 via-base-100/80 to-base-200/30 backdrop-blur-2xl border border-white/10 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
             <div class="p-6">
               <div class="flex items-center justify-between mb-5">
                 <h3 class="font-semibold tracking-tight">导入历史</h3>
@@ -248,21 +327,29 @@ const formatAmount = (amount) => {
               </div>
             </div>
 
-            <div class="space-y-2">
+            <div v-if="isLoading" class="py-16 text-center">
+              <svg class="w-8 h-8 mx-auto animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <p class="text-sm text-base-content/40 mt-4">加载中...</p>
+            </div>
+
+            <div v-else-if="filteredBills.length > 0" class="space-y-2">
               <div
                 v-for="bill in filteredBills"
                 :key="bill.id"
                 class="group flex items-center gap-4 p-4 rounded-2xl bg-base-200/20 hover:bg-base-200/40 transition-all duration-300 cursor-pointer"
               >
                 <div class="w-11 h-11 rounded-xl flex items-center justify-center text-lg"
-                  :class="'bg-gradient-to-br ' + platformInfo[bill.platform].color + ' text-white shadow-sm'">
-                  {{ platformInfo[bill.platform].icon }}
+                  :class="'bg-gradient-to-br ' + platformInfo[bill.platform]?.color + ' text-white shadow-sm'">
+                  {{ platformInfo[bill.platform]?.icon || '💳' }}
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2">
                     <span class="font-medium text-sm truncate">{{ bill.name }}</span>
                     <span class="px-2 py-0.5 rounded-md text-xs bg-base-200/80 text-base-content/50">
-                      {{ bill.category }}
+                      {{ bill.category || '其他' }}
                     </span>
                   </div>
                   <div class="text-xs text-base-content/40 mt-1">{{ bill.date }}</div>
@@ -275,7 +362,7 @@ const formatAmount = (amount) => {
               </div>
             </div>
 
-            <div v-if="filteredBills.length === 0" class="py-16 text-center">
+            <div v-else class="py-16 text-center">
               <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-base-200/50 flex items-center justify-center">
                 <svg class="w-8 h-8 text-base-content/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -285,10 +372,10 @@ const formatAmount = (amount) => {
               <p class="text-xs text-base-content/30 mt-1">导入账单文件后这里会显示记录</p>
             </div>
 
-            <div v-if="filteredBills.length > 0" class="mt-6 pt-4 border-t border-base-200/50">
+            <div v-if="!isLoading && filteredBills.length > 0" class="mt-6 pt-4 border-t border-base-200/50">
               <div class="flex items-center justify-between text-sm">
                 <span class="text-base-content/40">共 {{ filteredBills.length }} 条记录</span>
-                <button class="text-primary font-medium hover:underline">查看全部</button>
+                <span class="text-base-content/40">总计 {{ bills.length }} 条</span>
               </div>
             </div>
           </div>
@@ -297,3 +384,16 @@ const formatAmount = (amount) => {
     </div>
   </div>
 </template>
+
+<style>
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>
