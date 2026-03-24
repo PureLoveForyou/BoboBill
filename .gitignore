@@ -324,6 +324,6 @@ test/
 # End of https://www.toptal.com/developers/gitignore/api/vue,python,node
 
 # BoboBill specific
+database/
 testFile/
-backend/db.json
 backend/venv/
