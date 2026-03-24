@@ -26,6 +26,32 @@ const selectedPlatform = ref('all')
 
 const categories = ['all', '餐饮', '交通', '购物', '工资', '投资', '娱乐', '医疗', '转账', '其他']
 const platforms = ['all', 'wechat', 'alipay', 'bank']
+const editCategories = ['餐饮', '交通', '购物', '工资', '投资', '娱乐', '医疗', '转账', '其他']
+const editPlatforms = ['wechat', 'alipay', 'bank']
+
+const showAddModal = ref(false)
+const showEditModal = ref(false)
+const isSaving = ref(false)
+const newBill = ref({
+  name: '',
+  amount: '',
+  type: 'expense',
+  date: new Date().toISOString().split('T')[0],
+  category: '其他',
+  platform: 'wechat',
+  note: ''
+})
+
+const editingBill = ref({
+  id: null,
+  name: '',
+  amount: '',
+  type: 'expense',
+  date: '',
+  category: '其他',
+  platform: 'wechat',
+  note: ''
+})
 
 const filteredBills = computed(() => {
   return bills.value.filter(bill => {
@@ -133,6 +159,138 @@ const startImport = async () => {
   }
 }
 
+const openAddModal = () => {
+  newBill.value = {
+    name: '',
+    amount: '',
+    type: 'expense',
+    date: new Date().toISOString().split('T')[0],
+    category: '其他',
+    platform: 'wechat',
+    note: ''
+  }
+  showAddModal.value = true
+}
+
+const closeAddModal = () => {
+  showAddModal.value = false
+}
+
+const saveBill = async () => {
+  if (!newBill.value.name || !newBill.value.amount || !newBill.value.date) return
+  
+  isSaving.value = true
+  
+  try {
+    const amount = parseFloat(newBill.value.amount)
+    const billData = {
+      name: newBill.value.name,
+      amount: newBill.value.type === 'expense' ? -Math.abs(amount) : Math.abs(amount),
+      type: newBill.value.type,
+      date: newBill.value.date,
+      category: newBill.value.category,
+      platform: newBill.value.platform,
+      note: newBill.value.note || ''
+    }
+    
+    const response = await fetch(`${API_BASE}/bills`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(billData)
+    })
+    
+    if (response.ok) {
+      await fetchBills()
+      closeAddModal()
+    } else {
+      const result = await response.json()
+      console.error('保存失败:', result)
+    }
+  } catch (error) {
+    console.error('保存失败:', error)
+  } finally {
+    isSaving.value = false
+  }
+}
+
+const deleteBill = async (billId) => {
+  if (!confirm('确定要删除这条账单吗？')) return
+  
+  try {
+    const response = await fetch(`${API_BASE}/bills/${billId}`, {
+      method: 'DELETE'
+    })
+    
+    if (response.ok) {
+      await fetchBills()
+    } else {
+      const result = await response.json()
+      console.error('删除失败:', result)
+    }
+  } catch (error) {
+    console.error('删除失败:', error)
+  }
+}
+
+const openEditModal = (bill) => {
+  editingBill.value = {
+    id: bill.id,
+    name: bill.name,
+    amount: Math.abs(bill.amount),
+    type: bill.type || (bill.amount >= 0 ? 'income' : 'expense'),
+    date: bill.date,
+    category: bill.category || '其他',
+    platform: bill.platform || 'wechat',
+    note: bill.note || ''
+  }
+  showEditModal.value = true
+}
+
+const closeEditModal = () => {
+  showEditModal.value = false
+}
+
+const updateBill = async () => {
+  if (!editingBill.value.name || !editingBill.value.amount || !editingBill.value.date) return
+  
+  isSaving.value = true
+  
+  try {
+    const amount = parseFloat(editingBill.value.amount)
+    const billData = {
+      name: editingBill.value.name,
+      amount: editingBill.value.type === 'expense' ? -Math.abs(amount) : Math.abs(amount),
+      type: editingBill.value.type,
+      date: editingBill.value.date,
+      category: editingBill.value.category,
+      platform: editingBill.value.platform,
+      note: editingBill.value.note || ''
+    }
+    
+    const response = await fetch(`${API_BASE}/bills/${editingBill.value.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(billData)
+    })
+    
+    if (response.ok) {
+      await fetchBills()
+      closeEditModal()
+    } else {
+      const result = await response.json()
+      console.error('更新失败:', result)
+    }
+  } catch (error) {
+    console.error('更新失败:', error)
+  } finally {
+    isSaving.value = false
+  }
+}
+
 const formatAmount = (amount) => {
   const absAmount = Math.abs(amount)
   return amount >= 0 ? `+¥${absAmount.toFixed(2)}` : `-¥${absAmount.toFixed(2)}`
@@ -149,9 +307,20 @@ onMounted(() => {
 
 <template>
   <div class="p-6 lg:p-8 max-w-[1400px] mx-auto">
-    <div class="mb-10">
-      <h1 class="text-3xl font-bold tracking-tight">账单</h1>
-      <p class="text-sm text-base-content/50 mt-2 font-medium">导入和管理您的账单数据</p>
+    <div class="mb-10 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight">账单</h1>
+        <p class="text-sm text-base-content/50 mt-2 font-medium">导入和管理您的账单数据</p>
+      </div>
+      <button
+        @click="openAddModal"
+        class="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-primary to-primary/80 text-white font-semibold text-sm shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300"
+      >
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+        手动记账
+      </button>
     </div>
 
     <div
@@ -240,7 +409,7 @@ onMounted(() => {
                   <p v-else class="text-sm text-primary font-medium">
                     {{ uploadedFile.name }}
                   </p>
-                  <p class="text-xs text-base-content/30 mt-2">支持 CSV、Excel 格式（微信账单）</p>
+                  <p class="text-xs text-base-content/30 mt-2">支持 CSV、Excel 格式</p>
                 </div>
               </div>
 
@@ -354,10 +523,28 @@ onMounted(() => {
                   </div>
                   <div class="text-xs text-base-content/40 mt-1">{{ bill.date }}</div>
                 </div>
-                <div class="text-right">
-                  <div class="font-semibold tabular-nums" :class="bill.amount >= 0 ? 'text-success' : 'text-base-content'">
+                <div class="text-right flex items-center gap-2">
+                  <div class="font-semibold tabular-nums mr-2" :class="bill.amount >= 0 ? 'text-success' : 'text-base-content'">
                     {{ formatAmount(bill.amount) }}
                   </div>
+                  <button
+                    @click.stop="openEditModal(bill)"
+                    class="p-2 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-primary/60 hover:text-primary transition-all"
+                    title="编辑"
+                  >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button
+                    @click.stop="deleteBill(bill.id)"
+                    class="p-2 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-error/10 text-error/60 hover:text-error transition-all"
+                    title="删除"
+                  >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
@@ -369,7 +556,7 @@ onMounted(() => {
                 </svg>
               </div>
               <p class="text-sm text-base-content/40">暂无账单数据</p>
-              <p class="text-xs text-base-content/30 mt-1">导入账单文件后这里会显示记录</p>
+              <p class="text-xs text-base-content/30 mt-1">导入账单文件或手动添加记录</p>
             </div>
 
             <div v-if="!isLoading && filteredBills.length > 0" class="mt-6 pt-4 border-t border-base-200/50">
@@ -378,6 +565,264 @@ onMounted(() => {
                 <span class="text-base-content/40">总计 {{ bills.length }} 条</span>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeAddModal"></div>
+      <div class="relative w-full max-w-md bg-base-100 rounded-3xl shadow-2xl overflow-hidden">
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold tracking-tight">手动记账</h2>
+            <button @click="closeAddModal" class="p-2 rounded-xl hover:bg-base-200 transition-colors">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex gap-2 p-1 bg-base-200/50 rounded-2xl">
+              <button
+                class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                :class="newBill.type === 'expense' ? 'bg-base-100 text-error shadow-sm' : 'text-base-content/60'"
+                @click="newBill.type = 'expense'"
+              >
+                支出
+              </button>
+              <button
+                class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                :class="newBill.type === 'income' ? 'bg-base-100 text-success shadow-sm' : 'text-base-content/60'"
+                @click="newBill.type = 'income'"
+              >
+                收入
+              </button>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-base-content/60 mb-2">金额</label>
+              <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/40">¥</span>
+                <input
+                  v-model="newBill.amount"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  class="w-full pl-8 pr-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-lg font-semibold"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-base-content/60 mb-2">名称</label>
+              <input
+                v-model="newBill.name"
+                type="text"
+                placeholder="例如：午餐、地铁、工资"
+                class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-base-content/60 mb-2">日期</label>
+                <input
+                  v-model="newBill.date"
+                  type="date"
+                  class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-base-content/60 mb-2">分类</label>
+                <select
+                  v-model="newBill.category"
+                  class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer appearance-none"
+                >
+                  <option v-for="cat in editCategories" :key="cat" :value="cat">{{ cat }}</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-base-content/60 mb-2">平台</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  v-for="(info, key) in platformInfo"
+                  :key="key"
+                  @click="newBill.platform = key"
+                  class="py-2.5 rounded-xl text-sm font-medium transition-all"
+                  :class="newBill.platform === key 
+                    ? 'bg-gradient-to-br ' + info.color + ' text-white' 
+                    : 'bg-base-200/50 text-base-content/60 hover:bg-base-200'"
+                >
+                  {{ info.name }}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-base-content/60 mb-2">备注（可选）</label>
+              <input
+                v-model="newBill.note"
+                type="text"
+                placeholder="添加备注..."
+                class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+          </div>
+
+          <div class="flex gap-3 mt-6">
+            <button
+              @click="closeAddModal"
+              class="flex-1 py-3 rounded-xl bg-base-200 text-base-content font-semibold text-sm hover:bg-base-300 transition-colors"
+            >
+              取消
+            </button>
+            <button
+              @click="saveBill"
+              :disabled="!newBill.name || !newBill.amount || !newBill.date || isSaving"
+              class="flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-white font-semibold text-sm shadow-lg shadow-primary/25 hover:shadow-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <span v-if="isSaving" class="flex items-center justify-center gap-2">
+                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                保存中...
+              </span>
+              <span v-else>保存</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeEditModal"></div>
+      <div class="relative w-full max-w-md bg-base-100 rounded-3xl shadow-2xl overflow-hidden">
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold tracking-tight">编辑账单</h2>
+            <button @click="closeEditModal" class="p-2 rounded-xl hover:bg-base-200 transition-colors">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex gap-2 p-1 bg-base-200/50 rounded-2xl">
+              <button
+                class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                :class="editingBill.type === 'expense' ? 'bg-base-100 text-error shadow-sm' : 'text-base-content/60'"
+                @click="editingBill.type = 'expense'"
+              >
+                支出
+              </button>
+              <button
+                class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                :class="editingBill.type === 'income' ? 'bg-base-100 text-success shadow-sm' : 'text-base-content/60'"
+                @click="editingBill.type = 'income'"
+              >
+                收入
+              </button>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-base-content/60 mb-2">金额</label>
+              <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/40">¥</span>
+                <input
+                  v-model="editingBill.amount"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  class="w-full pl-8 pr-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-lg font-semibold"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-base-content/60 mb-2">名称</label>
+              <input
+                v-model="editingBill.name"
+                type="text"
+                placeholder="例如：午餐、地铁、工资"
+                class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-base-content/60 mb-2">日期</label>
+                <input
+                  v-model="editingBill.date"
+                  type="date"
+                  class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-base-content/60 mb-2">分类</label>
+                <select
+                  v-model="editingBill.category"
+                  class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer appearance-none"
+                >
+                  <option v-for="cat in editCategories" :key="cat" :value="cat">{{ cat }}</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-base-content/60 mb-2">平台</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  v-for="(info, key) in platformInfo"
+                  :key="key"
+                  @click="editingBill.platform = key"
+                  class="py-2.5 rounded-xl text-sm font-medium transition-all"
+                  :class="editingBill.platform === key 
+                    ? 'bg-gradient-to-br ' + info.color + ' text-white' 
+                    : 'bg-base-200/50 text-base-content/60 hover:bg-base-200'"
+                >
+                  {{ info.name }}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-base-content/60 mb-2">备注（可选）</label>
+              <input
+                v-model="editingBill.note"
+                type="text"
+                placeholder="添加备注..."
+                class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+          </div>
+
+          <div class="flex gap-3 mt-6">
+            <button
+              @click="closeEditModal"
+              class="flex-1 py-3 rounded-xl bg-base-200 text-base-content font-semibold text-sm hover:bg-base-300 transition-colors"
+            >
+              取消
+            </button>
+            <button
+              @click="updateBill"
+              :disabled="!editingBill.name || !editingBill.amount || !editingBill.date || isSaving"
+              class="flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-white font-semibold text-sm shadow-lg shadow-primary/25 hover:shadow-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <span v-if="isSaving" class="flex items-center justify-center gap-2">
+                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                保存中...
+              </span>
+              <span v-else>保存</span>
+            </button>
           </div>
         </div>
       </div>

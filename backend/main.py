@@ -83,6 +83,18 @@ def add_bill(bill: BillModel):
     bill_dict["id"] = doc_id
     return bill_dict
 
+@app.put("/bills/{bill_id}", response_model=BillModel)
+def update_bill(bill_id: int, bill: BillModel):
+    existing = db.get(doc_id=bill_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="账单未找到")
+    
+    bill_dict = bill.model_dump()
+    bill_dict.pop("id", None)
+    db.update(bill_dict, doc_ids=[bill_id])
+    bill_dict["id"] = bill_id
+    return bill_dict
+
 @app.delete("/bills/{bill_id}")
 def delete_bill(bill_id: int):
     if db.remove(doc_ids=[bill_id]):
