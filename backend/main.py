@@ -294,6 +294,207 @@ def parse_wechat_excel(content: bytes) -> List[dict]:
     
     return bills
 
+def parse_alipay_csv(content: str) -> List[dict]:
+    bills = []
+    lines = content.strip().split('\n')
+    
+    header_idx = -1
+    for i, line in enumerate(lines):
+        if '交易时间' in line and ('交易分类' in line or '交易对方' in line):
+            header_idx = i
+            break
+    
+    if header_idx == -1:
+        raise ValueError("无法识别支付宝账单格式：找不到表头")
+    
+    delimiter = '\t' if '\t' in lines[header_idx] else ','
+    reader = csv.reader(lines[header_idx:], delimiter=delimiter)
+    headers = next(reader)
+    headers = [h.strip() for h in headers]
+    
+    col_map = {}
+    for i, h in enumerate(headers):
+        if '交易时间' in h:
+            col_map['date'] = i
+        elif '交易分类' in h or '交易类型' in h:
+            col_map['type'] = i
+        elif '交易对方' in h:
+            col_map['merchant'] = i
+        elif '商品说明' in h or '商品' in h:
+            col_map['name'] = i
+        elif '收/支' in h:
+            col_map['direction'] = i
+        elif '金额' in h:
+            col_map['amount'] = i
+        elif '收/付款方式' in h or '支付方式' in h:
+            col_map['payment'] = i
+        elif '交易订单号' in h or '交易号' in h:
+            col_map['transaction_id'] = i
+        elif '备注' in h:
+            col_map['note'] = i
+    
+    for row in reader:
+        if not row or len(row) < 5:
+            continue
+        
+        if '---' in row[0] or '以上是' in row[0]:
+            break
+        
+        try:
+            get_val = lambda key: row[col_map[key]].strip() if key in col_map and col_map[key] < len(row) else ""
+            
+            date_str = get_val('date')
+            if not date_str:
+                continue
+            
+            try:
+                dt = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+                date_formatted = dt.strftime("%Y-%m-%d")
+            except:
+                date_formatted = date_str[:10] if len(date_str) >= 10 else date_str
+            
+            direction = get_val('direction')
+            bill_type = 'income' if '收入' in direction else 'expense' if '支出' in direction else 'expense'
+            
+            amount_str = get_val('amount')
+            amount_str = re.sub(r'[¥￥,\s]', '', amount_str)
+            try:
+                amount = float(amount_str)
+            except:
+                continue
+            
+            if bill_type == 'expense':
+                amount = -abs(amount)
+            else:
+                amount = abs(amount)
+            
+            merchant = get_val('merchant')
+            name = get_val('name') or merchant
+            
+            category = categorize_transaction(name, get_val('type'))
+            
+            bill = {
+                'name': name[:100] if name else "未知交易",
+                'amount': amount,
+                'type': bill_type,
+                'date': date_formatted,
+                'category': category,
+                'platform': 'alipay',
+                'merchant': merchant[:100] if merchant else "",
+                'note': get_val('note')[:200] if get_val('note') else "",
+                'transaction_id': get_val('transaction_id')
+            }
+            
+            bills.append(bill)
+            
+        except Exception as e:
+            print(f"解析行失败: {row}, 错误: {e}")
+            continue
+    
+    return bills
+
+def parse_alipay_excel(content: bytes) -> List[dict]:
+    bills = []
+    wb = load_workbook(io.BytesIO(content))
+    ws = wb.active
+    
+    header_idx = None
+    headers = []
+    
+    for row_idx, row in enumerate(ws.iter_rows(values_only=True), 1):
+        row_values = [str(cell) if cell is not None else '' for cell in row]
+        if '交易时间' in str(row_values) and ('交易分类' in str(row_values) or '交易对方' in str(row_values)):
+            header_idx = row_idx
+            headers = row_values
+            break
+    
+    if header_idx is None:
+        raise ValueError("无法识别支付宝账单格式：找不到表头")
+    
+    col_map = {}
+    for i, h in enumerate(headers):
+        h_str = str(h).strip()
+        if '交易时间' in h_str:
+            col_map['date'] = i
+        elif '交易分类' in h_str or '交易类型' in h_str:
+            col_map['type'] = i
+        elif '交易对方' in h_str:
+            col_map['merchant'] = i
+        elif '商品说明' in h_str or '商品' in h_str:
+            col_map['name'] = i
+        elif '收/支' in h_str:
+            col_map['direction'] = i
+        elif '金额' in h_str:
+            col_map['amount'] = i
+        elif '收/付款方式' in h_str or '支付方式' in h_str:
+            col_map['payment'] = i
+        elif '交易订单号' in h_str or '交易号' in h_str:
+            col_map['transaction_id'] = i
+        elif '备注' in h_str:
+            col_map['note'] = i
+    
+    for row in ws.iter_rows(min_row=header_idx + 1, values_only=True):
+        row_values = [str(cell) if cell is not None else '' for cell in row]
+        
+        if not row_values or len(row_values) < 5:
+            continue
+        
+        if '---' in row_values[0] or '以上是' in row_values[0]:
+            break
+        
+        try:
+            get_val = lambda key: row_values[col_map[key]].strip() if key in col_map and col_map[key] < len(row_values) else ""
+            
+            date_str = get_val('date')
+            if not date_str:
+                continue
+            
+            try:
+                dt = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+                date_formatted = dt.strftime("%Y-%m-%d")
+            except:
+                date_formatted = date_str[:10] if len(date_str) >= 10 else date_str
+            
+            direction = get_val('direction')
+            bill_type = 'income' if '收入' in direction else 'expense' if '支出' in direction else 'expense'
+            
+            amount_str = get_val('amount')
+            amount_str = re.sub(r'[¥￥,\s]', '', amount_str)
+            try:
+                amount = float(amount_str)
+            except:
+                continue
+            
+            if bill_type == 'expense':
+                amount = -abs(amount)
+            else:
+                amount = abs(amount)
+            
+            merchant = get_val('merchant')
+            name = get_val('name') or merchant
+            
+            category = categorize_transaction(name, get_val('type'))
+            
+            bill = {
+                'name': name[:100] if name else "未知交易",
+                'amount': amount,
+                'type': bill_type,
+                'date': date_formatted,
+                'category': category,
+                'platform': 'alipay',
+                'merchant': merchant[:100] if merchant else "",
+                'note': get_val('note')[:200] if get_val('note') else "",
+                'transaction_id': get_val('transaction_id')
+            }
+            
+            bills.append(bill)
+            
+        except Exception as e:
+            print(f"解析行失败: {row_values}, 错误: {e}")
+            continue
+    
+    return bills
+
 def categorize_transaction(name: str, trans_type: str) -> str:
     name_lower = name.lower() if name else ""
     
@@ -350,6 +551,21 @@ async def upload_bills(
                         except:
                             content_str = content.decode('gb18030')
                 bills = parse_wechat_csv(content_str)
+        elif platform == 'alipay':
+            if is_excel:
+                bills = parse_alipay_excel(content)
+            else:
+                try:
+                    content_str = content.decode('utf-8')
+                except:
+                    try:
+                        content_str = content.decode('utf-8-sig')
+                    except:
+                        try:
+                            content_str = content.decode('gbk')
+                        except:
+                            content_str = content.decode('gb18030')
+                bills = parse_alipay_csv(content_str)
         else:
             raise HTTPException(status_code=400, detail=f"{platform} 解析器暂未实现")
         
