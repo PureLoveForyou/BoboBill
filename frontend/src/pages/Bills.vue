@@ -104,18 +104,44 @@ const handleDragLeave = () => {
   isDragging.value = false
 }
 
-const handleDrop = (e) => {
+const handleDrop = async (e) => {
   e.preventDefault()
   isDragging.value = false
   const files = e.dataTransfer.files
   if (files.length > 0) {
     uploadedFile.value = files[0]
+    await detectPlatform()
   }
 }
 
-const handleFileSelect = (e) => {
+const handleFileSelect = async (e) => {
   if (e.target.files.length > 0) {
     uploadedFile.value = e.target.files[0]
+    await detectPlatform()
+  }
+  e.target.value = ''
+}
+
+const detectPlatform = async () => {
+  if (!uploadedFile.value) return
+  
+  const formData = new FormData()
+  formData.append('file', uploadedFile.value)
+  
+  try {
+    const response = await fetch(`${API_BASE}/bills/detect`, {
+      method: 'POST',
+      body: formData
+    })
+    
+    if (response.ok) {
+      const result = await response.json()
+      if (result.platform && result.platform !== 'unknown') {
+        importType.value = result.platform
+      }
+    }
+  } catch (error) {
+    console.error('检测平台失败:', error)
   }
 }
 
@@ -395,21 +421,29 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="grid grid-cols-3 gap-3 mb-6">
-                <button
-                  v-for="(info, key) in platformInfo"
-                  :key="key"
-                  @click="importType = key"
-                  class="group relative overflow-hidden rounded-2xl p-4 transition-all duration-300"
-                  :class="importType === key 
-                    ? 'bg-gradient-to-br ' + info.color + ' text-white shadow-lg scale-[1.02]'
-                    : 'bg-base-200/50 hover:bg-base-200/80'"
-                >
-                  <PlatformIcon :platform="key" size="md" />
-                  <div class="text-xs font-medium" :class="importType === key ? 'text-white' : 'text-base-content/70'">
-                    {{ info.name }}
-                  </div>
-                </button>
+              <div class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-sm font-medium text-base-content/60">选择平台</span>
+                  <span v-if="uploadedFile && importType" class="text-xs text-success font-medium">
+                    ✓ 已自动识别
+                  </span>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                  <button
+                    v-for="(info, key) in platformInfo"
+                    :key="key"
+                    @click="importType = key"
+                    class="group relative overflow-hidden rounded-2xl p-4 transition-all duration-300"
+                    :class="importType === key 
+                      ? 'bg-gradient-to-br ' + info.color + ' text-white shadow-lg scale-[1.02]'
+                      : 'bg-base-200/50 hover:bg-base-200/80'"
+                  >
+                    <PlatformIcon :platform="key" size="md" />
+                    <div class="text-xs font-medium mt-1" :class="importType === key ? 'text-white' : 'text-base-content/70'">
+                      {{ info.name }}
+                    </div>
+                  </button>
+                </div>
               </div>
 
               <div

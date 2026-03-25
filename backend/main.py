@@ -534,6 +534,73 @@ def categorize_transaction(name: str, trans_type: str) -> str:
     
     return '其他'
 
+def detect_platform(content: bytes, filename: str) -> str:
+    is_excel = filename.lower().endswith(('.xlsx', '.xls'))
+    
+    wechat_keywords = ['微信支付', '微信昵称', '微信支付账单明细', '商户消费', '零钱', '微信红包']
+    alipay_keywords = ['支付宝', '交易分类', '支付宝（中国）网络技术有限公司', '收/付款方式', '商品说明']
+    
+    wechat_score = 0
+    alipay_score = 0
+    
+    if is_excel:
+        try:
+            wb = load_workbook(io.BytesIO(content))
+            ws = wb.active
+            all_text = ''
+            for row in ws.iter_rows(min_row=1, max_row=30, values_only=True):
+                row_str = ' '.join(str(cell) if cell else '' for cell in row)
+                all_text += row_str + ' '
+            
+            for keyword in wechat_keywords:
+                if keyword in all_text:
+                    wechat_score += all_text.count(keyword)
+            
+            for keyword in alipay_keywords:
+                if keyword in all_text:
+                    alipay_score += all_text.count(keyword)
+        except:
+            pass
+    else:
+        try:
+            content_str = content.decode('utf-8')
+        except:
+            try:
+                content_str = content.decode('utf-8-sig')
+            except:
+                try:
+                    content_str = content.decode('gbk')
+                except:
+                    content_str = content.decode('gb18030')
+        
+        for keyword in wechat_keywords:
+            if keyword in content_str:
+                wechat_score += content_str.count(keyword)
+        
+        for keyword in alipay_keywords:
+            if keyword in content_str:
+                alipay_score += content_str.count(keyword)
+    
+    if wechat_score > alipay_score and wechat_score > 0:
+        return 'wechat'
+    if alipay_score > wechat_score and alipay_score > 0:
+        return 'alipay'
+    
+    return 'unknown'
+
+@app.post("/bills/detect")
+async def detect_bill_platform(file: UploadFile = File(...)):
+    if not file.filename.lower().endswith(('.csv', '.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="仅支持 CSV、Excel 格式文件")
+    
+    content = await file.read()
+    platform = detect_platform(content, file.filename)
+    
+    return {
+        "platform": platform,
+        "filename": file.filename
+    }
+
 @app.post("/bills/upload", response_model=ImportResult)
 async def upload_bills(
     file: UploadFile = File(...),
@@ -548,9 +615,17 @@ async def upload_bills(
     try:
         content = await file.read()
         
+        detected = detect_platform(content, file.filename)
+        actual_platform = platform
+        auto_corrected = False
+        
+        if detected != 'unknown' and detected != platform:
+            actual_platform = detected
+            auto_corrected = True
+        
         is_excel = file.filename.lower().endswith(('.xlsx', '.xls'))
         
-        if platform == 'wechat':
+        if actual_platform == 'wechat':
             if is_excel:
                 bills = parse_wechat_excel(content)
             else:
@@ -565,7 +640,7 @@ async def upload_bills(
                         except:
                             content_str = content.decode('gb18030')
                 bills = parse_wechat_csv(content_str)
-        elif platform == 'alipay':
+        elif actual_platform == 'alipay':
             if is_excel:
                 bills = parse_alipay_excel(content)
             else:
@@ -581,7 +656,7 @@ async def upload_bills(
                             content_str = content.decode('gb18030')
                 bills = parse_alipay_csv(content_str)
         else:
-            raise HTTPException(status_code=400, detail=f"{platform} 解析器暂未实现")
+            raise HTTPException(status_code=400, detail=f"{actual_platform} 解析器暂未实现")
         
         if not bills:
             return ImportResult(
@@ -608,11 +683,20 @@ async def upload_bills(
             db.insert(bill)
             success_count += 1
         
+        platform_names = {'wechat': '微信', 'alipay': '支付宝', 'bank': '银行卡'}
+        platform_name = platform_names.get(actual_platform, actual_platform)
+        
+        message = f"成功导入 {success_count} 条{platform_name}账单"
+        if auto_corrected:
+            message += f"（已自动识别平台）"
+        if skipped_count > 0:
+            message += f"，跳过 {skipped_count} 条重复记录"
+        
         return ImportResult(
             success=success_count,
             skipped=skipped_count,
             total=len(bills),
-            message=f"成功导入 {success_count} 条账单" + (f"，跳过 {skipped_count} 条重复记录" if skipped_count > 0 else "")
+            message=message
         )
         
     except ValueError as e:
