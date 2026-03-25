@@ -28,7 +28,7 @@ const isActive = (path) => route.path === path
 </script>
 
 <template>
-  <div class="drawer-side">
+  <div class="drawer-side z-40">
     <label for="sidebar-drawer" class="drawer-overlay"></label>
     <div class="m-4 w-64 min-h-[calc(100vh-2rem)] bg-base-100/80 backdrop-blur-xl text-base-content flex flex-col rounded-[28px] shadow-[0_8px_32px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)] overflow-hidden border border-white/20">
       

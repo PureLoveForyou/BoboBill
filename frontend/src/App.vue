@@ -57,7 +57,7 @@ watch(() => router.currentRoute.value.path, () => {
       </div>
       
       <!-- 页面内容 -->
-      <div class="flex-1 p-4">
+      <div class="flex-1 p-4 relative z-0">
         <router-view />
       </div>
     </div>
