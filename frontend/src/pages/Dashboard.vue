@@ -873,7 +873,6 @@ onMounted(async () => {
     <div class="flex items-center justify-between mb-6">
       <div>
         <h1 class="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p class="text-sm text-base-content/60 mt-1">账单数据概览与管理</p>
       </div>
       <div class="flex gap-3">
         <button
@@ -925,9 +924,8 @@ onMounted(async () => {
     </div>
 
     <template v-else>
-      <TimeFilter @change="onTimeFilterChange" />
-
-      <div class="flex items-center gap-3 mt-4 mb-6">
+      <div class="flex items-center gap-3 mb-5 flex-wrap">
+        <TimeFilter @change="onTimeFilterChange" />
         <AppleSelect
           v-model="selectedCategory"
           :options="categoryOptions"
@@ -938,10 +936,10 @@ onMounted(async () => {
           :options="platformOptions"
           placeholder="全部平台"
         />
-        <div v-if="pieSelectedCategory" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 text-primary text-sm font-medium">
+        <div v-if="pieSelectedCategory" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium">
           <span>{{ pieSelectedCategory }}</span>
           <button @click="clearPieFilter" class="hover:bg-primary/20 rounded-full p-0.5 transition-colors">
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>

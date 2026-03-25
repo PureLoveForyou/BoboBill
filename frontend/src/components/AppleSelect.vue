@@ -67,7 +67,7 @@ onUnmounted(() => {
   <div ref="dropdownRef" class="relative">
     <button
       @click="toggleDropdown"
-      class="flex items-center justify-between gap-2 px-4 py-3 rounded-xl bg-base-200/50 hover:bg-base-200/70 border-0 text-sm transition-all duration-200 min-w-[100px]"
+      class="flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-base-200/50 hover:bg-base-200/70 border-0 text-sm font-medium transition-all duration-200 min-w-[120px]"
       :class="{ 'ring-2 ring-primary/30': isOpen }"
     >
       <span class="truncate">{{ displayLabel }}</span>
@@ -93,7 +93,7 @@ onUnmounted(() => {
     >
       <div 
         v-if="isOpen"
-        class="absolute top-full left-0 mt-2 w-full min-w-[120px] py-2 rounded-2xl bg-base-100 shadow-xl border border-base-200/50 z-50 overflow-hidden"
+        class="absolute top-full left-0 mt-2 w-full min-w-[140px] py-2 rounded-2xl bg-base-100 shadow-xl border border-base-200/50 z-50 overflow-hidden"
       >
         <button
           v-for="(option, index) in options"
