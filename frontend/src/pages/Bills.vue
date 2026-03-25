@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { getCurrentTheme } from '../utils/theme'
 import { API_BASE } from '../config'
+import PlatformIcon from '../components/PlatformIcon.vue'
 
 const toast = ref('')
 const toastTimer = ref(null)
@@ -72,9 +73,9 @@ const filteredBills = computed(() => {
 })
 
 const platformInfo = {
-  wechat: { name: '微信', icon: '💚', color: 'from-green-500 to-green-600' },
-  alipay: { name: '支付宝', icon: '💙', color: 'from-blue-500 to-blue-600' },
-  bank: { name: '银行卡', icon: '💛', color: 'from-yellow-500 to-yellow-600' }
+  wechat: { name: '微信', color: 'from-green-500 to-green-600' },
+  alipay: { name: '支付宝', color: 'from-blue-500 to-blue-600' },
+  bank: { name: '银行卡', color: 'from-yellow-500 to-yellow-600' }
 }
 
 const fetchBills = async () => {
@@ -401,10 +402,10 @@ onMounted(() => {
                   @click="importType = key"
                   class="group relative overflow-hidden rounded-2xl p-4 transition-all duration-300"
                   :class="importType === key 
-                    ? 'bg-gradient-to-br ' + info.color + ' text-white shadow-lg scale-[1.02]' 
+                    ? 'bg-gradient-to-br ' + info.color + ' text-white shadow-lg scale-[1.02]'
                     : 'bg-base-200/50 hover:bg-base-200/80'"
                 >
-                  <div class="text-2xl mb-2">{{ info.icon }}</div>
+                  <PlatformIcon :platform="key" size="md" />
                   <div class="text-xs font-medium" :class="importType === key ? 'text-white' : 'text-base-content/70'">
                     {{ info.name }}
                   </div>
@@ -476,7 +477,7 @@ onMounted(() => {
                 >
                   <div class="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
                     :class="'bg-gradient-to-br ' + platformInfo[record.platform].color + ' text-white'">
-                    {{ platformInfo[record.platform].icon }}
+                    <PlatformIcon :platform="record.platform" size="sm" />
                   </div>
                   <div class="flex-1 min-w-0">
                     <div class="text-sm font-medium truncate">{{ platformInfo[record.platform].name }}账单</div>
