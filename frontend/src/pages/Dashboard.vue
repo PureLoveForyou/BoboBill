@@ -4,8 +4,7 @@ import VueApexCharts from 'vue3-apexcharts'
 import TimeFilter from '../components/TimeFilter.vue'
 import dayjs from 'dayjs'
 import { getCurrentTheme } from '../utils/theme'
-
-const API_BASE = 'http://localhost:8000'
+import { API_BASE } from '../config'
 
 const bills = ref([])
 const isLoading = ref(false)

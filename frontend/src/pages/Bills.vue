@@ -1,8 +1,15 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getCurrentTheme } from '../utils/theme'
+import { API_BASE } from '../config'
 
-const API_BASE = 'http://localhost:8000'
+const toast = ref('')
+const toastTimer = ref(null)
+const showToast = (msg) => {
+  toast.value = msg
+  clearTimeout(toastTimer.value)
+  toastTimer.value = setTimeout(() => { toast.value = '' }, 3000)
+}
 
 const currentTheme = ref(getCurrentTheme())
 
@@ -76,9 +83,12 @@ const fetchBills = async () => {
     const response = await fetch(`${API_BASE}/bills`)
     if (response.ok) {
       bills.value = await response.json()
+    } else {
+      showToast('获取账单失败: ' + response.status)
     }
   } catch (error) {
     console.error('获取账单失败:', error)
+    showToast('无法连接服务器，请检查网络')
   } finally {
     isLoading.value = false
   }
@@ -206,12 +216,14 @@ const saveBill = async () => {
     if (response.ok) {
       await fetchBills()
       closeAddModal()
+      showToast('保存成功')
     } else {
       const result = await response.json()
-      console.error('保存失败:', result)
+      showToast('保存失败: ' + (result.detail || '未知错误'))
     }
   } catch (error) {
     console.error('保存失败:', error)
+    showToast('无法连接服务器')
   } finally {
     isSaving.value = false
   }
@@ -238,12 +250,14 @@ const confirmDelete = async () => {
     if (response.ok) {
       await fetchBills()
       closeDeleteModal()
+      showToast('删除成功')
     } else {
       const result = await response.json()
-      console.error('删除失败:', result)
+      showToast('删除失败: ' + (result.detail || '未知错误'))
     }
   } catch (error) {
     console.error('删除失败:', error)
+    showToast('无法连接服务器')
   }
 }
 
@@ -293,12 +307,14 @@ const updateBill = async () => {
     if (response.ok) {
       await fetchBills()
       closeEditModal()
+      showToast('更新成功')
     } else {
       const result = await response.json()
-      console.error('更新失败:', result)
+      showToast('更新失败: ' + (result.detail || '未知错误'))
     }
   } catch (error) {
     console.error('更新失败:', error)
+    showToast('无法连接服务器')
   } finally {
     isSaving.value = false
   }
@@ -872,6 +888,12 @@ onMounted(() => {
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Toast 通知 -->
+  <div v-if="toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl shadow-lg text-white text-sm font-medium animate-bounce"
+    :class="toast.includes('成功') ? 'bg-success' : 'bg-error'">
+    {{ toast }}
   </div>
 </template>
 
