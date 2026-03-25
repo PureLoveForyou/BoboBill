@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { getCurrentTheme } from '../utils/theme'
 import { API_BASE } from '../config'
 import PlatformIcon from '../components/PlatformIcon.vue'
+import AppleSelect from '../components/AppleSelect.vue'
 
 const toast = ref('')
 const toastTimer = ref(null)
@@ -36,6 +37,20 @@ const categories = ['all', '餐饮', '交通', '购物', '工资', '投资', '�
 const platforms = ['all', 'wechat', 'alipay', 'bank']
 const editCategories = ['餐饮', '交通', '购物', '工资', '投资', '娱乐', '医疗', '转账', '其他']
 const editPlatforms = ['wechat', 'alipay', 'bank']
+
+const categoryOptions = computed(() => 
+  categories.map(cat => ({
+    value: cat,
+    label: cat === 'all' ? '全部分类' : cat
+  }))
+)
+
+const platformOptions = computed(() => 
+  platforms.map(plat => ({
+    value: plat,
+    label: plat === 'all' ? '全部平台' : platformInfo[plat]?.name || plat
+  }))
+)
 
 const showAddModal = ref(false)
 const showEditModal = ref(false)
@@ -541,22 +556,16 @@ onMounted(() => {
                 />
               </div>
               <div class="flex gap-3">
-                <select
+                <AppleSelect
                   v-model="selectedCategory"
-                  class="px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm cursor-pointer appearance-none min-w-[100px]"
-                >
-                  <option v-for="cat in categories" :key="cat" :value="cat">
-                    {{ cat === 'all' ? '全部分类' : cat }}
-                  </option>
-                </select>
-                <select
+                  :options="categoryOptions"
+                  placeholder="全部分类"
+                />
+                <AppleSelect
                   v-model="selectedPlatform"
-                  class="px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm cursor-pointer appearance-none min-w-[100px]"
-                >
-                  <option v-for="plat in platforms" :key="plat" :value="plat">
-                    {{ plat === 'all' ? '全部平台' : platformInfo[plat].name }}
-                  </option>
-                </select>
+                  :options="platformOptions"
+                  placeholder="全部平台"
+                />
               </div>
             </div>
 
