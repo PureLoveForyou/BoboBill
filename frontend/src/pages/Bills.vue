@@ -540,9 +540,9 @@ onMounted(() => {
                 :key="bill.id"
                 class="group flex items-center gap-4 p-4 rounded-2xl bg-base-200/20 hover:bg-base-200/40 transition-all duration-300 cursor-pointer"
               >
-                <div class="w-11 h-11 rounded-xl flex items-center justify-center text-lg"
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center"
                   :class="'bg-gradient-to-br ' + platformInfo[bill.platform]?.color + ' text-white shadow-sm'">
-                  {{ platformInfo[bill.platform]?.icon || '💳' }}
+                  <PlatformIcon :platform="bill.platform" size="sm" />
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2">
