@@ -1006,104 +1006,111 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div class="grid gap-6 lg:grid-cols-3 mb-6">
-        <div class="lg:col-span-2 grid gap-6 lg:grid-cols-2">
-          <div class="rounded-2xl bg-gradient-to-br from-base-100 to-base-200/30 border border-base-200/50 p-5">
-            <h3 class="text-base font-bold mb-4">收支趋势</h3>
-            <VueApexCharts type="area" height="200" :options="trendOptions" :series="trendSeries" />
-          </div>
-
-          <div class="rounded-2xl bg-gradient-to-br from-base-100 to-base-200/30 border border-base-200/50 p-5">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-base font-bold">分类统计</h3>
-              <div class="flex gap-1 p-0.5 bg-base-200/50 rounded-lg">
-                <button
-                  class="px-2 py-1 rounded-md text-xs font-medium transition-all"
-                  :class="categoryType === 'expense' ? 'bg-base-100 shadow-sm' : 'text-base-content/60'"
-                  @click="categoryType = 'expense'; pieSelectedCategory = null"
-                >支出</button>
-                <button
-                  class="px-2 py-1 rounded-md text-xs font-medium transition-all"
-                  :class="categoryType === 'income' ? 'bg-base-100 shadow-sm' : 'text-base-content/60'"
-                  @click="categoryType = 'income'; pieSelectedCategory = null"
-                >收入</button>
-              </div>
-            </div>
-            <div v-if="categorySeries.length === 0" class="py-6 text-center text-base-content/40 text-sm">
-              暂无数据
-            </div>
-            <VueApexCharts v-else type="donut" height="180" :options="categoryOptionsChart" :series="categorySeries" />
-          </div>
+      <div class="grid gap-6 lg:grid-cols-2 mb-6">
+        <div class="rounded-2xl bg-gradient-to-br from-base-100 to-base-200/30 border border-base-200/50 p-5">
+          <h3 class="text-base font-bold mb-4">收支趋势</h3>
+          <VueApexCharts type="area" height="220" :options="trendOptions" :series="trendSeries" />
         </div>
 
         <div class="rounded-2xl bg-gradient-to-br from-base-100 to-base-200/30 border border-base-200/50 p-5">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-base font-bold">账单明细</h3>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-base-content/50">{{ displayBills.length }} 条</span>
+            <h3 class="text-base font-bold">分类统计</h3>
+            <div class="flex gap-1 p-0.5 bg-base-200/50 rounded-lg">
               <button
-                @click="showBillList = !showBillList"
-                class="w-6 h-6 rounded-md bg-base-200/50 flex items-center justify-center hover:bg-base-200 transition-colors"
+                class="px-2 py-1 rounded-md text-xs font-medium transition-all"
+                :class="categoryType === 'expense' ? 'bg-base-100 shadow-sm' : 'text-base-content/60'"
+                @click="categoryType = 'expense'; pieSelectedCategory = null"
+              >支出</button>
+              <button
+                class="px-2 py-1 rounded-md text-xs font-medium transition-all"
+                :class="categoryType === 'income' ? 'bg-base-100 shadow-sm' : 'text-base-content/60'"
+                @click="categoryType = 'income'; pieSelectedCategory = null"
+              >收入</button>
+            </div>
+          </div>
+          <div v-if="categorySeries.length === 0" class="py-6 text-center text-base-content/40 text-sm">
+            暂无数据
+          </div>
+          <VueApexCharts v-else type="donut" height="220" :options="categoryOptionsChart" :series="categorySeries" />
+        </div>
+      </div>
+
+      <div class="rounded-2xl bg-gradient-to-br from-base-100 to-base-200/30 border border-base-200/50 p-5 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <h3 class="text-base font-bold">账单明细</h3>
+            <span class="text-xs text-base-content/40 px-2 py-0.5 rounded-full bg-base-200/50">{{ displayBills.length }} 条</span>
+            <div v-if="pieSelectedCategory" class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+              {{ pieSelectedCategory }}
+              <button @click="clearPieFilter" class="hover:bg-primary/20 rounded-full p-0.5 transition-colors">
+                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <button
+            @click="showBillList = !showBillList"
+            class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-base-200/50 hover:bg-base-200 transition-colors text-xs font-medium text-base-content/60"
+          >
+            {{ showBillList ? '收起' : '展开' }}
+            <svg class="w-3.5 h-3.5 transition-transform duration-300" :class="{ 'rotate-180': !showBillList }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+        
+        <div v-if="showBillList" class="space-y-1.5 max-h-[400px] overflow-y-auto pr-1">
+          <div
+            v-for="bill in displayBills"
+            :key="bill.id"
+            class="group flex items-center gap-3 p-3 rounded-xl bg-base-200/20 hover:bg-base-200/40 transition-all"
+          >
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+              :class="'bg-gradient-to-br ' + platformInfo[bill.platform]?.color + ' text-white'">
+              <PlatformIcon :platform="bill.platform" size="sm" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="font-medium text-sm truncate">{{ bill.name }}</span>
+                <span class="px-1.5 py-0.5 rounded text-xs bg-base-200/80 text-base-content/50 shrink-0">
+                  {{ bill.category || '其他' }}
+                </span>
+              </div>
+              <div class="text-xs text-base-content/40 mt-0.5">{{ bill.date }}{{ bill.note ? ' · ' + bill.note : '' }}</div>
+            </div>
+            <div class="font-semibold text-sm tabular-nums shrink-0" :class="bill.amount >= 0 ? 'text-success' : 'text-base-content'">
+              {{ formatAmount(bill.amount) }}
+            </div>
+            <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+              <button
+                @click="openEditModal(bill)"
+                class="p-1.5 rounded-lg hover:bg-primary/10 text-primary/60 hover:text-primary transition-all"
               >
-                <svg class="w-3.5 h-3.5 transition-transform duration-300" :class="{ 'rotate-180': !showBillList }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button
+                @click="openDeleteModal(bill)"
+                class="p-1.5 rounded-lg hover:bg-error/10 text-error/60 hover:text-error transition-all"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </button>
             </div>
           </div>
           
-          <div v-if="showBillList" class="space-y-1.5 max-h-[280px] overflow-y-auto pr-1">
-            <div
-              v-for="bill in displayBills"
-              :key="bill.id"
-              class="group flex items-center gap-2.5 p-2.5 rounded-xl bg-base-200/20 hover:bg-base-200/40 transition-all"
-            >
-              <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                :class="'bg-gradient-to-br ' + platformInfo[bill.platform]?.color + ' text-white'">
-                <PlatformIcon :platform="bill.platform" size="sm" />
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-1.5">
-                  <span class="font-medium text-sm truncate">{{ bill.name }}</span>
-                  <span class="px-1 py-0.5 rounded text-xs bg-base-200/80 text-base-content/50 shrink-0">
-                    {{ bill.category || '其他' }}
-                  </span>
-                </div>
-                <div class="text-xs text-base-content/40">{{ bill.date }}</div>
-              </div>
-              <div class="font-semibold text-sm tabular-nums shrink-0" :class="bill.amount >= 0 ? 'text-success' : 'text-base-content'">
-                {{ formatAmount(bill.amount) }}
-              </div>
-              <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                <button
-                  @click="openEditModal(bill)"
-                  class="p-1 rounded hover:bg-primary/10 text-primary/60 hover:text-primary transition-all"
-                >
-                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                </button>
-                <button
-                  @click="openDeleteModal(bill)"
-                  class="p-1 rounded hover:bg-error/10 text-error/60 hover:text-error transition-all"
-                >
-                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            
-            <div v-if="displayBills.length === 0" class="py-6 text-center text-base-content/40 text-sm">
-              暂无符合条件的账单
-            </div>
+          <div v-if="displayBills.length === 0" class="py-8 text-center text-base-content/40 text-sm">
+            暂无符合条件的账单
           </div>
         </div>
       </div>
 
       <div class="rounded-2xl bg-gradient-to-br from-base-100 to-base-200/30 border border-base-200/50 p-5">
         <h3 class="text-base font-bold mb-4">周期对比</h3>
-        <VueApexCharts type="bar" height="200" :options="comparisonOptions" :series="comparisonSeries" />
+        <VueApexCharts type="bar" height="220" :options="comparisonOptions" :series="comparisonSeries" />
       </div>
     </template>
 
