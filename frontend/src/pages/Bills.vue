@@ -33,7 +33,7 @@ const {
 } = useBillApi({ showToast })
 
 const {
-  showImportModal, importType, isDragging, uploadedFile, isUploading, uploadResult,
+  importType, isDragging, uploadedFile, isUploading, uploadResult,
   handleDragOver, handleDragLeave, handleDrop, handleFileSelect,
   startImport, clearResult
 } = useFileImport({ showToast, onImportSuccess: fetchBills })

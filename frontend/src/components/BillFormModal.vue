@@ -1,5 +1,4 @@
 <script setup>
-import PlatformIcon from './PlatformIcon.vue'
 import { CATEGORIES, PLATFORM_INFO } from '../constants/bill'
 
 defineProps({

@@ -1,10 +1,9 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { getCurrentTheme, toggleDarkLight } from '../utils/theme.js'
 
 const currentTheme = ref('light')
-const router = useRouter()
 const route = useRoute()
 
 const onThemeChange = (event) => {
