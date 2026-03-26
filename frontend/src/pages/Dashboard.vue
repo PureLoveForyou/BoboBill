@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import VueApexCharts from 'vue3-apexcharts'
 import TimeFilter from '../components/TimeFilter.vue'
 import PlatformIcon from '../components/PlatformIcon.vue'
@@ -110,8 +110,30 @@ const showToast = (msg) => {
 
 const getTextColor = () => currentTheme.value === 'dark' ? '#ffffff' : '#1f2937'
 
-window.addEventListener('themechange', (e) => {
+const themeChangeHandler = (e) => {
   currentTheme.value = e.detail.theme
+}
+window.addEventListener('themechange', themeChangeHandler)
+
+// Modal: Escape close + body scroll lock
+const anyModalOpen = computed(() => showImportModal.value || showAddModal.value || showEditModal.value || showDeleteModal.value)
+watch(anyModalOpen, (isOpen) => {
+  document.body.style.overflow = isOpen ? 'hidden' : ''
+})
+const handleEscape = (e) => {
+  if (e.key === 'Escape') {
+    if (showDeleteModal.value) closeDeleteModal()
+    else if (showEditModal.value) closeEditModal()
+    else if (showAddModal.value) closeAddModal()
+    else if (showImportModal.value) showImportModal.value = false
+  }
+}
+window.addEventListener('keydown', handleEscape)
+
+onUnmounted(() => {
+  document.body.style.overflow = ''
+  window.removeEventListener('keydown', handleEscape)
+  window.removeEventListener('themechange', themeChangeHandler)
 })
 
 const categorySeries = computed(() => categoryType.value === 'expense' ? expenseSeries.value : incomeSeries.value)
@@ -264,9 +286,8 @@ const categoryOptionsChart = computed(() => {
       theme: 'dark',
       y: {
         formatter: (value) => {
-          const total = categorySeries.value.reduce((a, b) => a + b, 0)
-          const percent = ((value / total) * 100).toFixed(1)
-          return `${value}% (¥${Math.round(total * value / 100).toLocaleString()})`
+                const actualTotal = categoryType.value === 'expense' ? totalExpense.value : totalIncome.value
+                return `${value}% (¥${Math.round(actualTotal * value / 100).toLocaleString()})`
         }
       }
     }
@@ -865,6 +886,7 @@ const confirmDelete = async () => {
 
 onMounted(async () => {
   await fetchBills()
+  processBillsData('月报', currentRange.value)
 })
 </script>
 
@@ -872,7 +894,7 @@ onMounted(async () => {
   <div class="p-6 lg:p-8 max-w-[1600px] mx-auto">
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <h1 class="text-2xl font-bold tracking-tight">仪表盘</h1>
       </div>
       <div class="flex gap-3">
         <button
@@ -896,12 +918,20 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="isLoading" class="py-20 text-center">
-      <svg class="w-10 h-10 mx-auto animate-spin text-primary" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-      <p class="text-sm text-base-content/40 mt-4">加载数据中...</p>
+    <div v-if="isLoading" class="space-y-6">
+      <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+        <div v-for="i in 4" :key="i" class="rounded-2xl border border-base-200/50 p-4 space-y-3">
+          <div class="flex justify-between"><div class="skeleton w-10 h-10"></div><div class="skeleton w-12 h-6"></div></div>
+          <div class="skeleton w-16 h-3"></div>
+          <div class="skeleton w-28 h-7"></div>
+          <div class="skeleton w-20 h-3"></div>
+        </div>
+      </div>
+      <div class="grid gap-6 lg:grid-cols-2">
+        <div class="rounded-2xl border border-base-200/50 p-5"><div class="skeleton w-full h-56"></div></div>
+        <div class="rounded-2xl border border-base-200/50 p-5"><div class="skeleton w-full h-56"></div></div>
+      </div>
+      <div class="rounded-2xl border border-base-200/50 p-5"><div class="skeleton w-full h-56"></div></div>
     </div>
 
     <div v-else-if="bills.length === 0" class="py-16 text-center">
@@ -982,8 +1012,8 @@ onMounted(async () => {
               </div>
               
               <div v-if="stat.trend !== 'neutral'" class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold" :class="{
-                'bg-success/10 text-success': stat.trend === 'up',
-                'bg-error/10 text-error': stat.trend === 'down'
+                'bg-success/10 text-success': (stat.type === 'expense' ? stat.trend === 'down' : stat.trend === 'up'),
+                'bg-error/10 text-error': (stat.type === 'expense' ? stat.trend === 'up' : stat.trend === 'down')
               }">
                 <svg v-if="stat.trend === 'up'" class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
@@ -1082,7 +1112,7 @@ onMounted(async () => {
             <div class="font-semibold text-sm tabular-nums shrink-0" :class="bill.amount >= 0 ? 'text-success' : 'text-base-content'">
               {{ formatAmount(bill.amount) }}
             </div>
-            <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+            <div class="flex gap-0.5 transition-opacity shrink-0 lg:opacity-0 lg:group-hover:opacity-100">
               <button
                 @click="openEditModal(bill)"
                 class="p-1.5 rounded-lg hover:bg-primary/10 text-primary/60 hover:text-primary transition-all"
@@ -1104,6 +1134,9 @@ onMounted(async () => {
           
           <div v-if="displayBills.length === 0" class="py-8 text-center text-base-content/40 text-sm">
             暂无符合条件的账单
+          </div>
+          <div v-else class="py-3 text-center text-xs text-base-content/30">
+            仅展示最近 20 条记录
           </div>
         </div>
       </div>
@@ -1429,7 +1462,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl shadow-lg text-white text-sm font-medium"
+    <div v-if="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl shadow-lg text-white text-sm font-medium animate-slide-down"
       :class="toast.includes('成功') ? 'bg-success' : 'bg-error'">
       {{ toast }}
     </div>

@@ -3,6 +3,27 @@
   themes: all;
 }
 
+/* Toast slide-down animation */
+@keyframes slideDown {
+  from { opacity: 0; transform: translate(-50%, -1rem); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out;
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, hsl(var(--b2)) 25%, hsl(var(--b3)) 50%, hsl(var(--b2)) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 0.75rem;
+}
+
 /* 路由链接激活状态 */
 .router-link-active {
   background-color: hsl(var(--bc) / 0.1);
