@@ -3,10 +3,14 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getCurrentTheme } from '../utils/theme'
 import PlatformIcon from '../components/PlatformIcon.vue'
 import AppleSelect from '../components/AppleSelect.vue'
-import { CATEGORIES_WITH_ALL, CATEGORIES, PLATFORMS_WITH_ALL, PLATFORMS, PLATFORM_INFO } from '../constants/bill'
+import { PLATFORM_INFO } from '../constants/bill'
 import { useToast } from '../composables/useToast'
 import { useBillApi } from '../composables/useBillApi'
 import { useFileImport } from '../composables/useFileImport'
+import { useBillFilters } from '../composables/useBillFilters'
+import BillItem from '../components/BillItem.vue'
+import BillFormModal from '../components/BillFormModal.vue'
+import DeleteConfirmModal from '../components/DeleteConfirmModal.vue'
 
 const { toast, showToast } = useToast()
 
@@ -35,27 +39,7 @@ const {
 } = useFileImport({ showToast, onImportSuccess: fetchBills })
 
 const searchQuery = ref('')
-const selectedCategory = ref('all')
-const selectedPlatform = ref('all')
-
-const categories = CATEGORIES_WITH_ALL
-const platforms = PLATFORMS_WITH_ALL
-const editCategories = CATEGORIES
-const editPlatforms = PLATFORMS
-
-const categoryOptions = computed(() =>
-  categories.map(cat => ({
-    value: cat,
-    label: cat === 'all' ? '全部分类' : cat
-  }))
-)
-
-const platformOptions = computed(() =>
-  platforms.map(plat => ({
-    value: plat,
-    label: plat === 'all' ? '全部平台' : PLATFORM_INFO[plat]?.name || plat
-  }))
-)
+const { selectedCategory, selectedPlatform, categoryOptions, platformOptions } = useBillFilters()
 
 const filteredBills = computed(() => {
   return bills.value.filter(bill => {
@@ -67,11 +51,6 @@ const filteredBills = computed(() => {
 })
 
 const platformInfo = PLATFORM_INFO
-
-const formatAmount = (amount) => {
-  const absAmount = Math.abs(amount)
-  return amount >= 0 ? `+¥${absAmount.toFixed(2)}` : `-¥${absAmount.toFixed(2)}`
-}
 
 onMounted(() => {
   fetchBills()
@@ -213,32 +192,6 @@ onMounted(() => {
               </button>
             </div>
           </div>
-
-          <div v-if="importHistory.length > 0" class="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-base-100/90 via-base-100/80 to-base-200/30 backdrop-blur-2xl border border-white/10 dark:border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
-            <div class="p-6">
-              <div class="flex items-center justify-between mb-5">
-                <h3 class="font-semibold tracking-tight">导入历史</h3>
-                <span class="text-xs text-base-content/40">{{ importHistory.length }} 次导入</span>
-              </div>
-              <div class="space-y-3">
-                <div
-                  v-for="record in importHistory"
-                  :key="record.id"
-                  class="flex items-center gap-3 p-3 rounded-xl bg-base-200/30 hover:bg-base-200/50 transition-colors"
-                >
-                  <div class="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
-                    :class="'bg-gradient-to-br ' + platformInfo[record.platform].color + ' text-white'">
-                    <PlatformIcon :platform="record.platform" size="sm" />
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="text-sm font-medium truncate">{{ platformInfo[record.platform].name }}账单</div>
-                    <div class="text-xs text-base-content/40">{{ record.count }} 条记录</div>
-                  </div>
-                  <div class="text-xs text-base-content/30">{{ record.date }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -280,48 +233,13 @@ onMounted(() => {
             </div>
 
             <div v-else-if="filteredBills.length > 0" class="space-y-2">
-              <div
+              <BillItem
                 v-for="bill in filteredBills"
                 :key="bill.id"
-                class="group flex items-center gap-4 p-4 rounded-2xl bg-base-200/20 hover:bg-base-200/40 transition-all duration-300 cursor-pointer"
-              >
-                <div class="w-11 h-11 rounded-xl flex items-center justify-center"
-                  :class="'bg-gradient-to-br ' + platformInfo[bill.platform]?.color + ' text-white shadow-sm'">
-                  <PlatformIcon :platform="bill.platform" size="sm" />
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span class="font-medium text-sm truncate">{{ bill.name }}</span>
-                    <span class="px-2 py-0.5 rounded-md text-xs bg-base-200/80 text-base-content/50">
-                      {{ bill.category || '其他' }}
-                    </span>
-                  </div>
-                  <div class="text-xs text-base-content/40 mt-1">{{ bill.date }}</div>
-                </div>
-                <div class="text-right flex items-center gap-2">
-                  <div class="font-semibold tabular-nums mr-2" :class="bill.amount >= 0 ? 'text-success' : 'text-base-content'">
-                    {{ formatAmount(bill.amount) }}
-                  </div>
-                  <button
-                    @click.stop="openEditModal(bill)"
-                    class="p-2 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-primary/60 hover:text-primary transition-all"
-                    title="编辑"
-                  >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                  </button>
-                  <button
-                    @click.stop="openDeleteModal(bill)"
-                    class="p-2 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-error/10 text-error/60 hover:text-error transition-all"
-                    title="删除"
-                  >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+                :bill="bill"
+                @edit="openEditModal"
+                @delete="openDeleteModal"
+              />
             </div>
 
             <div v-else class="py-16 text-center">
@@ -345,295 +263,11 @@ onMounted(() => {
       </div>
     </div>
 
-    <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeAddModal"></div>
-      <div class="relative w-full max-w-md bg-base-100 rounded-3xl shadow-2xl overflow-hidden">
-        <div class="p-6">
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-bold tracking-tight">手动记账</h2>
-            <button @click="closeAddModal" class="p-2 rounded-xl hover:bg-base-200 transition-colors">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+    <BillFormModal :visible="showAddModal" :bill="newBill" title="手动记账" :is-saving="isSaving" @close="closeAddModal" @save="saveBill" />
 
-          <div class="space-y-4">
-            <div class="flex gap-2 p-1 bg-base-200/50 rounded-2xl">
-              <button
-                class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                :class="newBill.type === 'expense' ? 'bg-base-100 text-error shadow-sm' : 'text-base-content/60'"
-                @click="newBill.type = 'expense'"
-              >
-                支出
-              </button>
-              <button
-                class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                :class="newBill.type === 'income' ? 'bg-base-100 text-success shadow-sm' : 'text-base-content/60'"
-                @click="newBill.type = 'income'"
-              >
-                收入
-              </button>
-            </div>
+    <BillFormModal :visible="showEditModal" :bill="editingBill" title="编辑账单" :is-saving="isSaving" @close="closeEditModal" @save="updateBill" />
 
-            <div>
-              <label class="block text-sm font-medium text-base-content/60 mb-2">金额</label>
-              <div class="relative">
-                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/40">¥</span>
-                <input
-                  v-model="newBill.amount"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  class="w-full pl-8 pr-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-lg font-semibold"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-base-content/60 mb-2">名称</label>
-              <input
-                v-model="newBill.name"
-                type="text"
-                placeholder="例如：午餐、地铁、工资"
-                class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-base-content/60 mb-2">日期</label>
-                <input
-                  v-model="newBill.date"
-                  type="date"
-                  class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-base-content/60 mb-2">分类</label>
-                <select
-                  v-model="newBill.category"
-                  class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer appearance-none"
-                >
-                  <option v-for="cat in editCategories" :key="cat" :value="cat">{{ cat }}</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-base-content/60 mb-2">平台</label>
-              <div class="grid grid-cols-3 gap-2">
-                <button
-                  v-for="(info, key) in platformInfo"
-                  :key="key"
-                  @click="newBill.platform = key"
-                  class="py-2.5 rounded-xl text-sm font-medium transition-all"
-                  :class="newBill.platform === key 
-                    ? 'bg-gradient-to-br ' + info.color + ' text-white' 
-                    : 'bg-base-200/50 text-base-content/60 hover:bg-base-200'"
-                >
-                  {{ info.name }}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-base-content/60 mb-2">备注（可选）</label>
-              <input
-                v-model="newBill.note"
-                type="text"
-                placeholder="添加备注..."
-                class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-          </div>
-
-          <div class="flex gap-3 mt-6">
-            <button
-              @click="closeAddModal"
-              class="flex-1 py-3 rounded-xl bg-base-200 text-base-content font-semibold text-sm hover:bg-base-300 transition-colors"
-            >
-              取消
-            </button>
-            <button
-              @click="saveBill"
-              :disabled="!newBill.name || !newBill.amount || !newBill.date || isSaving"
-              class="flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-white font-semibold text-sm shadow-lg shadow-primary/25 hover:shadow-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <span v-if="isSaving" class="flex items-center justify-center gap-2">
-                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                保存中...
-              </span>
-              <span v-else>保存</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeEditModal"></div>
-      <div class="relative w-full max-w-md bg-base-100 rounded-3xl shadow-2xl overflow-hidden">
-        <div class="p-6">
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-bold tracking-tight">编辑账单</h2>
-            <button @click="closeEditModal" class="p-2 rounded-xl hover:bg-base-200 transition-colors">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          <div class="space-y-4">
-            <div class="flex gap-2 p-1 bg-base-200/50 rounded-2xl">
-              <button
-                class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                :class="editingBill.type === 'expense' ? 'bg-base-100 text-error shadow-sm' : 'text-base-content/60'"
-                @click="editingBill.type = 'expense'"
-              >
-                支出
-              </button>
-              <button
-                class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                :class="editingBill.type === 'income' ? 'bg-base-100 text-success shadow-sm' : 'text-base-content/60'"
-                @click="editingBill.type = 'income'"
-              >
-                收入
-              </button>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-base-content/60 mb-2">金额</label>
-              <div class="relative">
-                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/40">¥</span>
-                <input
-                  v-model="editingBill.amount"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  class="w-full pl-8 pr-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-lg font-semibold"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-base-content/60 mb-2">名称</label>
-              <input
-                v-model="editingBill.name"
-                type="text"
-                placeholder="例如：午餐、地铁、工资"
-                class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-base-content/60 mb-2">日期</label>
-                <input
-                  v-model="editingBill.date"
-                  type="date"
-                  class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-base-content/60 mb-2">分类</label>
-                <select
-                  v-model="editingBill.category"
-                  class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer appearance-none"
-                >
-                  <option v-for="cat in editCategories" :key="cat" :value="cat">{{ cat }}</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-base-content/60 mb-2">平台</label>
-              <div class="grid grid-cols-3 gap-2">
-                <button
-                  v-for="(info, key) in platformInfo"
-                  :key="key"
-                  @click="editingBill.platform = key"
-                  class="py-2.5 rounded-xl text-sm font-medium transition-all"
-                  :class="editingBill.platform === key 
-                    ? 'bg-gradient-to-br ' + info.color + ' text-white' 
-                    : 'bg-base-200/50 text-base-content/60 hover:bg-base-200'"
-                >
-                  {{ info.name }}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-base-content/60 mb-2">备注（可选）</label>
-              <input
-                v-model="editingBill.note"
-                type="text"
-                placeholder="添加备注..."
-                class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-          </div>
-
-          <div class="flex gap-3 mt-6">
-            <button
-              @click="closeEditModal"
-              class="flex-1 py-3 rounded-xl bg-base-200 text-base-content font-semibold text-sm hover:bg-base-300 transition-colors"
-            >
-              取消
-            </button>
-            <button
-              @click="updateBill"
-              :disabled="!editingBill.name || !editingBill.amount || !editingBill.date || isSaving"
-              class="flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-white font-semibold text-sm shadow-lg shadow-primary/25 hover:shadow-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <span v-if="isSaving" class="flex items-center justify-center gap-2">
-                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                保存中...
-              </span>
-              <span v-else>保存</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeDeleteModal"></div>
-      <div class="relative w-full max-w-sm bg-base-100 rounded-3xl shadow-2xl overflow-hidden animate-[scaleIn_0.2s_ease-out]">
-        <div class="p-6 text-center">
-          <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-error/10 flex items-center justify-center">
-            <svg class="w-8 h-8 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </div>
-          <h3 class="text-lg font-bold mb-2">删除账单</h3>
-          <p class="text-sm text-base-content/60 mb-1">确定要删除这条账单吗？</p>
-          <p v-if="deletingBill" class="text-sm font-medium text-base-content/80">
-            {{ deletingBill.name }} · {{ formatAmount(deletingBill.amount) }}
-          </p>
-        </div>
-        <div class="flex border-t border-base-200">
-          <button
-            @click="closeDeleteModal"
-            class="flex-1 py-4 text-sm font-semibold text-base-content/60 hover:bg-base-200/50 transition-colors"
-          >
-            取消
-          </button>
-          <button
-            @click="confirmDelete"
-            class="flex-1 py-4 text-sm font-semibold text-error hover:bg-error/10 transition-colors border-l border-base-200"
-          >
-            删除
-          </button>
-        </div>
-      </div>
-    </div>
+    <DeleteConfirmModal :visible="showDeleteModal" :bill="deletingBill" @close="closeDeleteModal" @confirm="confirmDelete" />
   </div>
 
   <!-- Toast 通知 -->

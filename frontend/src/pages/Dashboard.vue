@@ -6,13 +6,21 @@ import PlatformIcon from '../components/PlatformIcon.vue'
 import AppleSelect from '../components/AppleSelect.vue'
 import dayjs from 'dayjs'
 import { getCurrentTheme } from '../utils/theme'
-import { CATEGORIES_WITH_ALL, PLATFORMS_WITH_ALL, PLATFORM_INFO } from '../constants/bill'
+import { PLATFORM_INFO } from '../constants/bill'
 import { useToast } from '../composables/useToast'
 import { useBillApi } from '../composables/useBillApi'
 import { useFileImport } from '../composables/useFileImport'
+import { useBillFilters } from '../composables/useBillFilters'
+import { useDashboardData } from '../composables/useDashboardData'
+import { useChartConfig } from '../composables/useChartConfig'
+import BillItem from '../components/BillItem.vue'
+import StatCards from '../components/StatCards.vue'
+import BillFormModal from '../components/BillFormModal.vue'
+import DeleteConfirmModal from '../components/DeleteConfirmModal.vue'
 
 // --- Composables ---
 const { toast, showToast } = useToast()
+const { selectedCategory, selectedPlatform, categoryOptions, platformOptions } = useBillFilters()
 
 const {
   bills, isLoading, fetchBills,
@@ -27,67 +35,30 @@ const {
   startImport
 } = useFileImport({ showToast, onImportSuccess: async () => { await fetchBills() } })
 
-// --- Dashboard State ---
+const {
+  stats, trendSeries, trendCategories,
+  categoryType, categorySeries, categoryLabels,
+  pieSelectedCategory, clearPieFilter,
+  expenseLabels, incomeLabels, totalExpense, totalIncome,
+  comparisonSeries, comparisonCategories,
+  processBillsData
+} = useDashboardData({ bills, selectedCategory, selectedPlatform })
+
+// --- Local State ---
 const currentFilterType = ref('月报')
 const currentRange = ref({ start: dayjs().startOf('month').format('YYYY-MM-DD'), end: dayjs().endOf('month').format('YYYY-MM-DD') })
-
-const selectedCategory = ref('all')
-const selectedPlatform = ref('all')
-const categories = CATEGORIES_WITH_ALL
-const platforms = PLATFORMS_WITH_ALL
-
-const categoryOptions = computed(() =>
-  categories.map(cat => ({
-    value: cat,
-    label: cat === 'all' ? '全部分类' : cat
-  }))
-)
-
-const platformOptions = computed(() =>
-  platforms.map(plat => ({
-    value: plat,
-    label: plat === 'all' ? '全部平台' : PLATFORM_INFO[plat]?.name || plat
-  }))
-)
-
-const stats = ref([
-  { title: '期间支出', value: '¥0', desc: '暂无数据', type: 'expense', trend: 'neutral', change: 0 },
-  { title: '期间收入', value: '¥0', desc: '暂无数据', type: 'income', trend: 'neutral', change: 0 },
-  { title: '期间结余', value: '¥0', desc: '结余率 0%', type: 'balance', trend: 'neutral', change: 0 },
-  { title: '账单笔数', value: '0', desc: '暂无数据', type: 'count', trend: 'neutral', change: 0 },
-])
-
-const trendSeries = ref([
-  { name: '收入', data: [] },
-  { name: '支出', data: [] }
-])
-
-const trendCategories = ref([])
-
-const categoryType = ref('expense')
-const expenseSeries = ref([])
-const expenseLabels = ref([])
-const incomeSeries = ref([])
-const incomeLabels = ref([])
-const totalExpense = ref(0)
-const totalIncome = ref(0)
-
-const comparisonSeries = ref([
-  { name: '收入', data: [] },
-  { name: '支出', data: [] }
-])
-const comparisonCategories = ref([])
-
 const currentTheme = ref(getCurrentTheme())
-
-const pieSelectedCategory = ref(null)
 const showBillList = ref(true)
-
 const platformInfo = PLATFORM_INFO
 
-// --- Theme & Modal ---
-const getTextColor = () => currentTheme.value === 'dark' ? '#ffffff' : '#1f2937'
+const { trendOptions, categoryOptionsChart, comparisonOptions } = useChartConfig({
+  currentTheme, trendCategories,
+  categoryType, categoryLabels, categorySeries,
+  pieSelectedCategory, expenseLabels, incomeLabels, totalExpense, totalIncome,
+  comparisonCategories
+})
 
+// --- Theme & Modal ---
 const themeChangeHandler = (e) => {
   currentTheme.value = e.detail.theme
 }
@@ -113,14 +84,10 @@ onUnmounted(() => {
   window.removeEventListener('themechange', themeChangeHandler)
 })
 
-// --- Computed: Chart Labels & Series ---
-const categorySeries = computed(() => categoryType.value === 'expense' ? expenseSeries.value : incomeSeries.value)
-const categoryLabels = computed(() => categoryType.value === 'expense' ? expenseLabels.value : incomeLabels.value)
-
+// --- Filtered Bills ---
 const filteredBillsByTime = computed(() => {
   const start = dayjs(currentRange.value.start)
   const end = dayjs(currentRange.value.end)
-
   return bills.value.filter(bill => {
     const billDate = dayjs(bill.date)
     return billDate.isAfter(start.subtract(1, 'day')) && billDate.isBefore(end.add(1, 'day'))
@@ -129,477 +96,23 @@ const filteredBillsByTime = computed(() => {
 
 const displayBills = computed(() => {
   let result = filteredBillsByTime.value
-
   if (selectedCategory.value !== 'all') {
-    result = result.filter(bill => {
-      const billCategory = bill.category || '其他'
-      return billCategory === selectedCategory.value
-    })
+    result = result.filter(bill => (bill.category || '其他') === selectedCategory.value)
   }
-
   if (selectedPlatform.value !== 'all') {
     result = result.filter(bill => bill.platform === selectedPlatform.value)
   }
-
   if (pieSelectedCategory.value) {
-    result = result.filter(bill => {
-      const billCategory = bill.category || '其他'
-      return billCategory === pieSelectedCategory.value
-    })
+    result = result.filter(bill => (bill.category || '其他') === pieSelectedCategory.value)
   }
-
   return result.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 20)
 })
 
-const formatAmount = (amount) => {
-  const absAmount = Math.abs(amount)
-  return amount >= 0 ? `+¥${absAmount.toFixed(2)}` : `-¥${absAmount.toFixed(2)}`
-}
-
-// --- Chart Options ---
-const trendOptions = computed(() => {
-  const textColor = getTextColor()
-  return {
-    chart: {
-      type: 'area',
-      fontFamily: 'inherit',
-      toolbar: { show: false },
-      animations: { enabled: true }
-    },
-    colors: ['#22c55e', '#ef4444'],
-    fill: {
-      type: 'gradient',
-      gradient: {
-        shadeIntensity: 1,
-        opacityFrom: 0.4,
-        opacityTo: 0.05,
-        stops: [0, 100]
-      }
-    },
-    stroke: { curve: 'smooth', width: 2 },
-    dataLabels: { enabled: false },
-    xaxis: {
-      categories: trendCategories.value,
-      labels: {
-        style: { colors: Array(50).fill(textColor) },
-        rotate: 0,
-        hideOverlappingLabels: true,
-        trim: false,
-        formatter: (value) => value || ''
-      }
-    },
-    yaxis: {
-      labels: {
-        style: { colors: Array(50).fill(textColor) },
-        formatter: (value) => '¥' + (value / 1000) + 'k'
-      }
-    },
-    grid: { borderColor: currentTheme.value === 'dark' ? '#374151' : '#e5e7eb', padding: { top: 0 } },
-    legend: {
-      labels: { colors: textColor },
-      position: 'top',
-      horizontalAlign: 'right',
-      offsetY: -5,
-      itemMargin: { horizontal: 15 }
-    },
-    tooltip: {
-      theme: 'dark',
-      x: { formatter: (value, { dataPointIndex }) => trendCategories.value[dataPointIndex] || value },
-      y: { formatter: (value) => '¥' + value.toLocaleString() }
-    }
-  }
-})
-
-const categoryOptionsChart = computed(() => {
-  const textColor = getTextColor()
-  return {
-    chart: {
-      type: 'donut',
-      fontFamily: 'inherit',
-      events: {
-        dataPointSelection: (event, chartContext, config) => {
-          const labelIndex = config.dataPointIndex
-          const labels = categoryType.value === 'expense' ? expenseLabels.value : incomeLabels.value
-          if (labelIndex >= 0 && labelIndex < labels.length) {
-            const clickedCategory = labels[labelIndex]
-            if (pieSelectedCategory.value === clickedCategory) {
-              pieSelectedCategory.value = null
-            } else {
-              pieSelectedCategory.value = clickedCategory
-            }
-          }
-        }
-      }
-    },
-    labels: categoryLabels.value,
-    colors: categoryType.value === 'expense'
-      ? ['#f97316', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280', '#10b981', '#f59e0b', '#06b6d4']
-      : ['#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280', '#f59e0b', '#06b6d4'],
-    plotOptions: {
-      pie: {
-        donut: {
-          size: '65%',
-          labels: {
-            show: true,
-            name: { show: true, color: textColor },
-            value: { show: true, color: textColor },
-            total: {
-              show: true,
-              label: categoryType.value === 'expense' ? '总支出' : '总收入',
-              color: textColor,
-              formatter: () => '¥' + (categoryType.value === 'expense' ? totalExpense.value : totalIncome.value).toLocaleString()
-            }
-          }
-        }
-      }
-    },
-    dataLabels: { enabled: false },
-    legend: { position: 'bottom', labels: { colors: textColor } },
-    tooltip: {
-      theme: 'dark',
-      y: {
-        formatter: (value) => {
-                const actualTotal = categoryType.value === 'expense' ? totalExpense.value : totalIncome.value
-                return `${value}% (¥${Math.round(actualTotal * value / 100).toLocaleString()})`
-        }
-      }
-    }
-  }
-})
-
-const comparisonOptions = computed(() => {
-  const textColor = getTextColor()
-  return {
-    chart: {
-      type: 'bar',
-      fontFamily: 'inherit',
-      toolbar: { show: false },
-      animations: { enabled: true }
-    },
-    colors: ['#22c55e', '#ef4444'],
-    plotOptions: {
-      bar: { horizontal: false, columnWidth: '60%', borderRadius: 4 }
-    },
-    dataLabels: { enabled: false },
-    xaxis: {
-      categories: comparisonCategories.value,
-      labels: { style: { colors: Array(50).fill(textColor) } }
-    },
-    yaxis: {
-      labels: {
-        style: { colors: Array(50).fill(textColor) },
-        formatter: (value) => '¥' + (value / 1000) + 'k'
-      }
-    },
-    grid: { borderColor: currentTheme.value === 'dark' ? '#374151' : '#e5e7eb' },
-    legend: {
-      labels: { colors: textColor },
-      position: 'top',
-      horizontalAlign: 'right',
-      offsetY: -5,
-      itemMargin: { horizontal: 15 }
-    },
-    tooltip: {
-      theme: 'dark',
-      y: { formatter: (value) => '¥' + value.toLocaleString() }
-    }
-  }
-})
-
-// --- Data Processing ---
 const onTimeFilterChange = (data) => {
   currentFilterType.value = data.type
   currentRange.value = data.range
   pieSelectedCategory.value = null
   processBillsData(data.type, data.range)
-}
-
-const processBillsData = (filterType, range) => {
-  const start = dayjs(range.start)
-  const end = dayjs(range.end)
-
-  let filteredBills = bills.value.filter(bill => {
-    const billDate = dayjs(bill.date)
-    return billDate.isAfter(start.subtract(1, 'day')) && billDate.isBefore(end.add(1, 'day'))
-  })
-
-  if (selectedCategory.value !== 'all') {
-    filteredBills = filteredBills.filter(bill => (bill.category || '其他') === selectedCategory.value)
-  }
-
-  if (selectedPlatform.value !== 'all') {
-    filteredBills = filteredBills.filter(bill => bill.platform === selectedPlatform.value)
-  }
-
-  const periodExpense = filteredBills.filter(b => b.amount < 0).reduce((sum, b) => sum + Math.abs(b.amount), 0)
-  const periodIncome = filteredBills.filter(b => b.amount >= 0).reduce((sum, b) => sum + b.amount, 0)
-  const periodBalance = periodIncome - periodExpense
-  const billCount = filteredBills.length
-
-  const prevStart = start.subtract(end.diff(start, 'day') + 1, 'day')
-  const prevEnd = start.subtract(1, 'day')
-  let prevBills = bills.value.filter(bill => {
-    const billDate = dayjs(bill.date)
-    return billDate.isAfter(prevStart.subtract(1, 'day')) && billDate.isBefore(prevEnd.add(1, 'day'))
-  })
-
-  if (selectedCategory.value !== 'all') {
-    prevBills = prevBills.filter(bill => (bill.category || '其他') === selectedCategory.value)
-  }
-  if (selectedPlatform.value !== 'all') {
-    prevBills = prevBills.filter(bill => bill.platform === selectedPlatform.value)
-  }
-
-  const prevExpense = prevBills.filter(b => b.amount < 0).reduce((sum, b) => sum + Math.abs(b.amount), 0)
-  const prevIncome = prevBills.filter(b => b.amount >= 0).reduce((sum, b) => sum + b.amount, 0)
-
-  const expenseChange = prevExpense > 0 ? ((periodExpense - prevExpense) / prevExpense * 100).toFixed(0) : 0
-  const incomeChange = prevIncome > 0 ? ((periodIncome - prevIncome) / prevIncome * 100).toFixed(0) : 0
-
-  stats.value = [
-    {
-      title: '期间支出',
-      value: `¥${periodExpense.toLocaleString()}`,
-      desc: prevExpense > 0 ? `${expenseChange >= 0 ? '+' : ''}${expenseChange}%` : '-',
-      type: 'expense',
-      trend: expenseChange >= 0 ? 'up' : 'down',
-      change: expenseChange
-    },
-    {
-      title: '期间收入',
-      value: `¥${periodIncome.toLocaleString()}`,
-      desc: prevIncome > 0 ? `${incomeChange >= 0 ? '+' : ''}${incomeChange}%` : '-',
-      type: 'income',
-      trend: incomeChange >= 0 ? 'up' : 'down',
-      change: incomeChange
-    },
-    {
-      title: '期间结余',
-      value: `¥${periodBalance.toLocaleString()}`,
-      desc: `结余率 ${periodIncome > 0 ? ((periodBalance / periodIncome) * 100).toFixed(0) : 0}%`,
-      type: 'balance',
-      trend: 'neutral',
-      change: 0
-    },
-    {
-      title: '账单笔数',
-      value: String(billCount),
-      desc: `${filteredBills.length}条`,
-      type: 'count',
-      trend: 'neutral',
-      change: 0
-    },
-  ]
-
-  generateTrendData(filteredBills, filterType, start, end)
-  generateCategoryData(filteredBills)
-  generateComparisonData(filterType, start, end)
-}
-
-const generateTrendData = (filteredBills, filterType, start, end) => {
-  const days = end.diff(start, 'day') + 1
-  const dailyData = {}
-
-  trendCategories.value = []
-
-  if (filterType === '周报') {
-    for (let i = 0; i < 7; i++) {
-      const date = start.add(i, 'day')
-      const key = date.format('YYYY-MM-DD')
-      dailyData[key] = { income: 0, expense: 0 }
-      trendCategories.value.push(date.format('ddd'))
-    }
-  } else if (filterType === '月报') {
-    for (let i = 0; i < days && i <= 31; i++) {
-      const date = start.add(i, 'day')
-      const key = date.format('YYYY-MM-DD')
-      dailyData[key] = { income: 0, expense: 0 }
-      const dayNum = date.date()
-      trendCategories.value.push(dayNum % 3 === 1 || i === days - 1 ? String(dayNum) : '')
-    }
-  } else if (filterType === '季报' || filterType === '年报') {
-    const monthCount = filterType === '季报' ? 3 : 12
-    for (let i = 0; i < monthCount; i++) {
-      const month = start.month() + i
-      const key = `month-${month}`
-      dailyData[key] = { income: 0, expense: 0 }
-      trendCategories.value.push(`${(month % 12) + 1}月`)
-    }
-  } else {
-    for (let i = 0; i < days && i <= 31; i++) {
-      const date = start.add(i, 'day')
-      const key = date.format('YYYY-MM-DD')
-      dailyData[key] = { income: 0, expense: 0 }
-      trendCategories.value.push(i % 3 === 0 || i === days - 1 ? date.format('MM-DD') : '')
-    }
-  }
-
-  filteredBills.forEach(bill => {
-    let key
-    if (filterType === '季报' || filterType === '年报') {
-      const month = dayjs(bill.date).month()
-      key = `month-${month}`
-    } else {
-      key = bill.date
-    }
-
-    if (dailyData[key]) {
-      if (bill.amount >= 0) {
-        dailyData[key].income += bill.amount
-      } else {
-        dailyData[key].expense += Math.abs(bill.amount)
-      }
-    }
-  })
-
-  const incomeData = []
-  const expenseData = []
-
-  Object.keys(dailyData).forEach(key => {
-    incomeData.push(dailyData[key].income)
-    expenseData.push(dailyData[key].expense)
-  })
-
-  trendSeries.value = [
-    { name: '收入', data: incomeData },
-    { name: '支出', data: expenseData }
-  ]
-}
-
-const generateCategoryData = (filteredBills) => {
-  const expenseByCategory = {}
-  const incomeByCategory = {}
-
-  filteredBills.forEach(bill => {
-    const category = bill.category || '其他'
-    if (bill.amount < 0) {
-      expenseByCategory[category] = (expenseByCategory[category] || 0) + Math.abs(bill.amount)
-    } else {
-      incomeByCategory[category] = (incomeByCategory[category] || 0) + bill.amount
-    }
-  })
-
-  const sortedExpense = Object.entries(expenseByCategory).sort((a, b) => b[1] - a[1])
-  const sortedIncome = Object.entries(incomeByCategory).sort((a, b) => b[1] - a[1])
-
-  const totalExp = sortedExpense.reduce((sum, [, val]) => sum + val, 0)
-  const totalInc = sortedIncome.reduce((sum, [, val]) => sum + val, 0)
-
-  expenseLabels.value = sortedExpense.map(([label]) => label)
-  expenseSeries.value = sortedExpense.map(([, value]) => totalExp > 0 ? Math.round((value / totalExp) * 100) : 0)
-  totalExpense.value = totalExp
-
-  incomeLabels.value = sortedIncome.map(([label]) => label)
-  incomeSeries.value = sortedIncome.map(([, value]) => totalInc > 0 ? Math.round((value / totalInc) * 100) : 0)
-  totalIncome.value = totalInc
-}
-
-const generateComparisonData = (filterType, start, end) => {
-  const periods = []
-  const days = end.diff(start, 'day') + 1
-
-  if (filterType === '周报') {
-    for (let i = 3; i >= 0; i--) {
-      const periodStart = start.subtract(i * 7, 'day')
-      const periodEnd = periodStart.add(6, 'day')
-      periods.push({
-        label: i === 0 ? '本周' : `前${i}周`,
-        start: periodStart,
-        end: periodEnd
-      })
-    }
-  } else if (filterType === '月报') {
-    const currentMonth = start.month()
-    for (let i = 3; i >= 0; i--) {
-      const month = currentMonth - i
-      const periodStart = start.subtract(i, 'month').startOf('month')
-      const periodEnd = periodStart.endOf('month')
-      periods.push({
-        label: `${(month + 12) % 12 + 1}月`,
-        start: periodStart,
-        end: periodEnd
-      })
-    }
-  } else if (filterType === '季报') {
-    const quarterNames = ['Q1', 'Q2', 'Q3', 'Q4']
-    const currentQuarter = Math.floor(start.month() / 3)
-    for (let i = 3; i >= 0; i--) {
-      const q = (currentQuarter - i + 4) % 4
-      periods.push({
-        label: quarterNames[q],
-        start: start.startOf('year').add(q * 3, 'month'),
-        end: start.startOf('year').add((q + 1) * 3 - 1, 'month').endOf('month')
-      })
-    }
-  } else if (filterType === '年报') {
-    const currentYear = start.year()
-    for (let i = 3; i >= 0; i--) {
-      const year = currentYear - i
-      periods.push({
-        label: `${year}年`,
-        start: dayjs(`${year}-01-01`),
-        end: dayjs(`${year}-12-31`)
-      })
-    }
-  } else {
-    if (days <= 14) {
-      const dayCount = Math.min(days, 7)
-      for (let i = dayCount - 1; i >= 0; i--) {
-        const periodStart = start.subtract(i, 'day')
-        periods.push({
-          label: periodStart.format('MM-DD'),
-          start: periodStart,
-          end: periodStart
-        })
-      }
-    } else if (days <= 60) {
-      const weekCount = Math.min(Math.ceil(days / 7), 6)
-      for (let i = weekCount - 1; i >= 0; i--) {
-        const periodStart = start.subtract(i * 7, 'day')
-        periods.push({
-          label: `第${weekCount - i}周`,
-          start: periodStart,
-          end: periodStart.add(6, 'day')
-        })
-      }
-    } else {
-      const monthCount = Math.min(Math.ceil(days / 30), 6)
-      for (let i = monthCount - 1; i >= 0; i--) {
-        const periodStart = start.subtract(i, 'month').startOf('month')
-        periods.push({
-          label: periodStart.format('M月'),
-          start: periodStart,
-          end: periodStart.endOf('month')
-        })
-      }
-    }
-  }
-
-  comparisonCategories.value = periods.map(p => p.label)
-  const incomeData = []
-  const expenseData = []
-
-  periods.forEach(period => {
-    const periodBills = bills.value.filter(bill => {
-      const billDate = dayjs(bill.date)
-      return billDate.isAfter(period.start.subtract(1, 'day')) && billDate.isBefore(period.end.add(1, 'day'))
-    })
-
-    const income = periodBills.filter(b => b.amount >= 0).reduce((sum, b) => sum + b.amount, 0)
-    const expense = periodBills.filter(b => b.amount < 0).reduce((sum, b) => sum + Math.abs(b.amount), 0)
-
-    incomeData.push(income)
-    expenseData.push(expense)
-  })
-
-  comparisonSeries.value = [
-    { name: '收入', data: incomeData },
-    { name: '支出', data: expenseData }
-  ]
-}
-
-const clearPieFilter = () => {
-  pieSelectedCategory.value = null
 }
 
 onMounted(async () => {
@@ -694,65 +207,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div class="grid gap-4 mb-6" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
-        <div 
-          v-for="(stat, index) in stats" 
-          :key="index" 
-          class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-base-100 via-base-100 to-base-200/50 border border-base-200/50 backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:shadow-base-300/10 hover:-translate-y-0.5"
-        >
-          <div class="absolute inset-0 bg-gradient-to-br opacity-5" :class="{
-            'from-error to-error/50': stat.type === 'expense',
-            'from-success to-success/50': stat.type === 'income',
-            'from-info to-info/50': stat.type === 'balance',
-            'from-primary to-primary/50': stat.type === 'count'
-          }"></div>
-          
-          <div class="relative p-4">
-            <div class="flex items-start justify-between mb-2">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110" :class="{
-                'bg-gradient-to-br from-error/20 to-error/5 text-error': stat.type === 'expense',
-                'bg-gradient-to-br from-success/20 to-success/5 text-success': stat.type === 'income',
-                'bg-gradient-to-br from-info/20 to-info/5 text-info': stat.type === 'balance',
-                'bg-gradient-to-br from-primary/20 to-primary/5 text-primary': stat.type === 'count'
-              }">
-                <svg v-if="stat.type === 'expense'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <svg v-else-if="stat.type === 'income'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                <svg v-else-if="stat.type === 'balance'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-                </svg>
-                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              </div>
-              
-              <div v-if="stat.trend !== 'neutral'" class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold" :class="{
-                'bg-success/10 text-success': (stat.type === 'expense' ? stat.trend === 'down' : stat.trend === 'up'),
-                'bg-error/10 text-error': (stat.type === 'expense' ? stat.trend === 'up' : stat.trend === 'down')
-              }">
-                <svg v-if="stat.trend === 'up'" class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                </svg>
-                <svg v-else class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                </svg>
-              </div>
-            </div>
-            
-            <div class="text-xs font-medium text-base-content/60 mb-1">{{ stat.title }}</div>
-            <div class="text-2xl font-bold tracking-tight mb-1">{{ stat.value }}</div>
-            <div class="text-xs font-medium" :class="{
-              'text-error': stat.type === 'expense',
-              'text-success': stat.type === 'income',
-              'text-info': stat.type === 'balance',
-              'text-base-content/50': stat.type === 'count'
-            }">{{ stat.desc }}</div>
-          </div>
-        </div>
-      </div>
+      <StatCards :stats="stats" />
 
       <div class="grid gap-6 lg:grid-cols-2 mb-6">
         <div class="rounded-2xl bg-gradient-to-br from-base-100 to-base-200/30 border border-base-200/50 p-5">
@@ -809,46 +264,14 @@ onMounted(async () => {
         </div>
         
         <div v-if="showBillList" class="space-y-1.5 max-h-[400px] overflow-y-auto pr-1">
-          <div
+          <BillItem
             v-for="bill in displayBills"
             :key="bill.id"
-            class="group flex items-center gap-3 p-3 rounded-xl bg-base-200/20 hover:bg-base-200/40 transition-all"
-          >
-            <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-              :class="'bg-gradient-to-br ' + platformInfo[bill.platform]?.color + ' text-white'">
-              <PlatformIcon :platform="bill.platform" size="sm" />
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-1.5">
-                <span class="font-medium text-sm truncate">{{ bill.name }}</span>
-                <span class="px-1.5 py-0.5 rounded text-xs bg-base-200/80 text-base-content/50 shrink-0">
-                  {{ bill.category || '其他' }}
-                </span>
-              </div>
-              <div class="text-xs text-base-content/40 mt-0.5">{{ bill.date }}{{ bill.note ? ' · ' + bill.note : '' }}</div>
-            </div>
-            <div class="font-semibold text-sm tabular-nums shrink-0" :class="bill.amount >= 0 ? 'text-success' : 'text-base-content'">
-              {{ formatAmount(bill.amount) }}
-            </div>
-            <div class="flex gap-0.5 transition-opacity shrink-0 lg:opacity-0 lg:group-hover:opacity-100">
-              <button
-                @click="openEditModal(bill)"
-                class="p-1.5 rounded-lg hover:bg-primary/10 text-primary/60 hover:text-primary transition-all"
-              >
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
-              <button
-                @click="openDeleteModal(bill)"
-                class="p-1.5 rounded-lg hover:bg-error/10 text-error/60 hover:text-error transition-all"
-              >
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            </div>
-          </div>
+            :bill="bill"
+            compact
+            @edit="openEditModal"
+            @delete="openDeleteModal"
+          />
           
           <div v-if="displayBills.length === 0" class="py-8 text-center text-base-content/40 text-sm">
             暂无符合条件的账单
@@ -951,234 +374,11 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeAddModal"></div>
-      <div class="relative w-full max-w-md bg-base-100 rounded-3xl shadow-2xl overflow-hidden">
-        <div class="p-6">
-          <div class="flex items-center justify-between mb-5">
-            <h2 class="text-lg font-bold">手动记账</h2>
-            <button @click="closeAddModal" class="p-1.5 rounded-lg hover:bg-base-200 transition-colors">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+    <BillFormModal :visible="showAddModal" :bill="newBill" title="手动记账" :is-saving="isSaving" @close="closeAddModal" @save="saveBill" />
 
-          <div class="space-y-4">
-            <div class="flex gap-2 p-1 bg-base-200/50 rounded-xl">
-              <button
-                class="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
-                :class="newBill.type === 'expense' ? 'bg-base-100 text-error shadow-sm' : 'text-base-content/60'"
-                @click="newBill.type = 'expense'"
-              >支出</button>
-              <button
-                class="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
-                :class="newBill.type === 'income' ? 'bg-base-100 text-success shadow-sm' : 'text-base-content/60'"
-                @click="newBill.type = 'income'"
-              >收入</button>
-            </div>
+    <BillFormModal :visible="showEditModal" :bill="editingBill" title="编辑账单" :is-saving="isSaving" @close="closeEditModal" @save="updateBill" />
 
-            <div>
-              <label class="block text-xs font-medium text-base-content/60 mb-1.5">金额</label>
-              <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40">¥</span>
-                <input
-                  v-model="newBill.amount"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  class="w-full pl-7 pr-3 py-2.5 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-base font-semibold"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-base-content/60 mb-1.5">名称</label>
-              <input
-                v-model="newBill.name"
-                type="text"
-                placeholder="例如：午餐、地铁、工资"
-                class="w-full px-3 py-2.5 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
-              />
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-medium text-base-content/60 mb-1.5">日期</label>
-                <input
-                  v-model="newBill.date"
-                  type="date"
-                  class="w-full px-3 py-2.5 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
-                />
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-base-content/60 mb-1.5">分类</label>
-                <select
-                  v-model="newBill.category"
-                  class="w-full px-3 py-2.5 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm cursor-pointer appearance-none"
-                >
-                  <option v-for="cat in CATEGORIES" :key="cat" :value="cat">{{ cat }}</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-base-content/60 mb-1.5">平台</label>
-              <div class="grid grid-cols-3 gap-2">
-                <button
-                  v-for="(info, key) in platformInfo"
-                  :key="key"
-                  @click="newBill.platform = key"
-                  class="py-2 rounded-xl text-xs font-medium transition-all"
-                  :class="newBill.platform === key 
-                    ? 'bg-gradient-to-br ' + info.color + ' text-white' 
-                    : 'bg-base-200/50 text-base-content/60 hover:bg-base-200'"
-                >{{ info.name }}</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex gap-3 mt-5">
-            <button
-              @click="closeAddModal"
-              class="flex-1 py-2.5 rounded-xl bg-base-200 text-base-content font-medium text-sm hover:bg-base-300 transition-colors"
-            >取消</button>
-            <button
-              @click="saveBill"
-              :disabled="!newBill.name || !newBill.amount || !newBill.date || isSaving"
-              class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-white font-medium text-sm shadow-lg shadow-primary/25 hover:shadow-xl transition-all disabled:opacity-40"
-            >保存</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeEditModal"></div>
-      <div class="relative w-full max-w-md bg-base-100 rounded-3xl shadow-2xl overflow-hidden">
-        <div class="p-6">
-          <div class="flex items-center justify-between mb-5">
-            <h2 class="text-lg font-bold">编辑账单</h2>
-            <button @click="closeEditModal" class="p-1.5 rounded-lg hover:bg-base-200 transition-colors">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          <div class="space-y-4">
-            <div class="flex gap-2 p-1 bg-base-200/50 rounded-xl">
-              <button
-                class="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
-                :class="editingBill.type === 'expense' ? 'bg-base-100 text-error shadow-sm' : 'text-base-content/60'"
-                @click="editingBill.type = 'expense'"
-              >支出</button>
-              <button
-                class="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
-                :class="editingBill.type === 'income' ? 'bg-base-100 text-success shadow-sm' : 'text-base-content/60'"
-                @click="editingBill.type = 'income'"
-              >收入</button>
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-base-content/60 mb-1.5">金额</label>
-              <div class="relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-base-content/40">¥</span>
-                <input
-                  v-model="editingBill.amount"
-                  type="number"
-                  step="0.01"
-                  class="w-full pl-7 pr-3 py-2.5 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-base font-semibold"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-base-content/60 mb-1.5">名称</label>
-              <input
-                v-model="editingBill.name"
-                type="text"
-                class="w-full px-3 py-2.5 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
-              />
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-medium text-base-content/60 mb-1.5">日期</label>
-                <input
-                  v-model="editingBill.date"
-                  type="date"
-                  class="w-full px-3 py-2.5 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
-                />
-              </div>
-              <div>
-                <label class="block text-xs font-medium text-base-content/60 mb-1.5">分类</label>
-                <select
-                  v-model="editingBill.category"
-                  class="w-full px-3 py-2.5 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm cursor-pointer appearance-none"
-                >
-                  <option v-for="cat in CATEGORIES" :key="cat" :value="cat">{{ cat }}</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-medium text-base-content/60 mb-1.5">平台</label>
-              <div class="grid grid-cols-3 gap-2">
-                <button
-                  v-for="(info, key) in platformInfo"
-                  :key="key"
-                  @click="editingBill.platform = key"
-                  class="py-2 rounded-xl text-xs font-medium transition-all"
-                  :class="editingBill.platform === key 
-                    ? 'bg-gradient-to-br ' + info.color + ' text-white' 
-                    : 'bg-base-200/50 text-base-content/60 hover:bg-base-200'"
-                >{{ info.name }}</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex gap-3 mt-5">
-            <button
-              @click="closeEditModal"
-              class="flex-1 py-2.5 rounded-xl bg-base-200 text-base-content font-medium text-sm hover:bg-base-300 transition-colors"
-            >取消</button>
-            <button
-              @click="updateBill"
-              :disabled="!editingBill.name || !editingBill.amount || !editingBill.date || isSaving"
-              class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-white font-medium text-sm shadow-lg shadow-primary/25 hover:shadow-xl transition-all disabled:opacity-40"
-            >保存</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeDeleteModal"></div>
-      <div class="relative w-full max-w-sm bg-base-100 rounded-2xl shadow-2xl overflow-hidden">
-        <div class="p-6 text-center">
-          <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-error/10 flex items-center justify-center">
-            <svg class="w-6 h-6 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </div>
-          <h3 class="text-base font-bold mb-1">删除账单</h3>
-          <p v-if="deletingBill" class="text-sm text-base-content/60">
-            {{ deletingBill.name }} · {{ formatAmount(deletingBill.amount) }}
-          </p>
-        </div>
-        <div class="flex border-t border-base-200">
-          <button
-            @click="closeDeleteModal"
-            class="flex-1 py-3 text-sm font-medium text-base-content/60 hover:bg-base-200/50 transition-colors"
-          >取消</button>
-          <button
-            @click="confirmDelete"
-            class="flex-1 py-3 text-sm font-medium text-error hover:bg-error/10 transition-colors border-l border-base-200"
-          >删除</button>
-        </div>
-      </div>
-    </div>
+    <DeleteConfirmModal :visible="showDeleteModal" :bill="deletingBill" @close="closeDeleteModal" @confirm="confirmDelete" />
 
     <div v-if="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl shadow-lg text-white text-sm font-medium animate-slide-down"
       :class="toast.includes('成功') ? 'bg-success' : 'bg-error'">
