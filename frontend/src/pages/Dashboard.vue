@@ -6,30 +6,47 @@ import PlatformIcon from '../components/PlatformIcon.vue'
 import AppleSelect from '../components/AppleSelect.vue'
 import dayjs from 'dayjs'
 import { getCurrentTheme } from '../utils/theme'
-import { API_BASE } from '../config'
+import { CATEGORIES_WITH_ALL, PLATFORMS_WITH_ALL, PLATFORM_INFO } from '../constants/bill'
+import { useToast } from '../composables/useToast'
+import { useBillApi } from '../composables/useBillApi'
+import { useFileImport } from '../composables/useFileImport'
 
-const bills = ref([])
-const isLoading = ref(false)
+// --- Composables ---
+const { toast, showToast } = useToast()
 
+const {
+  bills, isLoading, fetchBills,
+  showAddModal, newBill, isSaving, openAddModal, closeAddModal, saveBill,
+  showEditModal, editingBill, openEditModal, closeEditModal, updateBill,
+  showDeleteModal, deletingBill, openDeleteModal, closeDeleteModal, confirmDelete
+} = useBillApi({ showToast, onBillsChanged: () => processBillsData(currentFilterType.value, currentRange.value) })
+
+const {
+  showImportModal, importType, isDragging, uploadedFile, isUploading, uploadResult,
+  handleDragOver, handleDragLeave, handleDrop, handleFileSelect,
+  startImport
+} = useFileImport({ showToast, onImportSuccess: async () => { await fetchBills() } })
+
+// --- Dashboard State ---
 const currentFilterType = ref('月报')
 const currentRange = ref({ start: dayjs().startOf('month').format('YYYY-MM-DD'), end: dayjs().endOf('month').format('YYYY-MM-DD') })
 
 const selectedCategory = ref('all')
 const selectedPlatform = ref('all')
-const categories = ['all', '餐饮', '交通', '购物', '工资', '投资', '娱乐', '医疗', '转账', '其他']
-const platforms = ['all', 'wechat', 'alipay', 'bank']
+const categories = CATEGORIES_WITH_ALL
+const platforms = PLATFORMS_WITH_ALL
 
-const categoryOptions = computed(() => 
+const categoryOptions = computed(() =>
   categories.map(cat => ({
     value: cat,
     label: cat === 'all' ? '全部分类' : cat
   }))
 )
 
-const platformOptions = computed(() => 
+const platformOptions = computed(() =>
   platforms.map(plat => ({
     value: plat,
-    label: plat === 'all' ? '全部平台' : platformInfo[plat]?.name || plat
+    label: plat === 'all' ? '全部平台' : PLATFORM_INFO[plat]?.name || plat
   }))
 )
 
@@ -66,48 +83,9 @@ const currentTheme = ref(getCurrentTheme())
 const pieSelectedCategory = ref(null)
 const showBillList = ref(true)
 
-const showImportModal = ref(false)
-const importType = ref(null)
-const isDragging = ref(false)
-const uploadedFile = ref(null)
-const isUploading = ref(false)
-const uploadResult = ref(null)
+const platformInfo = PLATFORM_INFO
 
-const showAddModal = ref(false)
-const showEditModal = ref(false)
-const showDeleteModal = ref(false)
-const isSaving = ref(false)
-const deletingBill = ref(null)
-
-const newBill = ref({
-  name: '',
-  amount: '',
-  type: 'expense',
-  date: new Date().toISOString().split('T')[0],
-  category: '其他',
-  platform: 'wechat',
-  note: ''
-})
-
-const editingBill = ref({
-  id: null,
-  name: '',
-  amount: '',
-  type: 'expense',
-  date: '',
-  category: '其他',
-  platform: 'wechat',
-  note: ''
-})
-
-const toast = ref('')
-const toastTimer = ref(null)
-const showToast = (msg) => {
-  toast.value = msg
-  clearTimeout(toastTimer.value)
-  toastTimer.value = setTimeout(() => { toast.value = '' }, 3000)
-}
-
+// --- Theme & Modal ---
 const getTextColor = () => currentTheme.value === 'dark' ? '#ffffff' : '#1f2937'
 
 const themeChangeHandler = (e) => {
@@ -115,7 +93,6 @@ const themeChangeHandler = (e) => {
 }
 window.addEventListener('themechange', themeChangeHandler)
 
-// Modal: Escape close + body scroll lock
 const anyModalOpen = computed(() => showImportModal.value || showAddModal.value || showEditModal.value || showDeleteModal.value)
 watch(anyModalOpen, (isOpen) => {
   document.body.style.overflow = isOpen ? 'hidden' : ''
@@ -136,19 +113,14 @@ onUnmounted(() => {
   window.removeEventListener('themechange', themeChangeHandler)
 })
 
+// --- Computed: Chart Labels & Series ---
 const categorySeries = computed(() => categoryType.value === 'expense' ? expenseSeries.value : incomeSeries.value)
 const categoryLabels = computed(() => categoryType.value === 'expense' ? expenseLabels.value : incomeLabels.value)
-
-const platformInfo = {
-  wechat: { name: '微信', color: 'from-green-500 to-green-600' },
-  alipay: { name: '支付宝', color: 'from-blue-500 to-blue-600' },
-  bank: { name: '银行卡', color: 'from-yellow-500 to-yellow-600' }
-}
 
 const filteredBillsByTime = computed(() => {
   const start = dayjs(currentRange.value.start)
   const end = dayjs(currentRange.value.end)
-  
+
   return bills.value.filter(bill => {
     const billDate = dayjs(bill.date)
     return billDate.isAfter(start.subtract(1, 'day')) && billDate.isBefore(end.add(1, 'day'))
@@ -157,25 +129,25 @@ const filteredBillsByTime = computed(() => {
 
 const displayBills = computed(() => {
   let result = filteredBillsByTime.value
-  
+
   if (selectedCategory.value !== 'all') {
     result = result.filter(bill => {
       const billCategory = bill.category || '其他'
       return billCategory === selectedCategory.value
     })
   }
-  
+
   if (selectedPlatform.value !== 'all') {
     result = result.filter(bill => bill.platform === selectedPlatform.value)
   }
-  
+
   if (pieSelectedCategory.value) {
     result = result.filter(bill => {
       const billCategory = bill.category || '其他'
       return billCategory === pieSelectedCategory.value
     })
   }
-  
+
   return result.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 20)
 })
 
@@ -184,6 +156,7 @@ const formatAmount = (amount) => {
   return amount >= 0 ? `+¥${absAmount.toFixed(2)}` : `-¥${absAmount.toFixed(2)}`
 }
 
+// --- Chart Options ---
 const trendOptions = computed(() => {
   const textColor = getTextColor()
   return {
@@ -240,8 +213,8 @@ const trendOptions = computed(() => {
 const categoryOptionsChart = computed(() => {
   const textColor = getTextColor()
   return {
-    chart: { 
-      type: 'donut', 
+    chart: {
+      type: 'donut',
       fontFamily: 'inherit',
       events: {
         dataPointSelection: (event, chartContext, config) => {
@@ -333,20 +306,7 @@ const comparisonOptions = computed(() => {
   }
 })
 
-const fetchBills = async () => {
-  isLoading.value = true
-  try {
-    const response = await fetch(`${API_BASE}/bills`)
-    if (response.ok) {
-      bills.value = await response.json()
-    }
-  } catch (error) {
-    console.error('获取账单失败:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
+// --- Data Processing ---
 const onTimeFilterChange = (data) => {
   currentFilterType.value = data.type
   currentRange.value = data.range
@@ -357,80 +317,80 @@ const onTimeFilterChange = (data) => {
 const processBillsData = (filterType, range) => {
   const start = dayjs(range.start)
   const end = dayjs(range.end)
-  
+
   let filteredBills = bills.value.filter(bill => {
     const billDate = dayjs(bill.date)
     return billDate.isAfter(start.subtract(1, 'day')) && billDate.isBefore(end.add(1, 'day'))
   })
-  
+
   if (selectedCategory.value !== 'all') {
     filteredBills = filteredBills.filter(bill => (bill.category || '其他') === selectedCategory.value)
   }
-  
+
   if (selectedPlatform.value !== 'all') {
     filteredBills = filteredBills.filter(bill => bill.platform === selectedPlatform.value)
   }
-  
+
   const periodExpense = filteredBills.filter(b => b.amount < 0).reduce((sum, b) => sum + Math.abs(b.amount), 0)
   const periodIncome = filteredBills.filter(b => b.amount >= 0).reduce((sum, b) => sum + b.amount, 0)
   const periodBalance = periodIncome - periodExpense
   const billCount = filteredBills.length
-  
+
   const prevStart = start.subtract(end.diff(start, 'day') + 1, 'day')
   const prevEnd = start.subtract(1, 'day')
   let prevBills = bills.value.filter(bill => {
     const billDate = dayjs(bill.date)
     return billDate.isAfter(prevStart.subtract(1, 'day')) && billDate.isBefore(prevEnd.add(1, 'day'))
   })
-  
+
   if (selectedCategory.value !== 'all') {
     prevBills = prevBills.filter(bill => (bill.category || '其他') === selectedCategory.value)
   }
   if (selectedPlatform.value !== 'all') {
     prevBills = prevBills.filter(bill => bill.platform === selectedPlatform.value)
   }
-  
+
   const prevExpense = prevBills.filter(b => b.amount < 0).reduce((sum, b) => sum + Math.abs(b.amount), 0)
   const prevIncome = prevBills.filter(b => b.amount >= 0).reduce((sum, b) => sum + b.amount, 0)
-  
+
   const expenseChange = prevExpense > 0 ? ((periodExpense - prevExpense) / prevExpense * 100).toFixed(0) : 0
   const incomeChange = prevIncome > 0 ? ((periodIncome - prevIncome) / prevIncome * 100).toFixed(0) : 0
-  
+
   stats.value = [
-    { 
-      title: '期间支出', 
-      value: `¥${periodExpense.toLocaleString()}`, 
+    {
+      title: '期间支出',
+      value: `¥${periodExpense.toLocaleString()}`,
       desc: prevExpense > 0 ? `${expenseChange >= 0 ? '+' : ''}${expenseChange}%` : '-',
       type: 'expense',
       trend: expenseChange >= 0 ? 'up' : 'down',
       change: expenseChange
     },
-    { 
-      title: '期间收入', 
-      value: `¥${periodIncome.toLocaleString()}`, 
+    {
+      title: '期间收入',
+      value: `¥${periodIncome.toLocaleString()}`,
       desc: prevIncome > 0 ? `${incomeChange >= 0 ? '+' : ''}${incomeChange}%` : '-',
       type: 'income',
       trend: incomeChange >= 0 ? 'up' : 'down',
       change: incomeChange
     },
-    { 
-      title: '期间结余', 
-      value: `¥${periodBalance.toLocaleString()}`, 
+    {
+      title: '期间结余',
+      value: `¥${periodBalance.toLocaleString()}`,
       desc: `结余率 ${periodIncome > 0 ? ((periodBalance / periodIncome) * 100).toFixed(0) : 0}%`,
       type: 'balance',
       trend: 'neutral',
       change: 0
     },
-    { 
-      title: '账单笔数', 
-      value: String(billCount), 
+    {
+      title: '账单笔数',
+      value: String(billCount),
       desc: `${filteredBills.length}条`,
       type: 'count',
       trend: 'neutral',
       change: 0
     },
   ]
-  
+
   generateTrendData(filteredBills, filterType, start, end)
   generateCategoryData(filteredBills)
   generateComparisonData(filterType, start, end)
@@ -439,9 +399,9 @@ const processBillsData = (filterType, range) => {
 const generateTrendData = (filteredBills, filterType, start, end) => {
   const days = end.diff(start, 'day') + 1
   const dailyData = {}
-  
+
   trendCategories.value = []
-  
+
   if (filterType === '周报') {
     for (let i = 0; i < 7; i++) {
       const date = start.add(i, 'day')
@@ -473,7 +433,7 @@ const generateTrendData = (filteredBills, filterType, start, end) => {
       trendCategories.value.push(i % 3 === 0 || i === days - 1 ? date.format('MM-DD') : '')
     }
   }
-  
+
   filteredBills.forEach(bill => {
     let key
     if (filterType === '季报' || filterType === '年报') {
@@ -482,7 +442,7 @@ const generateTrendData = (filteredBills, filterType, start, end) => {
     } else {
       key = bill.date
     }
-    
+
     if (dailyData[key]) {
       if (bill.amount >= 0) {
         dailyData[key].income += bill.amount
@@ -491,15 +451,15 @@ const generateTrendData = (filteredBills, filterType, start, end) => {
       }
     }
   })
-  
+
   const incomeData = []
   const expenseData = []
-  
+
   Object.keys(dailyData).forEach(key => {
     incomeData.push(dailyData[key].income)
     expenseData.push(dailyData[key].expense)
   })
-  
+
   trendSeries.value = [
     { name: '收入', data: incomeData },
     { name: '支出', data: expenseData }
@@ -509,7 +469,7 @@ const generateTrendData = (filteredBills, filterType, start, end) => {
 const generateCategoryData = (filteredBills) => {
   const expenseByCategory = {}
   const incomeByCategory = {}
-  
+
   filteredBills.forEach(bill => {
     const category = bill.category || '其他'
     if (bill.amount < 0) {
@@ -518,17 +478,17 @@ const generateCategoryData = (filteredBills) => {
       incomeByCategory[category] = (incomeByCategory[category] || 0) + bill.amount
     }
   })
-  
+
   const sortedExpense = Object.entries(expenseByCategory).sort((a, b) => b[1] - a[1])
   const sortedIncome = Object.entries(incomeByCategory).sort((a, b) => b[1] - a[1])
-  
+
   const totalExp = sortedExpense.reduce((sum, [, val]) => sum + val, 0)
   const totalInc = sortedIncome.reduce((sum, [, val]) => sum + val, 0)
-  
+
   expenseLabels.value = sortedExpense.map(([label]) => label)
   expenseSeries.value = sortedExpense.map(([, value]) => totalExp > 0 ? Math.round((value / totalExp) * 100) : 0)
   totalExpense.value = totalExp
-  
+
   incomeLabels.value = sortedIncome.map(([label]) => label)
   incomeSeries.value = sortedIncome.map(([, value]) => totalInc > 0 ? Math.round((value / totalInc) * 100) : 0)
   totalIncome.value = totalInc
@@ -537,7 +497,7 @@ const generateCategoryData = (filteredBills) => {
 const generateComparisonData = (filterType, start, end) => {
   const periods = []
   const days = end.diff(start, 'day') + 1
-  
+
   if (filterType === '周报') {
     for (let i = 3; i >= 0; i--) {
       const periodStart = start.subtract(i * 7, 'day')
@@ -614,24 +574,24 @@ const generateComparisonData = (filterType, start, end) => {
       }
     }
   }
-  
+
   comparisonCategories.value = periods.map(p => p.label)
   const incomeData = []
   const expenseData = []
-  
+
   periods.forEach(period => {
     const periodBills = bills.value.filter(bill => {
       const billDate = dayjs(bill.date)
       return billDate.isAfter(period.start.subtract(1, 'day')) && billDate.isBefore(period.end.add(1, 'day'))
     })
-    
+
     const income = periodBills.filter(b => b.amount >= 0).reduce((sum, b) => sum + b.amount, 0)
     const expense = periodBills.filter(b => b.amount < 0).reduce((sum, b) => sum + Math.abs(b.amount), 0)
-    
+
     incomeData.push(income)
     expenseData.push(expense)
   })
-  
+
   comparisonSeries.value = [
     { name: '收入', data: incomeData },
     { name: '支出', data: expenseData }
@@ -640,248 +600,6 @@ const generateComparisonData = (filterType, start, end) => {
 
 const clearPieFilter = () => {
   pieSelectedCategory.value = null
-}
-
-const handleDragOver = (e) => {
-  e.preventDefault()
-  isDragging.value = true
-}
-
-const handleDragLeave = () => {
-  isDragging.value = false
-}
-
-const handleDrop = async (e) => {
-  e.preventDefault()
-  isDragging.value = false
-  const files = e.dataTransfer.files
-  if (files.length > 0) {
-    uploadedFile.value = files[0]
-    await detectPlatform()
-  }
-}
-
-const handleFileSelect = async (e) => {
-  if (e.target.files.length > 0) {
-    uploadedFile.value = e.target.files[0]
-    await detectPlatform()
-  }
-  e.target.value = ''
-}
-
-const detectPlatform = async () => {
-  if (!uploadedFile.value) return
-  
-  const formData = new FormData()
-  formData.append('file', uploadedFile.value)
-  
-  try {
-    const response = await fetch(`${API_BASE}/bills/detect`, {
-      method: 'POST',
-      body: formData
-    })
-    
-    if (response.ok) {
-      const result = await response.json()
-      if (result.platform && result.platform !== 'unknown') {
-        importType.value = result.platform
-      }
-    }
-  } catch (error) {
-    console.error('检测平台失败:', error)
-  }
-}
-
-const startImport = async () => {
-  if (!uploadedFile.value || !importType.value) return
-  
-  isUploading.value = true
-  uploadResult.value = null
-  
-  const formData = new FormData()
-  formData.append('file', uploadedFile.value)
-  formData.append('platform', importType.value)
-  
-  try {
-    const response = await fetch(`${API_BASE}/bills/upload`, {
-      method: 'POST',
-      body: formData
-    })
-    
-    const result = await response.json()
-    
-    if (response.ok) {
-      uploadResult.value = {
-        type: 'success',
-        message: result.message
-      }
-      await fetchBills()
-      uploadedFile.value = null
-      importType.value = null
-    } else {
-      uploadResult.value = {
-        type: 'error',
-        message: result.detail || '导入失败，请检查文件格式'
-      }
-    }
-  } catch (error) {
-    uploadResult.value = {
-      type: 'error',
-      message: '网络错误，请确保后端服务已启动'
-    }
-    console.error('上传失败:', error)
-  } finally {
-    isUploading.value = false
-  }
-}
-
-const openAddModal = () => {
-  newBill.value = {
-    name: '',
-    amount: '',
-    type: 'expense',
-    date: new Date().toISOString().split('T')[0],
-    category: '其他',
-    platform: 'wechat',
-    note: ''
-  }
-  showAddModal.value = true
-}
-
-const closeAddModal = () => {
-  showAddModal.value = false
-}
-
-const saveBill = async () => {
-  if (!newBill.value.name || !newBill.value.amount || !newBill.value.date) return
-  
-  isSaving.value = true
-  
-  try {
-    const amount = parseFloat(newBill.value.amount)
-    const billData = {
-      name: newBill.value.name,
-      amount: newBill.value.type === 'expense' ? -Math.abs(amount) : Math.abs(amount),
-      type: newBill.value.type,
-      date: newBill.value.date,
-      category: newBill.value.category,
-      platform: newBill.value.platform,
-      note: newBill.value.note || ''
-    }
-    
-    const response = await fetch(`${API_BASE}/bills`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(billData)
-    })
-    
-    if (response.ok) {
-      await fetchBills()
-      closeAddModal()
-      showToast('保存成功')
-    } else {
-      const result = await response.json()
-      showToast('保存失败: ' + (result.detail || '未知错误'))
-    }
-  } catch (error) {
-    console.error('保存失败:', error)
-    showToast('无法连接服务器')
-  } finally {
-    isSaving.value = false
-  }
-}
-
-const openEditModal = (bill) => {
-  editingBill.value = {
-    id: bill.id,
-    name: bill.name,
-    amount: Math.abs(bill.amount),
-    type: bill.type || (bill.amount >= 0 ? 'income' : 'expense'),
-    date: bill.date,
-    category: bill.category || '其他',
-    platform: bill.platform || 'wechat',
-    note: bill.note || ''
-  }
-  showEditModal.value = true
-}
-
-const closeEditModal = () => {
-  showEditModal.value = false
-}
-
-const updateBill = async () => {
-  if (!editingBill.value.name || !editingBill.value.amount || !editingBill.value.date) return
-  
-  isSaving.value = true
-  
-  try {
-    const amount = parseFloat(editingBill.value.amount)
-    const billData = {
-      name: editingBill.value.name,
-      amount: editingBill.value.type === 'expense' ? -Math.abs(amount) : Math.abs(amount),
-      type: editingBill.value.type,
-      date: editingBill.value.date,
-      category: editingBill.value.category,
-      platform: editingBill.value.platform,
-      note: editingBill.value.note || ''
-    }
-    
-    const response = await fetch(`${API_BASE}/bills/${editingBill.value.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(billData)
-    })
-    
-    if (response.ok) {
-      await fetchBills()
-      closeEditModal()
-      showToast('更新成功')
-    } else {
-      const result = await response.json()
-      showToast('更新失败: ' + (result.detail || '未知错误'))
-    }
-  } catch (error) {
-    console.error('更新失败:', error)
-    showToast('无法连接服务器')
-  } finally {
-    isSaving.value = false
-  }
-}
-
-const openDeleteModal = (bill) => {
-  deletingBill.value = bill
-  showDeleteModal.value = true
-}
-
-const closeDeleteModal = () => {
-  showDeleteModal.value = false
-  deletingBill.value = null
-}
-
-const confirmDelete = async () => {
-  if (!deletingBill.value) return
-  
-  try {
-    const response = await fetch(`${API_BASE}/bills/${deletingBill.value.id}`, {
-      method: 'DELETE'
-    })
-    
-    if (response.ok) {
-      await fetchBills()
-      closeDeleteModal()
-      showToast('删除成功')
-    } else {
-      const result = await response.json()
-      showToast('删除失败: ' + (result.detail || '未知错误'))
-    }
-  } catch (error) {
-    console.error('删除失败:', error)
-    showToast('无法连接服务器')
-  }
 }
 
 onMounted(async () => {
@@ -1299,7 +1017,7 @@ onMounted(async () => {
                   v-model="newBill.category"
                   class="w-full px-3 py-2.5 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm cursor-pointer appearance-none"
                 >
-                  <option v-for="cat in ['餐饮', '交通', '购物', '工资', '投资', '娱乐', '医疗', '转账', '其他']" :key="cat" :value="cat">{{ cat }}</option>
+                  <option v-for="cat in CATEGORIES" :key="cat" :value="cat">{{ cat }}</option>
                 </select>
               </div>
             </div>
@@ -1399,7 +1117,7 @@ onMounted(async () => {
                   v-model="editingBill.category"
                   class="w-full px-3 py-2.5 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm cursor-pointer appearance-none"
                 >
-                  <option v-for="cat in ['餐饮', '交通', '购物', '工资', '投资', '娱乐', '医疗', '转账', '其他']" :key="cat" :value="cat">{{ cat }}</option>
+                  <option v-for="cat in CATEGORIES" :key="cat" :value="cat">{{ cat }}</option>
                 </select>
               </div>
             </div>

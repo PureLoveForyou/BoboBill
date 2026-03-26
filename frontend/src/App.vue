@@ -1,6 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router'
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { initTheme, toggleDarkLight, getCurrentTheme } from './utils/theme.js'
 import Sidebar from './components/Sidebar.vue'
 
@@ -8,14 +8,18 @@ const router = useRouter()
 const currentTheme = ref('light')
 
 // 初始化主题
+const onThemeChange = (event) => {
+  currentTheme.value = event.detail.theme
+}
+
 onMounted(() => {
   initTheme()
   currentTheme.value = getCurrentTheme()
-  
-  // 监听主题变化
-  window.addEventListener('themechange', (event) => {
-    currentTheme.value = event.detail.theme
-  })
+  window.addEventListener('themechange', onThemeChange)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('themechange', onThemeChange)
 })
 
 // 切换深色/浅色模式

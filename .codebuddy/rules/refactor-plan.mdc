@@ -1,0 +1,27 @@
+---
+description: 
+alwaysApply: false
+enabled: true
+updatedAt: 2026-03-26T12:14:09.734Z
+provider: 
+---
+
+# 前端重构计划
+
+## 当前进度
+- [x] Phase 0: 清理死代码
+  - [x] 0.1 删除 ModernSelect.vue (死代码)
+  - [x] 0.2 删除空目录 components/icons/
+  - [x] 0.3 修复 themechange 事件监听器泄漏 (App.vue, Sidebar.vue, Settings.vue, Bills.vue)
+  - [x] 0.4 修复 Bills.vue toast setTimeout 未清理
+- [x] Phase 1: 提取常量
+  - [x] 1.1 创建 constants/bill.js — CATEGORIES, PLATFORMS, PLATFORM_INFO, DEFAULT_BILL, CHART_COLORS
+  - [x] 1.2 Dashboard.vue 和 Bills.vue 改为从 constants 导入
+- [x] Phase 2: 提取 Composables
+  - [x] 2.1 composables/useToast.js
+  - [x] 2.2 composables/useBillApi.js (fetchBills, saveBill, updateBill, confirmDelete, modal 管理)
+  - [x] 2.3 composables/useFileImport.js (拖拽/选择/检测/上传)
+- [ ] Phase 3: 提取共享组件
+- [ ] Phase 4: Dashboard 专属逻辑提取
+- [ ] Phase 5: 路由注册 Bills 页面
+- [ ] Phase 6: 收尾清理

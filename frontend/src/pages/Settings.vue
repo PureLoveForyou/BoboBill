@@ -1,17 +1,21 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { getCurrentTheme, toggleDarkLight } from '../utils/theme.js'
 
 const currentTheme = ref('light')
 
 // 初始化
+const onThemeChange = (event) => {
+  currentTheme.value = event.detail.theme
+}
+
 onMounted(() => {
   currentTheme.value = getCurrentTheme()
-  
-  // 监听主题变化
-  window.addEventListener('themechange', (event) => {
-    currentTheme.value = event.detail.theme
-  })
+  window.addEventListener('themechange', onThemeChange)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('themechange', onThemeChange)
 })
 
 // 切换深色/浅色

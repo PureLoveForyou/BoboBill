@@ -1,82 +1,61 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getCurrentTheme } from '../utils/theme'
-import { API_BASE } from '../config'
 import PlatformIcon from '../components/PlatformIcon.vue'
 import AppleSelect from '../components/AppleSelect.vue'
+import { CATEGORIES_WITH_ALL, CATEGORIES, PLATFORMS_WITH_ALL, PLATFORMS, PLATFORM_INFO } from '../constants/bill'
+import { useToast } from '../composables/useToast'
+import { useBillApi } from '../composables/useBillApi'
+import { useFileImport } from '../composables/useFileImport'
 
-const toast = ref('')
-const toastTimer = ref(null)
-const showToast = (msg) => {
-  toast.value = msg
-  clearTimeout(toastTimer.value)
-  toastTimer.value = setTimeout(() => { toast.value = '' }, 3000)
-}
+const { toast, showToast } = useToast()
 
 const currentTheme = ref(getCurrentTheme())
 
-window.addEventListener('themechange', (e) => {
+const onThemeChange = (e) => {
   currentTheme.value = e.detail.theme
+}
+window.addEventListener('themechange', onThemeChange)
+
+onUnmounted(() => {
+  window.removeEventListener('themechange', onThemeChange)
 })
 
-const importType = ref(null)
-const isDragging = ref(false)
-const uploadedFile = ref(null)
-const isUploading = ref(false)
-const uploadResult = ref(null)
-const importHistory = ref([])
+const {
+  bills, isLoading, fetchBills,
+  showAddModal, newBill, isSaving, openAddModal, closeAddModal, saveBill,
+  showEditModal, editingBill, openEditModal, closeEditModal, updateBill,
+  showDeleteModal, deletingBill, openDeleteModal, closeDeleteModal, confirmDelete
+} = useBillApi({ showToast })
 
-const bills = ref([])
-const isLoading = ref(false)
+const {
+  showImportModal, importType, isDragging, uploadedFile, isUploading, uploadResult,
+  handleDragOver, handleDragLeave, handleDrop, handleFileSelect,
+  startImport, clearResult
+} = useFileImport({ showToast, onImportSuccess: fetchBills })
 
 const searchQuery = ref('')
 const selectedCategory = ref('all')
 const selectedPlatform = ref('all')
 
-const categories = ['all', '餐饮', '交通', '购物', '工资', '投资', '娱乐', '医疗', '转账', '其他']
-const platforms = ['all', 'wechat', 'alipay', 'bank']
-const editCategories = ['餐饮', '交通', '购物', '工资', '投资', '娱乐', '医疗', '转账', '其他']
-const editPlatforms = ['wechat', 'alipay', 'bank']
+const categories = CATEGORIES_WITH_ALL
+const platforms = PLATFORMS_WITH_ALL
+const editCategories = CATEGORIES
+const editPlatforms = PLATFORMS
 
-const categoryOptions = computed(() => 
+const categoryOptions = computed(() =>
   categories.map(cat => ({
     value: cat,
     label: cat === 'all' ? '全部分类' : cat
   }))
 )
 
-const platformOptions = computed(() => 
+const platformOptions = computed(() =>
   platforms.map(plat => ({
     value: plat,
-    label: plat === 'all' ? '全部平台' : platformInfo[plat]?.name || plat
+    label: plat === 'all' ? '全部平台' : PLATFORM_INFO[plat]?.name || plat
   }))
 )
-
-const showAddModal = ref(false)
-const showEditModal = ref(false)
-const showDeleteModal = ref(false)
-const isSaving = ref(false)
-const deletingBill = ref(null)
-const newBill = ref({
-  name: '',
-  amount: '',
-  type: 'expense',
-  date: new Date().toISOString().split('T')[0],
-  category: '其他',
-  platform: 'wechat',
-  note: ''
-})
-
-const editingBill = ref({
-  id: null,
-  name: '',
-  amount: '',
-  type: 'expense',
-  date: '',
-  category: '其他',
-  platform: 'wechat',
-  note: ''
-})
 
 const filteredBills = computed(() => {
   return bills.value.filter(bill => {
@@ -87,288 +66,11 @@ const filteredBills = computed(() => {
   })
 })
 
-const platformInfo = {
-  wechat: { name: '微信', color: 'from-green-500 to-green-600' },
-  alipay: { name: '支付宝', color: 'from-blue-500 to-blue-600' },
-  bank: { name: '银行卡', color: 'from-yellow-500 to-yellow-600' }
-}
-
-const fetchBills = async () => {
-  isLoading.value = true
-  try {
-    const response = await fetch(`${API_BASE}/bills`)
-    if (response.ok) {
-      bills.value = await response.json()
-    } else {
-      showToast('获取账单失败: ' + response.status)
-    }
-  } catch (error) {
-    console.error('获取账单失败:', error)
-    showToast('无法连接服务器，请检查网络')
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const handleDragOver = (e) => {
-  e.preventDefault()
-  isDragging.value = true
-}
-
-const handleDragLeave = () => {
-  isDragging.value = false
-}
-
-const handleDrop = async (e) => {
-  e.preventDefault()
-  isDragging.value = false
-  const files = e.dataTransfer.files
-  if (files.length > 0) {
-    uploadedFile.value = files[0]
-    await detectPlatform()
-  }
-}
-
-const handleFileSelect = async (e) => {
-  if (e.target.files.length > 0) {
-    uploadedFile.value = e.target.files[0]
-    await detectPlatform()
-  }
-  e.target.value = ''
-}
-
-const detectPlatform = async () => {
-  if (!uploadedFile.value) return
-  
-  const formData = new FormData()
-  formData.append('file', uploadedFile.value)
-  
-  try {
-    const response = await fetch(`${API_BASE}/bills/detect`, {
-      method: 'POST',
-      body: formData
-    })
-    
-    if (response.ok) {
-      const result = await response.json()
-      if (result.platform && result.platform !== 'unknown') {
-        importType.value = result.platform
-      }
-    }
-  } catch (error) {
-    console.error('检测平台失败:', error)
-  }
-}
-
-const startImport = async () => {
-  if (!uploadedFile.value || !importType.value) return
-  
-  isUploading.value = true
-  uploadResult.value = null
-  
-  const formData = new FormData()
-  formData.append('file', uploadedFile.value)
-  formData.append('platform', importType.value)
-  
-  try {
-    const response = await fetch(`${API_BASE}/bills/upload`, {
-      method: 'POST',
-      body: formData
-    })
-    
-    const result = await response.json()
-    
-    if (response.ok) {
-      uploadResult.value = {
-        type: 'success',
-        message: result.message
-      }
-      
-      importHistory.value.unshift({
-        id: Date.now(),
-        platform: importType.value,
-        count: result.success,
-        date: new Date().toLocaleDateString('zh-CN'),
-        status: 'success'
-      })
-      
-      await fetchBills()
-      
-      uploadedFile.value = null
-      importType.value = null
-    } else {
-      uploadResult.value = {
-        type: 'error',
-        message: result.detail || '导入失败，请检查文件格式'
-      }
-    }
-  } catch (error) {
-    uploadResult.value = {
-      type: 'error',
-      message: '网络错误，请确保后端服务已启动'
-    }
-    console.error('上传失败:', error)
-  } finally {
-    isUploading.value = false
-  }
-}
-
-const openAddModal = () => {
-  newBill.value = {
-    name: '',
-    amount: '',
-    type: 'expense',
-    date: new Date().toISOString().split('T')[0],
-    category: '其他',
-    platform: 'wechat',
-    note: ''
-  }
-  showAddModal.value = true
-}
-
-const closeAddModal = () => {
-  showAddModal.value = false
-}
-
-const saveBill = async () => {
-  if (!newBill.value.name || !newBill.value.amount || !newBill.value.date) return
-  
-  isSaving.value = true
-  
-  try {
-    const amount = parseFloat(newBill.value.amount)
-    const billData = {
-      name: newBill.value.name,
-      amount: newBill.value.type === 'expense' ? -Math.abs(amount) : Math.abs(amount),
-      type: newBill.value.type,
-      date: newBill.value.date,
-      category: newBill.value.category,
-      platform: newBill.value.platform,
-      note: newBill.value.note || ''
-    }
-    
-    const response = await fetch(`${API_BASE}/bills`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(billData)
-    })
-    
-    if (response.ok) {
-      await fetchBills()
-      closeAddModal()
-      showToast('保存成功')
-    } else {
-      const result = await response.json()
-      showToast('保存失败: ' + (result.detail || '未知错误'))
-    }
-  } catch (error) {
-    console.error('保存失败:', error)
-    showToast('无法连接服务器')
-  } finally {
-    isSaving.value = false
-  }
-}
-
-const openDeleteModal = (bill) => {
-  deletingBill.value = bill
-  showDeleteModal.value = true
-}
-
-const closeDeleteModal = () => {
-  showDeleteModal.value = false
-  deletingBill.value = null
-}
-
-const confirmDelete = async () => {
-  if (!deletingBill.value) return
-  
-  try {
-    const response = await fetch(`${API_BASE}/bills/${deletingBill.value.id}`, {
-      method: 'DELETE'
-    })
-    
-    if (response.ok) {
-      await fetchBills()
-      closeDeleteModal()
-      showToast('删除成功')
-    } else {
-      const result = await response.json()
-      showToast('删除失败: ' + (result.detail || '未知错误'))
-    }
-  } catch (error) {
-    console.error('删除失败:', error)
-    showToast('无法连接服务器')
-  }
-}
-
-const openEditModal = (bill) => {
-  editingBill.value = {
-    id: bill.id,
-    name: bill.name,
-    amount: Math.abs(bill.amount),
-    type: bill.type || (bill.amount >= 0 ? 'income' : 'expense'),
-    date: bill.date,
-    category: bill.category || '其他',
-    platform: bill.platform || 'wechat',
-    note: bill.note || ''
-  }
-  showEditModal.value = true
-}
-
-const closeEditModal = () => {
-  showEditModal.value = false
-}
-
-const updateBill = async () => {
-  if (!editingBill.value.name || !editingBill.value.amount || !editingBill.value.date) return
-  
-  isSaving.value = true
-  
-  try {
-    const amount = parseFloat(editingBill.value.amount)
-    const billData = {
-      name: editingBill.value.name,
-      amount: editingBill.value.type === 'expense' ? -Math.abs(amount) : Math.abs(amount),
-      type: editingBill.value.type,
-      date: editingBill.value.date,
-      category: editingBill.value.category,
-      platform: editingBill.value.platform,
-      note: editingBill.value.note || ''
-    }
-    
-    const response = await fetch(`${API_BASE}/bills/${editingBill.value.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(billData)
-    })
-    
-    if (response.ok) {
-      await fetchBills()
-      closeEditModal()
-      showToast('更新成功')
-    } else {
-      const result = await response.json()
-      showToast('更新失败: ' + (result.detail || '未知错误'))
-    }
-  } catch (error) {
-    console.error('更新失败:', error)
-    showToast('无法连接服务器')
-  } finally {
-    isSaving.value = false
-  }
-}
+const platformInfo = PLATFORM_INFO
 
 const formatAmount = (amount) => {
   const absAmount = Math.abs(amount)
   return amount >= 0 ? `+¥${absAmount.toFixed(2)}` : `-¥${absAmount.toFixed(2)}`
-}
-
-const clearResult = () => {
-  uploadResult.value = null
 }
 
 onMounted(() => {
