@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 
 class BillModel(BaseModel):
@@ -20,3 +20,10 @@ class ImportResult(BaseModel):
     skipped: int
     total: int
     message: str
+
+
+class PaginatedResponse(BaseModel):
+    items: List[BillModel]
+    total: int
+    page: int
+    page_size: int

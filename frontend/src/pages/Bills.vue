@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { getCurrentTheme } from '../utils/theme'
 import PlatformIcon from '../components/PlatformIcon.vue'
 import AppleSelect from '../components/AppleSelect.vue'
@@ -25,8 +25,10 @@ onUnmounted(() => {
   window.removeEventListener('themechange', onThemeChange)
 })
 
+const PAGE_SIZE = 20
+
 const {
-  bills, isLoading, fetchBills,
+  bills, total, isLoading, fetchBills, loadMore,
   showAddModal, newBill, isSaving, openAddModal, closeAddModal, saveBill,
   showEditModal, editingBill, openEditModal, closeEditModal, updateBill,
   showDeleteModal, deletingBill, openDeleteModal, closeDeleteModal, confirmDelete
@@ -36,25 +38,50 @@ const {
   importType, isDragging, uploadedFile, isUploading, uploadResult,
   handleDragOver, handleDragLeave, handleDrop, handleFileSelect,
   startImport, clearResult
-} = useFileImport({ showToast, onImportSuccess: fetchBills })
+} = useFileImport({ showToast, onImportSuccess: () => fetchBills(getFetchParams()) })
 
 const searchQuery = ref('')
 const { selectedCategory, selectedPlatform, categoryOptions, platformOptions } = useBillFilters()
 
-const filteredBills = computed(() => {
-  return bills.value.filter(bill => {
-    const matchSearch = bill.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchCategory = selectedCategory.value === 'all' || bill.category === selectedCategory.value
-    const matchPlatform = selectedPlatform.value === 'all' || bill.platform === selectedPlatform.value
-    return matchSearch && matchCategory && matchPlatform
-  })
-})
-
 const platformInfo = PLATFORM_INFO
 
-onMounted(() => {
-  fetchBills()
+const hasMore = computed(() => bills.value.length < total.value)
+const isLoadingMore = ref(false)
+
+const getFetchParams = () => ({
+  page: 1,
+  page_size: PAGE_SIZE,
+  search: searchQuery.value || undefined,
+  category: selectedCategory.value !== 'all' ? selectedCategory.value : undefined,
+  platform: selectedPlatform.value !== 'all' ? selectedPlatform.value : undefined,
 })
+
+const doFetch = () => {
+  bills.value = []
+  fetchBills(getFetchParams())
+}
+
+const doLoadMore = async () => {
+  if (isLoadingMore.value || !hasMore.value) return
+  isLoadingMore.value = true
+  await loadMore({
+    page_size: PAGE_SIZE,
+    search: searchQuery.value || undefined,
+    category: selectedCategory.value !== 'all' ? selectedCategory.value : undefined,
+    platform: selectedPlatform.value !== 'all' ? selectedPlatform.value : undefined,
+  })
+  isLoadingMore.value = false
+}
+
+let debounceTimer = null
+watch(searchQuery, () => {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(doFetch, 300)
+})
+
+watch([selectedCategory, selectedPlatform], doFetch)
+
+onMounted(doFetch)
 </script>
 
 <template>
@@ -232,9 +259,9 @@ onMounted(() => {
               <p class="text-sm text-base-content/40 mt-4">加载中...</p>
             </div>
 
-            <div v-else-if="filteredBills.length > 0" class="space-y-2">
+            <div v-else-if="bills.length > 0" class="space-y-2">
               <BillItem
-                v-for="bill in filteredBills"
+                v-for="bill in bills"
                 :key="bill.id"
                 :bill="bill"
                 @edit="openEditModal"
@@ -252,10 +279,22 @@ onMounted(() => {
               <p class="text-xs text-base-content/30 mt-1">导入账单文件或手动添加记录</p>
             </div>
 
-            <div v-if="!isLoading && filteredBills.length > 0" class="mt-6 pt-4 border-t border-base-200/50">
+            <div v-if="!isLoading && bills.length > 0" class="mt-6 pt-4 border-t border-base-200/50">
               <div class="flex items-center justify-between text-sm">
-                <span class="text-base-content/40">共 {{ filteredBills.length }} 条记录</span>
-                <span class="text-base-content/40">总计 {{ bills.length }} 条</span>
+                <span class="text-base-content/40">已加载 {{ bills.length }} / {{ total }} 条</span>
+                <button
+                  v-if="hasMore"
+                  @click="doLoadMore"
+                  :disabled="isLoadingMore"
+                  class="px-4 py-2 rounded-xl bg-base-200/60 hover:bg-base-200 text-sm font-medium text-base-content/60 hover:text-base-content/80 transition-all disabled:opacity-50"
+                >
+                  <svg v-if="isLoadingMore" class="w-4 h-4 animate-spin inline-block mr-1" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {{ isLoadingMore ? '加载中...' : '加载更多' }}
+                </button>
+                <span v-else class="text-base-content/30">已全部加载</span>
               </div>
             </div>
           </div>

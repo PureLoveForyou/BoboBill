@@ -2,16 +2,35 @@ import { ref } from 'vue'
 import { API_BASE } from '../config'
 import { DEFAULT_BILL } from '../constants/bill'
 
+function buildQuery(params) {
+  const qs = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== '') qs.append(k, v)
+  }
+  const s = qs.toString()
+  return s ? `?${s}` : ''
+}
+
 export function useBillApi({ showToast, onBillsChanged }) {
   const bills = ref([])
+  const total = ref(0)
   const isLoading = ref(false)
 
-  const fetchBills = async () => {
+  const fetchBills = async (params = {}) => {
     isLoading.value = true
     try {
-      const response = await fetch(`${API_BASE}/bills`)
+      const query = buildQuery(params)
+      const response = await fetch(`${API_BASE}/bills${query}`)
       if (response.ok) {
-        bills.value = await response.json()
+        const data = await response.json()
+        // Support both paginated {items, total} and legacy array format
+        if (Array.isArray(data)) {
+          bills.value = data
+          total.value = data.length
+        } else {
+          bills.value = data.items
+          total.value = data.total
+        }
         onBillsChanged?.()
       } else {
         showToast('获取账单失败: ' + response.status)
@@ -21,6 +40,22 @@ export function useBillApi({ showToast, onBillsChanged }) {
       showToast('无法连接服务器，请检查网络')
     } finally {
       isLoading.value = false
+    }
+  }
+
+  const loadMore = async (params = {}) => {
+    const currentPage = Math.ceil(bills.value.length / (params.page_size || 20)) + 1
+    try {
+      const query = buildQuery({ ...params, page: currentPage })
+      const response = await fetch(`${API_BASE}/bills${query}`)
+      if (response.ok) {
+        const data = await response.json()
+        const newItems = Array.isArray(data) ? data : data.items
+        bills.value = [...bills.value, ...newItems]
+        total.value = Array.isArray(data) ? bills.value.length : data.total
+      }
+    } catch (error) {
+      console.error('加载更多失败:', error)
     }
   }
 
@@ -184,7 +219,7 @@ export function useBillApi({ showToast, onBillsChanged }) {
   }
 
   return {
-    bills, isLoading, fetchBills,
+    bills, total, isLoading, fetchBills, loadMore,
     showAddModal, newBill, isSaving, openAddModal, closeAddModal, saveBill,
     showEditModal, editingBill, openEditModal, closeEditModal, updateBill,
     showDeleteModal, deletingBill, openDeleteModal, closeDeleteModal, confirmDelete

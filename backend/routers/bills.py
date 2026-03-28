@@ -1,19 +1,26 @@
-from fastapi import APIRouter, HTTPException
-from typing import List, Optional
-from models import BillModel
+from fastapi import APIRouter, HTTPException, Query
+from typing import Optional
+from models import BillModel, PaginatedResponse
 from database import db
 
 router = APIRouter(prefix="/bills", tags=["bills"])
 
+DEFAULT_PAGE_SIZE = 20
 
-@router.get("", response_model=List[BillModel])
+
+@router.get("", response_model=PaginatedResponse)
 def get_bills(
+    page: int = Query(0, ge=0),
+    page_size: int = Query(0, ge=0),
     category: Optional[str] = None,
     platform: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    search: Optional[str] = None,
 ):
     result = []
+    search_lower = (search or "").lower()
+
     for bill in db.all():
         bill["id"] = bill.doc_id
         if category and bill.get("category") != category:
@@ -24,9 +31,20 @@ def get_bills(
             continue
         if end_date and bill.get("date", "") > end_date:
             continue
+        if search_lower and search_lower not in (bill.get("name") or "").lower():
+            continue
         result.append(bill)
+
     result.sort(key=lambda x: x.get("date", ""), reverse=True)
-    return result
+    total = len(result)
+
+    if page > 0 and page_size > 0:
+        start = (page - 1) * page_size
+        items = result[start:start + page_size]
+    else:
+        items = result
+
+    return {"items": items, "total": total, "page": page, "page_size": page_size}
 
 
 @router.post("", response_model=BillModel)
