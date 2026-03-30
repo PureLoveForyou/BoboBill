@@ -34,8 +34,16 @@ def get_bills(
             continue
         if end_date and bill.get("date", "") > end_date:
             continue
-        if search_lower and search_lower not in (bill.get("name") or "").lower():
-            continue
+        if search_lower:
+            # 搜索名称、备注、商户、分类
+            searchable_text = " ".join([
+                bill.get("name") or "",
+                bill.get("note") or "",
+                bill.get("merchant") or "",
+                bill.get("category") or ""
+            ]).lower()
+            if search_lower not in searchable_text:
+                continue
         result.append(bill)
 
     result.sort(key=lambda x: x.get("date", ""), reverse=True)
@@ -139,8 +147,16 @@ def export_bills(
             continue
         if end_date and bill.get("date", "") > end_date:
             continue
-        if search_lower and search_lower not in (bill.get("name") or "").lower():
-            continue
+        if search_lower:
+            # 搜索名称、备注、商户、分类
+            searchable_text = " ".join([
+                bill.get("name") or "",
+                bill.get("note") or "",
+                bill.get("merchant") or "",
+                bill.get("category") or ""
+            ]).lower()
+            if search_lower not in searchable_text:
+                continue
         result.append(bill)
 
     result.sort(key=lambda x: x.get("date", ""), reverse=True)

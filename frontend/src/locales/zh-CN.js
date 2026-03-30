@@ -61,7 +61,7 @@ export default {
     deleteFailed: '删除失败',
     loadMore: '加载更多',
     allLoaded: '已全部加载',
-    searchPlaceholder: '搜索账单...',
+    searchPlaceholder: '搜索名称、备注、商户、分类...',
     noBills: '暂无账单数据',
     noBillsHint: '导入账单文件或手动添加记录',
     noMatchingBills: '暂无符合条件的账单',

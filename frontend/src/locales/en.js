@@ -61,7 +61,7 @@ export default {
     deleteFailed: 'Failed to delete',
     loadMore: 'Load More',
     allLoaded: 'All Loaded',
-    searchPlaceholder: 'Search bills...',
+    searchPlaceholder: 'Search name, note, merchant, category...',
     noBills: 'No Bills',
     noBillsHint: 'Import bill files or add manually',
     noMatchingBills: 'No matching bills',
