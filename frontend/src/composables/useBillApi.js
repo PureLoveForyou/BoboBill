@@ -219,8 +219,25 @@ export function useBillApi({ showToast, onBillsChanged }) {
     }
   }
 
+  const exportBills = async (params = {}) => {
+    try {
+      const query = buildQuery(params)
+      const url = `${API_BASE}/bills/export${query}`
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'bills.csv'
+      a.target = '_blank'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('export failed:', error)
+      showToast(t('bill.exportFailed'), 'error')
+    }
+  }
+
   return {
-    bills, total, isLoading, fetchBills, loadMore,
+    bills, total, isLoading, fetchBills, loadMore, exportBills,
     showAddModal, newBill, isSaving, openAddModal, closeAddModal, saveBill,
     showEditModal, editingBill, openEditModal, closeEditModal, updateBill,
     showDeleteModal, deletingBill, openDeleteModal, closeDeleteModal, confirmDelete

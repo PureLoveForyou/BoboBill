@@ -65,7 +65,9 @@ export default {
     noBillsHint: 'Import bill files or add manually',
     noMatchingBills: 'No matching bills',
     onlyShowRecent: 'Showing recent {n} records',
-    loadedOf: '{loaded} / {total} loaded'
+    loadedOf: '{loaded} / {total} loaded',
+    exportBtn: 'Export CSV',
+    exportFailed: 'Export failed'
   },
   dashboard: {
     title: 'Dashboard',

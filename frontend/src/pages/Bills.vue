@@ -30,7 +30,7 @@ onUnmounted(() => {
 const PAGE_SIZE = 20
 
 const {
-  bills, total, isLoading, fetchBills, loadMore,
+  bills, total, isLoading, fetchBills, loadMore, exportBills,
   showAddModal, newBill, isSaving, openAddModal, closeAddModal, saveBill,
   showEditModal, editingBill, openEditModal, closeEditModal, updateBill,
   showDeleteModal, deletingBill, openDeleteModal, closeDeleteModal, confirmDelete
@@ -43,6 +43,8 @@ const {
 } = useFileImport({ showToast, onImportSuccess: () => fetchBills(getFetchParams()) })
 
 const searchQuery = ref('')
+const startDate = ref('')
+const endDate = ref('')
 const { selectedCategory, selectedPlatform, categoryOptions, platformOptions } = useBillFilters()
 
 const platformInfo = PLATFORM_INFO
@@ -61,6 +63,14 @@ const getFetchParams = () => ({
 const doFetch = () => {
   bills.value = []
   fetchBills(getFetchParams())
+}
+
+const doExport = () => {
+  exportBills({
+    search: searchQuery.value || undefined,
+    category: selectedCategory.value !== 'all' ? selectedCategory.value : undefined,
+    platform: selectedPlatform.value !== 'all' ? selectedPlatform.value : undefined,
+  })
 }
 
 const doLoadMore = async () => {
@@ -93,15 +103,26 @@ onMounted(doFetch)
         <h1 class="text-3xl font-bold tracking-tight">{{ t('bills.title') }}</h1>
         <p class="text-sm text-base-content/50 mt-2 font-medium">{{ t('bills.subtitle') }}</p>
       </div>
-      <button
-        @click="openAddModal"
-        class="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-primary to-primary/80 text-white font-semibold text-sm shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300"
-      >
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-        {{ t('bill.addTitle') }}
-      </button>
+      <div class="flex items-center gap-3">
+        <button
+          @click="doExport"
+          class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-base-200/60 text-base-content/70 font-medium text-sm hover:bg-base-200 hover:text-base-content/90 transition-all duration-300"
+        >
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          {{ t('bill.exportBtn') }}
+        </button>
+        <button
+          @click="openAddModal"
+          class="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-primary to-primary/80 text-white font-semibold text-sm shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300"
+        >
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          {{ t('bill.addTitle') }}
+        </button>
+      </div>
     </div>
 
     <div

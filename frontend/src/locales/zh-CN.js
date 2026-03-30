@@ -65,7 +65,9 @@ export default {
     noBillsHint: '导入账单文件或手动添加记录',
     noMatchingBills: '暂无符合条件的账单',
     onlyShowRecent: '仅展示最近 {n} 条记录',
-    loadedOf: '已加载 {loaded} / {total} 条'
+    loadedOf: '已加载 {loaded} / {total} 条',
+    exportBtn: '导出 CSV',
+    exportFailed: '导出失败'
   },
   dashboard: {
     title: '仪表盘',

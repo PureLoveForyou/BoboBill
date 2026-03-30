@@ -1,5 +1,8 @@
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from typing import Optional
+import csv
+import io
 from models import BillModel, PaginatedResponse
 from database import db
 
@@ -104,3 +107,58 @@ def get_stats():
         "category_stats": category_stats,
         "platform_stats": platform_stats,
     }
+
+
+PLATFORM_NAMES = {"wechat": "微信", "alipay": "支付宝", "bank": "银行卡"}
+
+
+@router.get("/export")
+def export_bills(
+    category: Optional[str] = None,
+    platform: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    search: Optional[str] = None,
+):
+    result = []
+    search_lower = (search or "").lower()
+
+    for bill in db.all():
+        if category and bill.get("category") != category:
+            continue
+        if platform and bill.get("platform") != platform:
+            continue
+        if start_date and bill.get("date", "") < start_date:
+            continue
+        if end_date and bill.get("date", "") > end_date:
+            continue
+        if search_lower and search_lower not in (bill.get("name") or "").lower():
+            continue
+        result.append(bill)
+
+    result.sort(key=lambda x: x.get("date", ""), reverse=True)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["日期", "名称", "分类", "平台", "金额", "类型", "备注"])
+
+    for bill in result:
+        amount = bill.get("amount", 0)
+        bill_type = "收入" if amount >= 0 else "支出"
+        plat_name = PLATFORM_NAMES.get(bill.get("platform", ""), bill.get("platform", ""))
+        writer.writerow([
+            bill.get("date", ""),
+            bill.get("name", ""),
+            bill.get("category", "其他"),
+            plat_name,
+            abs(amount),
+            bill_type,
+            bill.get("note", ""),
+        ])
+
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv; charset=utf-8-sig",
+        headers={"Content-Disposition": "attachment; filename=bills.csv"},
+    )
