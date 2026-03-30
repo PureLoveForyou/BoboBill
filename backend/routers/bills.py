@@ -10,6 +10,20 @@ router = APIRouter(prefix="/bills", tags=["bills"])
 
 DEFAULT_PAGE_SIZE = 20
 
+# 分类英文别名（用于搜索）
+CATEGORY_ALIASES = {
+    "餐饮": ["food", "catering", "dining", "eat", "meal", "restaurant"],
+    "交通": ["transport", "traffic", "subway", "bus", "taxi", "metro"],
+    "购物": ["shopping", "buy", "purchase", "store", "mall"],
+    "工资": ["salary", "wage", "income", "payroll"],
+    "投资": ["investment", "invest", "stock", "fund"],
+    "娱乐": ["entertainment", "game", "movie", "fun", "play"],
+    "医疗": ["medical", "hospital", "doctor", "health", "medicine"],
+    "教育": ["education", "study", "school", "course", "learn"],
+    "转账": ["transfer", "remit", "send money"],
+    "其他": ["other", "misc", "miscellaneous"]
+}
+
 
 @router.get("", response_model=PaginatedResponse)
 def get_bills(
@@ -36,13 +50,26 @@ def get_bills(
             continue
         if search_lower:
             # 搜索名称、备注、商户、分类
+            bill_category = bill.get("category") or ""
             searchable_text = " ".join([
                 bill.get("name") or "",
                 bill.get("note") or "",
                 bill.get("merchant") or "",
-                bill.get("category") or ""
+                bill_category
             ]).lower()
-            if search_lower not in searchable_text:
+            
+            # 检查是否匹配基本文本
+            text_match = search_lower in searchable_text
+            
+            # 检查是否匹配分类别名（支持双向模糊匹配：foo能匹配food，food也能匹配food）
+            alias_match = False
+            if not text_match and bill_category in CATEGORY_ALIASES:
+                alias_match = any(
+                    search_lower in alias or alias in search_lower
+                    for alias in CATEGORY_ALIASES[bill_category]
+                )
+            
+            if not text_match and not alias_match:
                 continue
         result.append(bill)
 
