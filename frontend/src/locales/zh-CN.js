@@ -68,7 +68,13 @@ export default {
     onlyShowRecent: '仅展示最近 {n} 条记录',
     loadedOf: '已加载 {loaded} / {total} 条',
     exportBtn: '导出 CSV',
-    exportFailed: '导出失败'
+    exportFailed: '导出失败',
+    batchSelect: '批量选择',
+    batchDelete: '批量删除',
+    batchDeleteTitle: '批量删除确认',
+    batchDeleteConfirm: '确定要删除选中的 {n} 条账单吗？',
+    batchDeleteSuccess: '成功删除 {n} 条账单',
+    selectAll: '全选'
   },
   dashboard: {
     title: '仪表盘',

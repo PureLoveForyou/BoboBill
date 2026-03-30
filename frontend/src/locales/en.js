@@ -68,7 +68,13 @@ export default {
     onlyShowRecent: 'Showing recent {n} records',
     loadedOf: '{loaded} / {total} loaded',
     exportBtn: 'Export CSV',
-    exportFailed: 'Export failed'
+    exportFailed: 'Export failed',
+    batchSelect: 'Select',
+    batchDelete: 'Delete',
+    batchDeleteTitle: 'Batch Delete',
+    batchDeleteConfirm: 'Delete {n} selected bills?',
+    batchDeleteSuccess: '{n} bills deleted',
+    selectAll: 'Select All'
   },
   dashboard: {
     title: 'Dashboard',

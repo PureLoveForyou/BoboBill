@@ -30,11 +30,62 @@ onUnmounted(() => {
 const PAGE_SIZE = 20
 
 const {
-  bills, total, isLoading, fetchBills, loadMore, exportBills,
+  bills, total, isLoading, fetchBills, loadMore, exportBills, batchDeleteBills,
   showAddModal, newBill, isSaving, openAddModal, closeAddModal, saveBill,
   showEditModal, editingBill, openEditModal, closeEditModal, updateBill,
   showDeleteModal, deletingBill, openDeleteModal, closeDeleteModal, confirmDelete
 } = useBillApi({ showToast })
+
+// --- Batch Select ---
+const isSelectMode = ref(false)
+const selectedIds = ref(new Set())
+
+const toggleSelectMode = () => {
+  isSelectMode.value = !isSelectMode.value
+  if (!isSelectMode.value) {
+    selectedIds.value.clear()
+  }
+}
+
+const toggleSelect = (bill) => {
+  if (selectedIds.value.has(bill.id)) {
+    selectedIds.value.delete(bill.id)
+  } else {
+    selectedIds.value.add(bill.id)
+  }
+}
+
+const isSelected = (id) => selectedIds.value.has(id)
+
+const selectAll = () => {
+  bills.value.forEach(b => selectedIds.value.add(b.id))
+}
+
+const deselectAll = () => {
+  selectedIds.value.clear()
+}
+
+const isAllSelected = computed(() => bills.value.length > 0 && selectedIds.value.size === bills.value.length)
+
+const showBatchDeleteConfirm = ref(false)
+
+const openBatchDeleteConfirm = () => {
+  showBatchDeleteConfirm.value = true
+}
+
+const closeBatchDeleteConfirm = () => {
+  showBatchDeleteConfirm.value = false
+}
+
+const confirmBatchDelete = async () => {
+  const success = await batchDeleteBills([...selectedIds.value])
+  if (success) {
+    selectedIds.value.clear()
+    isSelectMode.value = false
+    await fetchBills(getFetchParams())
+  }
+  closeBatchDeleteConfirm()
+}
 
 const {
   importType, isDragging, uploadedFile, isUploading, uploadResult,
@@ -115,24 +166,65 @@ onMounted(doFetch)
         <p class="text-sm text-base-content/50 mt-2 font-medium">{{ t('bills.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-3">
-        <button
-          @click="doExport"
-          class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-base-200/60 text-base-content/70 font-medium text-sm hover:bg-base-200 hover:text-base-content/90 transition-all duration-300"
-        >
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          {{ t('bill.exportBtn') }}
-        </button>
-        <button
-          @click="openAddModal"
-          class="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-primary to-primary/80 text-white font-semibold text-sm shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300"
-        >
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          {{ t('bill.addTitle') }}
-        </button>
+        <!-- 批量操作模式 -->
+        <template v-if="isSelectMode">
+          <button
+            @click="isAllSelected ? deselectAll() : selectAll()"
+            class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-base-200/60 text-base-content/70 font-medium text-sm hover:bg-base-200 transition-all"
+          >
+            <div class="w-4 h-4 rounded border-2 flex items-center justify-center" :class="isAllSelected ? 'bg-primary border-primary' : 'border-base-content/30'">
+              <svg v-if="isAllSelected" class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            {{ t('bill.selectAll') }}
+          </button>
+          <button
+            @click="openBatchDeleteConfirm"
+            :disabled="selectedIds.size === 0"
+            class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-error/10 text-error font-medium text-sm hover:bg-error/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            {{ t('bill.batchDelete') }} ({{ selectedIds.size }})
+          </button>
+          <button
+            @click="toggleSelectMode"
+            class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-base-200/60 text-base-content/70 font-medium text-sm hover:bg-base-200 transition-all"
+          >
+            {{ t('common.cancel') }}
+          </button>
+        </template>
+        <template v-else>
+          <button
+            @click="toggleSelectMode"
+            class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-base-200/60 text-base-content/70 font-medium text-sm hover:bg-base-200 hover:text-base-content/90 transition-all duration-300"
+          >
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+            {{ t('bill.batchSelect') }}
+          </button>
+          <button
+            @click="doExport"
+            class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-base-200/60 text-base-content/70 font-medium text-sm hover:bg-base-200 hover:text-base-content/90 transition-all duration-300"
+          >
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            {{ t('bill.exportBtn') }}
+          </button>
+          <button
+            @click="openAddModal"
+            class="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-primary to-primary/80 text-white font-semibold text-sm shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-300"
+          >
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            {{ t('bill.addTitle') }}
+          </button>
+        </template>
       </div>
     </div>
 
@@ -320,8 +412,11 @@ onMounted(doFetch)
                 v-for="bill in bills"
                 :key="bill.id"
                 :bill="bill"
+                :selectable="isSelectMode"
+                :selected="isSelected(bill.id)"
                 @edit="openEditModal"
                 @delete="openDeleteModal"
+                @toggle-select="toggleSelect"
               />
             </div>
 
@@ -363,6 +458,30 @@ onMounted(doFetch)
     <BillFormModal :visible="showEditModal" :bill="editingBill" :title="t('bill.editTitle')" :is-saving="isSaving" @close="closeEditModal" @save="updateBill" />
 
     <DeleteConfirmModal :visible="showDeleteModal" :bill="deletingBill" @close="closeDeleteModal" @confirm="confirmDelete" />
+
+    <!-- 批量删除确认弹窗 -->
+    <div v-if="showBatchDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center">
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="closeBatchDeleteConfirm"></div>
+      <div class="relative bg-base-100 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl animate-[scaleIn_0.2s_ease-out]">
+        <div class="text-center">
+          <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-error/10 flex items-center justify-center">
+            <svg class="w-7 h-7 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold mb-2">{{ t('bill.batchDeleteTitle') }}</h3>
+          <p class="text-sm text-base-content/60 mb-6">{{ t('bill.batchDeleteConfirm', { n: selectedIds.size }) }}</p>
+          <div class="flex gap-3">
+            <button @click="closeBatchDeleteConfirm" class="flex-1 py-2.5 rounded-xl bg-base-200 text-base-content/70 font-medium text-sm hover:bg-base-300 transition-all">
+              {{ t('common.cancel') }}
+            </button>
+            <button @click="confirmBatchDelete" class="flex-1 py-2.5 rounded-xl bg-error text-white font-medium text-sm hover:bg-error/90 transition-all">
+              {{ t('common.delete') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Toast -->

@@ -6,12 +6,14 @@ import { formatAmount } from '../utils/format'
 
 const { t } = useI18n()
 
-defineProps({
+const props = defineProps({
   bill: { type: Object, required: true },
-  compact: { type: Boolean, default: false }
+  compact: { type: Boolean, default: false },
+  selectable: { type: Boolean, default: false },
+  selected: { type: Boolean, default: false }
 })
 
-defineEmits(['edit', 'delete'])
+const emit = defineEmits(['edit', 'delete', 'toggle-select'])
 
 const platformInfo = PLATFORM_INFO
 </script>
@@ -19,10 +21,26 @@ const platformInfo = PLATFORM_INFO
 <template>
   <div
     class="group flex items-center bg-base-200/20 hover:bg-base-200/40 transition-all"
-    :class="compact
-      ? 'gap-3 p-3 rounded-xl'
-      : 'gap-4 p-4 rounded-2xl duration-300 cursor-pointer'"
+    :class="[
+      compact ? 'gap-3 p-3 rounded-xl' : 'gap-4 p-4 rounded-2xl duration-300',
+      selectable ? 'cursor-pointer' : ''
+    ]"
+    @click="selectable && emit('toggle-select', bill)"
   >
+    <!-- 复选框 -->
+    <div v-if="selectable" class="shrink-0">
+      <div
+        class="w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all"
+        :class="selected
+          ? 'bg-primary border-primary'
+          : 'border-base-content/30 hover:border-primary/50'"
+      >
+        <svg v-if="selected" class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+    </div>
+
     <div
       class="shrink-0 bg-gradient-to-br text-white flex items-center justify-center"
       :class="[

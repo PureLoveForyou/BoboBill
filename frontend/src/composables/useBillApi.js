@@ -236,8 +236,35 @@ export function useBillApi({ showToast, onBillsChanged }) {
     }
   }
 
+  // --- Batch Delete ---
+  const batchDeleteBills = async (ids) => {
+    if (!ids || ids.length === 0) return false
+
+    try {
+      const response = await fetch(`${API_BASE}/bills/batch-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ids)
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        showToast(t('bill.batchDeleteSuccess', { n: result.deleted }), 'success')
+        return true
+      } else {
+        const result = await response.json()
+        showToast(t('bill.deleteFailed') + ': ' + (result.detail || ''), 'error')
+        return false
+      }
+    } catch (error) {
+      console.error('batch delete failed:', error)
+      showToast(t('bill.serverUnavailable'), 'error')
+      return false
+    }
+  }
+
   return {
-    bills, total, isLoading, fetchBills, loadMore, exportBills,
+    bills, total, isLoading, fetchBills, loadMore, exportBills, batchDeleteBills,
     showAddModal, newBill, isSaving, openAddModal, closeAddModal, saveBill,
     showEditModal, editingBill, openEditModal, closeEditModal, updateBill,
     showDeleteModal, deletingBill, openDeleteModal, closeDeleteModal, confirmDelete

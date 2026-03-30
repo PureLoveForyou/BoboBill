@@ -77,6 +77,13 @@ def delete_bill(bill_id: int):
     raise HTTPException(status_code=404, detail="账单未找到")
 
 
+@router.post("/batch-delete")
+def batch_delete_bills(ids: list[int]):
+    """批量删除账单"""
+    deleted = db.remove(doc_ids=ids)
+    return {"message": f"成功删除 {deleted} 条账单", "deleted": deleted}
+
+
 @router.delete("")
 def clear_all_bills():
     db.truncate()
