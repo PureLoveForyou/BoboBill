@@ -120,7 +120,17 @@ export default {
     langZh: '中文',
     langEn: 'English',
     other: 'Other Settings',
-    otherHint: 'Other settings will be added in future versions.'
+    otherHint: 'Other settings will be added in future versions.',
+    backup: 'Backup & Restore',
+    backupDesc: 'Export full database backup or restore from backup file. Import will overwrite existing data, please export first.',
+    exportBackup: 'Export Backup',
+    importBackup: 'Import Backup',
+    exportSuccess: 'Backup exported successfully',
+    importSuccess: 'Data imported, please refresh page',
+    importFailed: 'Import failed',
+    importInvalidFormat: 'Please select a JSON backup file',
+    importConfirmTitle: 'Confirm Import',
+    importConfirmDesc: 'Import will overwrite all existing data, continue?'
   },
   timeFilter: {
     weekly: 'Weekly',

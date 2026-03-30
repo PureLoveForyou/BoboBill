@@ -120,7 +120,17 @@ export default {
     langZh: '中文',
     langEn: 'English',
     other: '其他设置',
-    otherHint: '其他设置功能将在后续版本中添加。'
+    otherHint: '其他设置功能将在后续版本中添加。',
+    backup: '数据备份与恢复',
+    backupDesc: '导出完整数据库备份，或从备份文件恢复数据。导入将覆盖现有数据，建议先导出备份。',
+    exportBackup: '导出备份',
+    importBackup: '导入备份',
+    exportSuccess: '备份导出成功',
+    importSuccess: '数据导入成功，请刷新页面',
+    importFailed: '导入失败',
+    importInvalidFormat: '请选择 JSON 格式的备份文件',
+    importConfirmTitle: '确认导入',
+    importConfirmDesc: '导入将覆盖现有所有数据，确定继续吗？'
   },
   timeFilter: {
     weekly: '周报',
