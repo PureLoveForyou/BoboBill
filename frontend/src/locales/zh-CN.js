@@ -35,6 +35,7 @@ export default {
     allCategories: '全部分类',
     allPlatforms: '全部平台',
     pleaseSelect: '请选择',
+    clear: '清除',
     currency: '¥'
   },
   bill: {

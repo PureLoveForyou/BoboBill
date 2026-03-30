@@ -35,6 +35,7 @@ export default {
     allCategories: 'All Categories',
     allPlatforms: 'All Platforms',
     pleaseSelect: 'Please Select',
+    clear: 'Clear',
     currency: '¥'
   },
   bill: {

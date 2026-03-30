@@ -58,6 +58,8 @@ const getFetchParams = () => ({
   search: searchQuery.value || undefined,
   category: selectedCategory.value !== 'all' ? selectedCategory.value : undefined,
   platform: selectedPlatform.value !== 'all' ? selectedPlatform.value : undefined,
+  start_date: startDate.value || undefined,
+  end_date: endDate.value || undefined,
 })
 
 const doFetch = () => {
@@ -70,7 +72,14 @@ const doExport = () => {
     search: searchQuery.value || undefined,
     category: selectedCategory.value !== 'all' ? selectedCategory.value : undefined,
     platform: selectedPlatform.value !== 'all' ? selectedPlatform.value : undefined,
+    start_date: startDate.value || undefined,
+    end_date: endDate.value || undefined,
   })
+}
+
+const clearDateFilter = () => {
+  startDate.value = ''
+  endDate.value = ''
 }
 
 const doLoadMore = async () => {
@@ -81,6 +90,8 @@ const doLoadMore = async () => {
     search: searchQuery.value || undefined,
     category: selectedCategory.value !== 'all' ? selectedCategory.value : undefined,
     platform: selectedPlatform.value !== 'all' ? selectedPlatform.value : undefined,
+    start_date: startDate.value || undefined,
+    end_date: endDate.value || undefined,
   })
   isLoadingMore.value = false
 }
@@ -91,7 +102,7 @@ watch(searchQuery, () => {
   debounceTimer = setTimeout(doFetch, 300)
 })
 
-watch([selectedCategory, selectedPlatform], doFetch)
+watch([selectedCategory, selectedPlatform, startDate, endDate], doFetch)
 
 onMounted(doFetch)
 </script>
@@ -270,6 +281,30 @@ onMounted(doFetch)
                   :options="platformOptions"
                 />
               </div>
+            </div>
+
+            <div class="flex items-center gap-3 mb-6 text-sm">
+              <svg class="w-4 h-4 text-base-content/30 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <input
+                v-model="startDate"
+                type="date"
+                class="px-3 py-2 rounded-lg bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm text-base-content/70"
+              />
+              <span class="text-base-content/30">—</span>
+              <input
+                v-model="endDate"
+                type="date"
+                class="px-3 py-2 rounded-lg bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm text-base-content/70"
+              />
+              <button
+                v-if="startDate || endDate"
+                @click="clearDateFilter"
+                class="px-2 py-1 rounded-lg text-xs text-base-content/40 hover:text-base-content/60 hover:bg-base-200/60 transition-all"
+              >
+                {{ t('common.clear') }}
+              </button>
             </div>
 
             <div v-if="isLoading" class="py-16 text-center">
