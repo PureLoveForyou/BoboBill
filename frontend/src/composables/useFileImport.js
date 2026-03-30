@@ -1,7 +1,9 @@
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { API_BASE } from '../config'
 
 export function useFileImport({ showToast, onImportSuccess }) {
+  const { t } = useI18n()
   const showImportModal = ref(false)
   const importType = ref(null)
   const isDragging = ref(false)
@@ -55,7 +57,7 @@ export function useFileImport({ showToast, onImportSuccess }) {
         }
       }
     } catch (error) {
-      console.error('检测平台失败:', error)
+      console.error('detect platform failed:', error)
     }
   }
 
@@ -88,15 +90,15 @@ export function useFileImport({ showToast, onImportSuccess }) {
       } else {
         uploadResult.value = {
           type: 'error',
-          message: result.detail || '导入失败，请检查文件格式'
+          message: result.detail || t('import.importFailed')
         }
       }
     } catch (error) {
       uploadResult.value = {
         type: 'error',
-        message: '网络错误，请确保后端服务已启动'
+        message: t('import.networkError')
       }
-      console.error('上传失败:', error)
+      console.error('upload failed:', error)
     } finally {
       isUploading.value = false
     }

@@ -1,10 +1,13 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { CATEGORIES, PLATFORM_INFO } from '../constants/bill'
+
+const { t } = useI18n()
 
 defineProps({
   visible: Boolean,
   bill: { type: Object, required: true },
-  title: { type: String, default: '记账' },
+  title: { type: String, default: '' },
   isSaving: { type: Boolean, default: false }
 })
 
@@ -34,18 +37,18 @@ const platformInfo = PLATFORM_INFO
               class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
               :class="bill.type === 'expense' ? 'bg-base-100 text-error shadow-sm' : 'text-base-content/60'"
               @click="bill.type = 'expense'"
-            >支出</button>
+            >{{ t('common.expense') }}</button>
             <button
               class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
               :class="bill.type === 'income' ? 'bg-base-100 text-success shadow-sm' : 'text-base-content/60'"
               @click="bill.type = 'income'"
-            >收入</button>
+            >{{ t('common.income') }}</button>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-base-content/60 mb-2">金额</label>
+            <label class="block text-sm font-medium text-base-content/60 mb-2">{{ t('bill.amount') }}</label>
             <div class="relative">
-              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/40">¥</span>
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-base-content/40">{{ t('common.currency') }}</span>
               <input
                 v-model="bill.amount"
                 type="number"
@@ -57,18 +60,18 @@ const platformInfo = PLATFORM_INFO
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-base-content/60 mb-2">名称</label>
+            <label class="block text-sm font-medium text-base-content/60 mb-2">{{ t('bill.name') }}</label>
             <input
               v-model="bill.name"
               type="text"
-              placeholder="例如：午餐、地铁、工资"
+              :placeholder="t('bill.namePlaceholder')"
               class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-base-content/60 mb-2">日期</label>
+              <label class="block text-sm font-medium text-base-content/60 mb-2">{{ t('bill.date') }}</label>
               <input
                 v-model="bill.date"
                 type="date"
@@ -76,18 +79,18 @@ const platformInfo = PLATFORM_INFO
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-base-content/60 mb-2">分类</label>
+              <label class="block text-sm font-medium text-base-content/60 mb-2">{{ t('bill.category') }}</label>
               <select
                 v-model="bill.category"
                 class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer appearance-none"
               >
-                <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+                <option v-for="cat in categories" :key="cat" :value="cat">{{ t('categories.' + cat) }}</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-base-content/60 mb-2">平台</label>
+            <label class="block text-sm font-medium text-base-content/60 mb-2">{{ t('bill.platform') }}</label>
             <div class="grid grid-cols-3 gap-2">
               <button
                 v-for="(info, key) in platformInfo"
@@ -97,16 +100,16 @@ const platformInfo = PLATFORM_INFO
                 :class="bill.platform === key
                   ? 'bg-gradient-to-br ' + info.color + ' text-white'
                   : 'bg-base-200/50 text-base-content/60 hover:bg-base-200'"
-              >{{ info.name }}</button>
+              >{{ t('platforms.' + key) }}</button>
             </div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-base-content/60 mb-2">备注（可选）</label>
+            <label class="block text-sm font-medium text-base-content/60 mb-2">{{ t('bill.noteOptional') }}</label>
             <input
               v-model="bill.note"
               type="text"
-              placeholder="添加备注..."
+              :placeholder="t('bill.notePlaceholder')"
               class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
@@ -116,7 +119,7 @@ const platformInfo = PLATFORM_INFO
           <button
             @click="$emit('close')"
             class="flex-1 py-3 rounded-xl bg-base-200 text-base-content font-semibold text-sm hover:bg-base-300 transition-colors"
-          >取消</button>
+          >{{ t('common.cancel') }}</button>
           <button
             @click="$emit('save')"
             :disabled="!bill.name || !bill.amount || !bill.date || isSaving"
@@ -127,9 +130,9 @@ const platformInfo = PLATFORM_INFO
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              保存中...
+              {{ t('common.saving') }}
             </span>
-            <span v-else>保存</span>
+            <span v-else>{{ t('common.save') }}</span>
           </button>
         </div>
       </div>

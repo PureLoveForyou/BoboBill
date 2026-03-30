@@ -1,4 +1,5 @@
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { CHART_COLORS } from '../constants/bill'
 
 export function useChartConfig({
@@ -7,10 +8,13 @@ export function useChartConfig({
   pieSelectedCategory, expenseLabels, incomeLabels, totalExpense, totalIncome,
   comparisonCategories
 }) {
+  const { t } = useI18n()
   const getTextColor = () => currentTheme.value === 'dark' ? '#ffffff' : '#1f2937'
+  const currency = () => t('common.currency')
 
   const trendOptions = computed(() => {
     const textColor = getTextColor()
+    const c = currency()
     return {
       chart: { type: 'area', fontFamily: 'inherit', toolbar: { show: false }, animations: { enabled: true } },
       colors: CHART_COLORS.income,
@@ -22,20 +26,21 @@ export function useChartConfig({
         labels: { style: { colors: Array(50).fill(textColor) }, rotate: 0, hideOverlappingLabels: true, trim: false, formatter: (value) => value || '' }
       },
       yaxis: {
-        labels: { style: { colors: Array(50).fill(textColor) }, formatter: (value) => '¥' + (value / 1000) + 'k' }
+        labels: { style: { colors: Array(50).fill(textColor) }, formatter: (value) => c + (value / 1000) + 'k' }
       },
       grid: { borderColor: currentTheme.value === 'dark' ? '#374151' : '#e5e7eb', padding: { top: 0 } },
       legend: { labels: { colors: textColor }, position: 'top', horizontalAlign: 'right', offsetY: -5, itemMargin: { horizontal: 15 } },
       tooltip: {
         theme: 'dark',
         x: { formatter: (value, { dataPointIndex }) => trendCategories.value[dataPointIndex] || value },
-        y: { formatter: (value) => '¥' + value.toLocaleString() }
+        y: { formatter: (value) => c + value.toLocaleString() }
       }
     }
   })
 
   const categoryOptionsChart = computed(() => {
     const textColor = getTextColor()
+    const c = currency()
     return {
       chart: {
         type: 'donut',
@@ -63,9 +68,9 @@ export function useChartConfig({
               value: { show: true, color: textColor },
               total: {
                 show: true,
-                label: categoryType.value === 'expense' ? '总支出' : '总收入',
+                label: categoryType.value === 'expense' ? t('dashboard.totalExpense') : t('dashboard.totalIncome'),
                 color: textColor,
-                formatter: () => '¥' + (categoryType.value === 'expense' ? totalExpense.value : totalIncome.value).toLocaleString()
+                formatter: () => c + (categoryType.value === 'expense' ? totalExpense.value : totalIncome.value).toLocaleString()
               }
             }
           }
@@ -78,7 +83,7 @@ export function useChartConfig({
         y: {
           formatter: (value) => {
             const actualTotal = categoryType.value === 'expense' ? totalExpense.value : totalIncome.value
-            return `${value}% (¥${Math.round(actualTotal * value / 100).toLocaleString()})`
+            return `${value}% (${c}${Math.round(actualTotal * value / 100).toLocaleString()})`
           }
         }
       }
@@ -87,6 +92,7 @@ export function useChartConfig({
 
   const comparisonOptions = computed(() => {
     const textColor = getTextColor()
+    const c = currency()
     return {
       chart: { type: 'bar', fontFamily: 'inherit', toolbar: { show: false }, animations: { enabled: true } },
       colors: CHART_COLORS.income,
@@ -97,11 +103,11 @@ export function useChartConfig({
         labels: { style: { colors: Array(50).fill(textColor) } }
       },
       yaxis: {
-        labels: { style: { colors: Array(50).fill(textColor) }, formatter: (value) => '¥' + (value / 1000) + 'k' }
+        labels: { style: { colors: Array(50).fill(textColor) }, formatter: (value) => c + (value / 1000) + 'k' }
       },
       grid: { borderColor: currentTheme.value === 'dark' ? '#374151' : '#e5e7eb' },
       legend: { labels: { colors: textColor }, position: 'top', horizontalAlign: 'right', offsetY: -5, itemMargin: { horizontal: 15 } },
-      tooltip: { theme: 'dark', y: { formatter: (value) => '¥' + value.toLocaleString() } }
+      tooltip: { theme: 'dark', y: { formatter: (value) => c + value.toLocaleString() } }
     }
   })
 

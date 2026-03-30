@@ -1,10 +1,22 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { getCurrentTheme, toggleDarkLight } from '../utils/theme.js'
 
+const { t, locale } = useI18n()
 const currentTheme = ref('light')
 
-// 初始化
+const localeOptions = computed(() => [
+  { value: 'zh-CN', label: t('settings.langZh') },
+  { value: 'en', label: t('settings.langEn') }
+])
+
+const switchLocale = (lang) => {
+  locale.value = lang
+  localStorage.setItem('locale', lang)
+}
+
+// Theme
 const onThemeChange = (event) => {
   currentTheme.value = event.detail.theme
 }
@@ -18,7 +30,6 @@ onUnmounted(() => {
   window.removeEventListener('themechange', onThemeChange)
 })
 
-// 切换深色/浅色
 const toggleTheme = () => {
   currentTheme.value = toggleDarkLight()
 }
@@ -26,38 +37,64 @@ const toggleTheme = () => {
 
 <template>
   <div class="p-4">
-    <h1 class="text-2xl font-bold mb-4">设置</h1>
+    <h1 class="text-2xl font-bold mb-4">{{ t('settings.title') }}</h1>
     
-    <!-- 主题设置 -->
+    <!-- Language -->
     <div class="card bg-base-100 shadow-lg mb-6">
       <div class="card-body">
-        <h2 class="card-title text-xl mb-4">主题设置</h2>
+        <h2 class="card-title text-xl mb-4">{{ t('settings.language') }}</h2>
         
-        <div class="space-y-4">
-          <div class="flex items-center justify-between p-4 bg-base-200 rounded-lg">
-            <div>
-              <h3 class="font-semibold">深色/浅色模式</h3>
-              <p class="text-sm opacity-70">当前: {{ currentTheme === 'dark' ? '深色模式' : '浅色模式' }}</p>
-            </div>
-            <button @click="toggleTheme" class="btn btn-primary">
-              <span v-if="currentTheme === 'dark'">🌙 切换到浅色</span>
-              <span v-else>☀️ 切换到深色</span>
-            </button>
+        <div class="flex items-center justify-between p-4 bg-base-200 rounded-lg">
+          <div>
+            <h3 class="font-semibold">{{ t('settings.languageDesc') }}</h3>
           </div>
-          
-          <div class="text-sm opacity-70">
-            <p>💡 点击按钮切换深色/浅色模式</p>
-            <p>🌓 系统会自动跟随您的操作系统主题偏好</p>
+          <div class="flex gap-2">
+            <button
+              v-for="opt in localeOptions"
+              :key="opt.value"
+              @click="switchLocale(opt.value)"
+              class="px-4 py-2 rounded-xl text-sm font-medium transition-all"
+              :class="locale === opt.value
+                ? 'bg-primary text-white shadow-lg shadow-primary/25'
+                : 'bg-base-300 text-base-content/70 hover:bg-base-300/80'"
+            >
+              {{ opt.label }}
+            </button>
           </div>
         </div>
       </div>
     </div>
     
-    <!-- 其他设置 -->
+    <!-- Theme -->
+    <div class="card bg-base-100 shadow-lg mb-6">
+      <div class="card-body">
+        <h2 class="card-title text-xl mb-4">{{ t('settings.theme') }}</h2>
+        
+        <div class="space-y-4">
+          <div class="flex items-center justify-between p-4 bg-base-200 rounded-lg">
+            <div>
+              <h3 class="font-semibold">{{ t('theme.darkLight') }}</h3>
+              <p class="text-sm opacity-70">{{ t('theme.current') }}: {{ currentTheme === 'dark' ? t('theme.darkMode') : t('theme.lightMode') }}</p>
+            </div>
+            <button @click="toggleTheme" class="btn btn-primary">
+              <span v-if="currentTheme === 'dark'">{{ t('theme.switchToLightBtn') }}</span>
+              <span v-else>{{ t('theme.switchToDarkBtn') }}</span>
+            </button>
+          </div>
+          
+          <div class="text-sm opacity-70">
+            <p>{{ t('theme.hint1') }}</p>
+            <p>{{ t('theme.hint2') }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Other -->
     <div class="card bg-base-100 shadow-lg">
       <div class="card-body">
-        <h2 class="card-title text-xl mb-4">其他设置</h2>
-        <p>其他设置功能将在后续版本中添加。</p>
+        <h2 class="card-title text-xl mb-4">{{ t('settings.other') }}</h2>
+        <p>{{ t('settings.otherHint') }}</p>
       </div>
     </div>
   </div>

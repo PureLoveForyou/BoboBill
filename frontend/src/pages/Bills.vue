@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { getCurrentTheme } from '../utils/theme'
 import PlatformIcon from '../components/PlatformIcon.vue'
 import AppleSelect from '../components/AppleSelect.vue'
@@ -12,6 +13,7 @@ import BillItem from '../components/BillItem.vue'
 import BillFormModal from '../components/BillFormModal.vue'
 import DeleteConfirmModal from '../components/DeleteConfirmModal.vue'
 
+const { t } = useI18n()
 const { toast, showToast } = useToast()
 
 const currentTheme = ref(getCurrentTheme())
@@ -88,8 +90,8 @@ onMounted(doFetch)
   <div class="p-6 lg:p-8 max-w-[1400px] mx-auto">
     <div class="mb-10 flex items-center justify-between">
       <div>
-        <h1 class="text-3xl font-bold tracking-tight">账单</h1>
-        <p class="text-sm text-base-content/50 mt-2 font-medium">导入和管理您的账单数据</p>
+        <h1 class="text-3xl font-bold tracking-tight">{{ t('bills.title') }}</h1>
+        <p class="text-sm text-base-content/50 mt-2 font-medium">{{ t('bills.subtitle') }}</p>
       </div>
       <button
         @click="openAddModal"
@@ -98,7 +100,7 @@ onMounted(doFetch)
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
         </svg>
-        手动记账
+        {{ t('bill.addTitle') }}
       </button>
     </div>
 
@@ -139,16 +141,16 @@ onMounted(doFetch)
                   </svg>
                 </div>
                 <div>
-                  <h2 class="text-lg font-semibold tracking-tight">导入账单</h2>
-                  <p class="text-xs text-base-content/50">支持微信、支付宝账单文件</p>
+                  <h2 class="text-lg font-semibold tracking-tight">{{ t('import.title') }}</h2>
+                  <p class="text-xs text-base-content/50">{{ t('import.platformSupport') }}</p>
                 </div>
               </div>
 
               <div class="mb-6">
                 <div class="flex items-center justify-between mb-3">
-                  <span class="text-sm font-medium text-base-content/60">选择平台</span>
+                  <span class="text-sm font-medium text-base-content/60">{{ t('import.selectPlatform') }}</span>
                   <span v-if="uploadedFile && importType" class="text-xs text-success font-medium">
-                    ✓ 已自动识别
+                    {{ t('import.autoDetected') }}
                   </span>
                 </div>
                 <div class="grid grid-cols-3 gap-3">
@@ -163,7 +165,7 @@ onMounted(doFetch)
                   >
                     <PlatformIcon :platform="key" size="md" />
                     <div class="text-xs font-medium mt-1" :class="importType === key ? 'text-white' : 'text-base-content/70'">
-                      {{ info.name }}
+                      {{ t('platforms.' + key) }}
                     </div>
                   </button>
                 </div>
@@ -191,12 +193,12 @@ onMounted(doFetch)
                     </svg>
                   </div>
                   <p v-if="!uploadedFile" class="text-sm text-base-content/50 font-medium">
-                    拖拽文件到此处，或<span class="text-primary">点击上传</span>
+                    {{ t('import.dragHint') }}
                   </p>
                   <p v-else class="text-sm text-primary font-medium">
                     {{ uploadedFile.name }}
                   </p>
-                  <p class="text-xs text-base-content/30 mt-2">支持 CSV、Excel 格式</p>
+                  <p class="text-xs text-base-content/30 mt-2">{{ t('import.supportedFormat') }}</p>
                 </div>
               </div>
 
@@ -213,9 +215,9 @@ onMounted(doFetch)
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  正在导入...
+                  {{ t('import.importing') }}
                 </span>
-                <span v-else>开始导入</span>
+                <span v-else>{{ t('import.startImport') }}</span>
               </button>
             </div>
           </div>
@@ -233,7 +235,7 @@ onMounted(doFetch)
                 <input
                   v-model="searchQuery"
                   type="text"
-                  placeholder="搜索账单..."
+                  :placeholder="t('bill.searchPlaceholder')"
                   class="w-full pl-11 pr-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm placeholder:text-base-content/30 transition-all"
                 />
               </div>
@@ -241,12 +243,10 @@ onMounted(doFetch)
                 <AppleSelect
                   v-model="selectedCategory"
                   :options="categoryOptions"
-                  placeholder="全部分类"
                 />
                 <AppleSelect
                   v-model="selectedPlatform"
                   :options="platformOptions"
-                  placeholder="全部平台"
                 />
               </div>
             </div>
@@ -256,7 +256,7 @@ onMounted(doFetch)
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <p class="text-sm text-base-content/40 mt-4">加载中...</p>
+              <p class="text-sm text-base-content/40 mt-4">{{ t('common.loading') }}</p>
             </div>
 
             <div v-else-if="bills.length > 0" class="space-y-2">
@@ -275,13 +275,13 @@ onMounted(doFetch)
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <p class="text-sm text-base-content/40">暂无账单数据</p>
-              <p class="text-xs text-base-content/30 mt-1">导入账单文件或手动添加记录</p>
+              <p class="text-sm text-base-content/40">{{ t('bill.noBills') }}</p>
+              <p class="text-xs text-base-content/30 mt-1">{{ t('bill.noBillsHint') }}</p>
             </div>
 
             <div v-if="!isLoading && bills.length > 0" class="mt-6 pt-4 border-t border-base-200/50">
               <div class="flex items-center justify-between text-sm">
-                <span class="text-base-content/40">已加载 {{ bills.length }} / {{ total }} 条</span>
+                <span class="text-base-content/40">{{ t('bill.loadedOf', { loaded: bills.length, total }) }}</span>
                 <button
                   v-if="hasMore"
                   @click="doLoadMore"
@@ -292,9 +292,9 @@ onMounted(doFetch)
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  {{ isLoadingMore ? '加载中...' : '加载更多' }}
+                  {{ isLoadingMore ? t('common.loading') : t('bill.loadMore') }}
                 </button>
-                <span v-else class="text-base-content/30">已全部加载</span>
+                <span v-else class="text-base-content/30">{{ t('bill.allLoaded') }}</span>
               </div>
             </div>
           </div>
@@ -302,17 +302,17 @@ onMounted(doFetch)
       </div>
     </div>
 
-    <BillFormModal :visible="showAddModal" :bill="newBill" title="手动记账" :is-saving="isSaving" @close="closeAddModal" @save="saveBill" />
+    <BillFormModal :visible="showAddModal" :bill="newBill" :title="t('bill.addTitle')" :is-saving="isSaving" @close="closeAddModal" @save="saveBill" />
 
-    <BillFormModal :visible="showEditModal" :bill="editingBill" title="编辑账单" :is-saving="isSaving" @close="closeEditModal" @save="updateBill" />
+    <BillFormModal :visible="showEditModal" :bill="editingBill" :title="t('bill.editTitle')" :is-saving="isSaving" @close="closeEditModal" @save="updateBill" />
 
     <DeleteConfirmModal :visible="showDeleteModal" :bill="deletingBill" @close="closeDeleteModal" @confirm="confirmDelete" />
   </div>
 
-  <!-- Toast 通知 -->
+  <!-- Toast -->
   <div v-if="toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl shadow-lg text-white text-sm font-medium animate-bounce"
-    :class="toast.includes('成功') ? 'bg-success' : 'bg-error'">
-    {{ toast }}
+    :class="toast.type === 'success' ? 'bg-success' : 'bg-error'">
+    {{ toast.message }}
   </div>
 </template>
 

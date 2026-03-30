@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import dayjs from 'dayjs'
 import weekOfYear from 'dayjs/plugin/weekOfYear'
 import isBetween from 'dayjs/plugin/isBetween'
@@ -9,8 +10,10 @@ import '@vuepic/vue-datepicker/dist/main.css'
 dayjs.extend(weekOfYear)
 dayjs.extend(isBetween)
 
-const reportTypes = ['周报', '月报', '季报', '年报', '自定义']
-const selectedReportType = ref('月报')
+const { t } = useI18n()
+
+const reportTypeKeys = ['weekly', 'monthly', 'quarterly', 'yearly', 'custom']
+const selectedReportType = ref('monthly')
 
 const currentYear = ref(dayjs().year())
 const currentWeek = ref(dayjs().week())
@@ -24,50 +27,50 @@ const selectedQuarter = ref(currentQuarter.value)
 const customDateRange = ref([dayjs().subtract(30, 'day').toDate(), dayjs().toDate()])
 const showCustomPicker = ref(false)
 
-const years = Array.from({ length: 5 }, (_, i) => ({ value: dayjs().year() - i, label: `${dayjs().year() - i}年` }))
+const years = Array.from({ length: 5 }, (_, i) => ({ value: dayjs().year() - i, label: t('timeFilter.yearOnly', { year: dayjs().year() - i }) }))
 const weeks = Array.from({ length: 53 }, (_, i) => ({ value: i + 1, label: `${i + 1}` }))
-const months = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: `${i + 1}月` }))
+const months = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: t('timeFilter.monthOnly', { month: i + 1 }) }))
 const quarters = [1, 2, 3, 4].map(q => ({ value: q, label: `Q${q}` }))
 
 const timeRange = computed(() => {
   switch (selectedReportType.value) {
-    case '周报': {
+    case 'weekly': {
       const weekStart = dayjs().year(selectedYear.value).week(selectedWeek.value).startOf('week').add(1, 'day')
       const weekEnd = weekStart.endOf('week').add(1, 'day')
       return {
         start: weekStart.format('YYYY-MM-DD'),
         end: weekEnd.format('YYYY-MM-DD'),
-        label: `${selectedYear.value}年 第${selectedWeek.value}周`
+        label: t('timeFilter.weekYear', { year: selectedYear.value, week: selectedWeek.value })
       }
     }
-    case '月报': {
+    case 'monthly': {
       const monthStart = dayjs().year(selectedYear.value).month(selectedMonth.value - 1).startOf('month')
       const monthEnd = monthStart.endOf('month')
       return {
         start: monthStart.format('YYYY-MM-DD'),
         end: monthEnd.format('YYYY-MM-DD'),
-        label: `${selectedYear.value}年${selectedMonth.value}月`
+        label: t('timeFilter.monthYear', { year: selectedYear.value, month: selectedMonth.value })
       }
     }
-    case '季报': {
+    case 'quarterly': {
       const quarterStart = dayjs().year(selectedYear.value).month((selectedQuarter.value - 1) * 3).startOf('month')
       const quarterEnd = quarterStart.add(2, 'month').endOf('month')
       return {
         start: quarterStart.format('YYYY-MM-DD'),
         end: quarterEnd.format('YYYY-MM-DD'),
-        label: `${selectedYear.value}年Q${selectedQuarter.value}`
+        label: `${selectedYear.value}Q${selectedQuarter.value}`
       }
     }
-    case '年报': {
+    case 'yearly': {
       const yearStart = dayjs().year(selectedYear.value).startOf('year')
       const yearEnd = yearStart.endOf('year')
       return {
         start: yearStart.format('YYYY-MM-DD'),
         end: yearEnd.format('YYYY-MM-DD'),
-        label: `${selectedYear.value}年`
+        label: t('timeFilter.yearOnly', { year: selectedYear.value })
       }
     }
-    case '自定义': {
+    case 'custom': {
       if (!customDateRange.value || customDateRange.value.length !== 2) {
         return { start: '', end: '', label: '' }
       }
@@ -90,34 +93,34 @@ const comparisonRanges = computed(() => {
   const days = dayjs(end).diff(dayjs(start), 'day') + 1
 
   switch (selectedReportType.value) {
-    case '周报':
+    case 'weekly':
       for (let i = 5; i >= 0; i--) {
         const week = selectedWeek.value - i
         const weekStart = dayjs().year(selectedYear.value).week(week).startOf('week').add(1, 'day')
         const weekEnd = weekStart.endOf('week').add(1, 'day')
         ranges.push({
-          label: `第${week}周`,
+          label: t('timeFilter.weekPrefix', { week }),
           start: weekStart.format('YYYY-MM-DD'),
           end: weekEnd.format('YYYY-MM-DD'),
           isSelected: i === 0
         })
       }
       break
-    case '月报':
+    case 'monthly':
       for (let i = 5; i >= 0; i--) {
         const month = selectedMonth.value - i
         if (month < 1) continue
         const monthStart = dayjs().year(selectedYear.value).month(month - 1).startOf('month')
         const monthEnd = monthStart.endOf('month')
         ranges.push({
-          label: `${month}月`,
+          label: t('timeFilter.monthOnly', { month }),
           start: monthStart.format('YYYY-MM-DD'),
           end: monthEnd.format('YYYY-MM-DD'),
           isSelected: i === 0
         })
       }
       break
-    case '季报':
+    case 'quarterly':
       for (let i = 5; i >= 0; i--) {
         const quarter = selectedQuarter.value - i
         if (quarter < 1) continue
@@ -131,20 +134,20 @@ const comparisonRanges = computed(() => {
         })
       }
       break
-    case '年报':
+    case 'yearly':
       for (let i = 5; i >= 0; i--) {
         const year = selectedYear.value - i
         const yearStart = dayjs().year(year).startOf('year')
         const yearEnd = yearStart.endOf('year')
         ranges.push({
-          label: `${year}年`,
+          label: t('timeFilter.yearOnly', { year }),
           start: yearStart.format('YYYY-MM-DD'),
           end: yearEnd.format('YYYY-MM-DD'),
           isSelected: i === 0
         })
       }
       break
-    case '自定义':
+    case 'custom':
       const chunkDays = Math.ceil(days / 6)
       const chunkStart = dayjs(start)
       for (let i = 0; i < 6; i++) {
@@ -152,7 +155,7 @@ const comparisonRanges = computed(() => {
         const rangeEnd = rangeStart.add(chunkDays - 1, 'day')
         if (rangeStart.isAfter(end)) break
         ranges.push({
-          label: `区间${i + 1}`,
+          label: t('timeFilter.range', { n: i + 1 }),
           start: rangeStart.format('YYYY-MM-DD'),
           end: rangeEnd.isAfter(end) ? end : rangeEnd.format('YYYY-MM-DD'),
           isSelected: i === 0
@@ -166,7 +169,7 @@ const comparisonRanges = computed(() => {
 
 const switchReportType = (type) => {
   selectedReportType.value = type
-  if (type === '自定义') {
+  if (type === 'custom') {
     showCustomPicker.value = true
   } else {
     showCustomPicker.value = false
@@ -198,21 +201,21 @@ watch([selectedReportType, selectedYear, selectedMonth, selectedWeek, selectedQu
   <div class="flex items-center gap-3 flex-wrap">
     <div class="flex gap-1.5 p-1.5 bg-base-200/50 rounded-2xl">
       <button
-        v-for="type in reportTypes"
-        :key="type"
+        v-for="typeKey in reportTypeKeys"
+        :key="typeKey"
         class="px-4 py-2 rounded-xl text-sm font-semibold transition-all"
-        :class="selectedReportType === type 
+        :class="selectedReportType === typeKey 
           ? 'bg-base-100 text-base-content shadow-sm' 
           : 'text-base-content/50 hover:text-base-content'"
-        @click="switchReportType(type)"
+        @click="switchReportType(typeKey)"
       >
-        {{ type }}
+        {{ t('timeFilter.' + typeKey) }}
       </button>
     </div>
 
     <template v-if="!showCustomPicker">
       <select
-        v-if="selectedReportType === '周报' || selectedReportType === '月报' || selectedReportType === '季报' || selectedReportType === '年报'"
+        v-if="selectedReportType === 'weekly' || selectedReportType === 'monthly' || selectedReportType === 'quarterly' || selectedReportType === 'yearly'"
         v-model="selectedYear"
         class="select select-bordered rounded-xl bg-base-100 text-sm font-medium w-28"
       >
@@ -220,15 +223,15 @@ watch([selectedReportType, selectedYear, selectedMonth, selectedWeek, selectedQu
       </select>
 
       <select
-        v-if="selectedReportType === '周报'"
+        v-if="selectedReportType === 'weekly'"
         v-model="selectedWeek"
         class="select select-bordered rounded-xl bg-base-100 text-sm font-medium w-24"
       >
-        <option v-for="w in weeks" :key="w.value" :value="w.value">第{{ w.label }}周</option>
+        <option v-for="w in weeks" :key="w.value" :value="w.value">{{ t('timeFilter.weekPrefix', { week: w.label }) }}</option>
       </select>
 
       <select
-        v-if="selectedReportType === '月报'"
+        v-if="selectedReportType === 'monthly'"
         v-model="selectedMonth"
         class="select select-bordered rounded-xl bg-base-100 text-sm font-medium w-24"
       >
@@ -236,7 +239,7 @@ watch([selectedReportType, selectedYear, selectedMonth, selectedWeek, selectedQu
       </select>
 
       <select
-        v-if="selectedReportType === '季报'"
+        v-if="selectedReportType === 'quarterly'"
         v-model="selectedQuarter"
         class="select select-bordered rounded-xl bg-base-100 text-sm font-medium w-24"
       >
@@ -258,12 +261,12 @@ watch([selectedReportType, selectedYear, selectedMonth, selectedWeek, selectedQu
         :enable-time-picker="false"
         :format="'MM/dd'"
         :preview-format="'MM/dd'"
-        placeholder="选择日期"
+        :placeholder="t('timeFilter.selectDate')"
         class="compact-datepicker"
         :clearable="false"
         style="width: 180px;"
       />
-      <button @click="confirmCustomRange" class="btn btn-primary rounded-xl px-5 text-sm font-semibold">确认</button>
+      <button @click="confirmCustomRange" class="btn btn-primary rounded-xl px-5 text-sm font-semibold">{{ t('timeFilter.confirm') }}</button>
     </template>
   </div>
 </template>

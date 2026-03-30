@@ -1,5 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   modelValue: {
@@ -12,7 +15,7 @@ const props = defineProps({
   },
   placeholder: {
     type: String,
-    default: '请选择'
+    default: ''
   }
 })
 
@@ -31,7 +34,7 @@ const selectedOption = computed(() => {
 })
 
 const displayLabel = computed(() => {
-  if (!selectedOption.value) return props.placeholder
+  if (!selectedOption.value) return props.placeholder || t('common.pleaseSelect')
   if (typeof selectedOption.value === 'string') {
     return selectedOption.value
   }

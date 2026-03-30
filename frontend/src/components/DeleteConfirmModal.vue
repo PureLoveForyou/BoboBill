@@ -1,5 +1,8 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { formatAmount } from '../utils/format'
+
+const { t } = useI18n()
 
 defineProps({
   visible: Boolean,
@@ -19,8 +22,8 @@ defineEmits(['close', 'confirm'])
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
         </div>
-        <h3 class="text-lg font-bold mb-2">删除账单</h3>
-        <p class="text-sm text-base-content/60 mb-1">确定要删除这条账单吗？</p>
+        <h3 class="text-lg font-bold mb-2">{{ t('bill.deleteTitle') }}</h3>
+        <p class="text-sm text-base-content/60 mb-1">{{ t('bill.deleteConfirm') }}</p>
         <p v-if="bill" class="text-sm font-medium text-base-content/80">
           {{ bill.name }} · {{ formatAmount(bill.amount) }}
         </p>
@@ -29,11 +32,11 @@ defineEmits(['close', 'confirm'])
         <button
           @click="$emit('close')"
           class="flex-1 py-4 text-sm font-semibold text-base-content/60 hover:bg-base-200/50 transition-colors"
-        >取消</button>
+        >{{ t('common.cancel') }}</button>
         <button
           @click="$emit('confirm')"
           class="flex-1 py-4 text-sm font-semibold text-error hover:bg-error/10 transition-colors border-l border-base-200"
-        >删除</button>
+        >{{ t('common.delete') }}</button>
       </div>
     </div>
   </div>

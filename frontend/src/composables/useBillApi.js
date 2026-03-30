@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { API_BASE } from '../config'
 import { DEFAULT_BILL } from '../constants/bill'
 
@@ -12,6 +13,7 @@ function buildQuery(params) {
 }
 
 export function useBillApi({ showToast, onBillsChanged }) {
+  const { t } = useI18n()
   const bills = ref([])
   const total = ref(0)
   const isLoading = ref(false)
@@ -23,7 +25,6 @@ export function useBillApi({ showToast, onBillsChanged }) {
       const response = await fetch(`${API_BASE}/bills${query}`)
       if (response.ok) {
         const data = await response.json()
-        // Support both paginated {items, total} and legacy array format
         if (Array.isArray(data)) {
           bills.value = data
           total.value = data.length
@@ -33,11 +34,11 @@ export function useBillApi({ showToast, onBillsChanged }) {
         }
         onBillsChanged?.()
       } else {
-        showToast('获取账单失败: ' + response.status)
+        showToast(t('bill.fetchFailed') + ': ' + response.status, 'error')
       }
     } catch (error) {
-      console.error('获取账单失败:', error)
-      showToast('无法连接服务器，请检查网络')
+      console.error('fetch bills failed:', error)
+      showToast(t('bill.serverUnavailable'), 'error')
     } finally {
       isLoading.value = false
     }
@@ -55,7 +56,7 @@ export function useBillApi({ showToast, onBillsChanged }) {
         total.value = Array.isArray(data) ? bills.value.length : data.total
       }
     } catch (error) {
-      console.error('加载更多失败:', error)
+      console.error('load more failed:', error)
     }
   }
 
@@ -99,14 +100,14 @@ export function useBillApi({ showToast, onBillsChanged }) {
       if (response.ok) {
         await fetchBills()
         closeAddModal()
-        showToast('保存成功')
+        showToast(t('bill.saveSuccess'), 'success')
       } else {
         const result = await response.json()
-        showToast('保存失败: ' + (result.detail || '未知错误'))
+        showToast(t('bill.saveFailed') + ': ' + (result.detail || ''), 'error')
       }
     } catch (error) {
-      console.error('保存失败:', error)
-      showToast('无法连接服务器')
+      console.error('save failed:', error)
+      showToast(t('bill.serverUnavailable'), 'error')
     } finally {
       isSaving.value = false
     }
@@ -169,14 +170,14 @@ export function useBillApi({ showToast, onBillsChanged }) {
       if (response.ok) {
         await fetchBills()
         closeEditModal()
-        showToast('更新成功')
+        showToast(t('bill.updateSuccess'), 'success')
       } else {
         const result = await response.json()
-        showToast('更新失败: ' + (result.detail || '未知错误'))
+        showToast(t('bill.updateFailed') + ': ' + (result.detail || ''), 'error')
       }
     } catch (error) {
-      console.error('更新失败:', error)
-      showToast('无法连接服务器')
+      console.error('update failed:', error)
+      showToast(t('bill.serverUnavailable'), 'error')
     } finally {
       isSaving.value = false
     }
@@ -207,14 +208,14 @@ export function useBillApi({ showToast, onBillsChanged }) {
       if (response.ok) {
         await fetchBills()
         closeDeleteModal()
-        showToast('删除成功')
+        showToast(t('bill.deleteSuccess'), 'success')
       } else {
         const result = await response.json()
-        showToast('删除失败: ' + (result.detail || '未知错误'))
+        showToast(t('bill.deleteFailed') + ': ' + (result.detail || ''), 'error')
       }
     } catch (error) {
-      console.error('删除失败:', error)
-      showToast('无法连接服务器')
+      console.error('delete failed:', error)
+      showToast(t('bill.serverUnavailable'), 'error')
     }
   }
 

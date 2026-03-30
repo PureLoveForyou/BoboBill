@@ -1,13 +1,15 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { initTheme, toggleDarkLight, getCurrentTheme } from './utils/theme.js'
 import Sidebar from './components/Sidebar.vue'
 
+const { t } = useI18n()
 const router = useRouter()
 const currentTheme = ref('light')
 
-// 初始化主题
+// Theme
 const onThemeChange = (event) => {
   currentTheme.value = event.detail.theme
 }
@@ -22,13 +24,12 @@ onUnmounted(() => {
   window.removeEventListener('themechange', onThemeChange)
 })
 
-// 切换深色/浅色模式
 const toggleTheme = () => {
   const newTheme = toggleDarkLight()
   currentTheme.value = newTheme
 }
 
-// 监听路由变化，在移动端关闭侧边栏
+// Close sidebar on route change (mobile)
 watch(() => router.currentRoute.value.path, () => {
   const drawerCheckbox = document.getElementById('sidebar-drawer')
   if (drawerCheckbox && window.innerWidth < 1024) {
@@ -42,7 +43,7 @@ watch(() => router.currentRoute.value.path, () => {
     <input id="sidebar-drawer" type="checkbox" class="drawer-toggle" />
     
     <div class="drawer-content flex flex-col">
-      <!-- 移动端固定导航栏 -->
+      <!-- Mobile nav bar -->
       <div class="sticky top-0 z-10 lg:hidden">
         <div class="flex items-center justify-between bg-base-100 shadow-sm px-4 py-3">
           <div class="flex items-center">
@@ -51,22 +52,22 @@ watch(() => router.currentRoute.value.path, () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </label>
-            <h1 class="text-xl font-bold ml-3">BoboBill</h1>
+            <h1 class="text-xl font-bold ml-3">{{ t('app.brand') }}</h1>
           </div>
-          <button @click="toggleTheme" class="btn btn-ghost p-2" :title="currentTheme === 'dark' ? '切换到浅色模式' : '切换到深色模式'">
+          <button @click="toggleTheme" class="btn btn-ghost p-2" :title="currentTheme === 'dark' ? t('theme.switchToLight') : t('theme.switchToDark')">
             <span v-if="currentTheme === 'dark'" class="text-xl">🌙</span>
             <span v-else class="text-xl">☀️</span>
           </button>
         </div>
       </div>
       
-      <!-- 页面内容 -->
+      <!-- Page content -->
       <div class="flex-1 p-4 relative z-0">
         <router-view />
       </div>
     </div>
     
-    <!-- 侧边栏组件 -->
+    <!-- Sidebar -->
     <Sidebar />
   </div>
 </template>

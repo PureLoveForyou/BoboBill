@@ -1,17 +1,20 @@
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import dayjs from 'dayjs'
 
 export function useDashboardData({ bills, selectedCategory, selectedPlatform }) {
+  const { t } = useI18n()
+
   const stats = ref([
-    { title: '期间支出', value: '¥0', desc: '暂无数据', type: 'expense', trend: 'neutral', change: 0 },
-    { title: '期间收入', value: '¥0', desc: '暂无数据', type: 'income', trend: 'neutral', change: 0 },
-    { title: '期间结余', value: '¥0', desc: '结余率 0%', type: 'balance', trend: 'neutral', change: 0 },
-    { title: '账单笔数', value: '0', desc: '暂无数据', type: 'count', trend: 'neutral', change: 0 },
+    { title: '', value: '', desc: '', type: 'expense', trend: 'neutral', change: 0 },
+    { title: '', value: '', desc: '', type: 'income', trend: 'neutral', change: 0 },
+    { title: '', value: '', desc: '', type: 'balance', trend: 'neutral', change: 0 },
+    { title: '', value: '', desc: '', type: 'count', trend: 'neutral', change: 0 },
   ])
 
   const trendSeries = ref([
-    { name: '收入', data: [] },
-    { name: '支出', data: [] }
+    { name: '', data: [] },
+    { name: '', data: [] }
   ])
   const trendCategories = ref([])
 
@@ -24,8 +27,8 @@ export function useDashboardData({ bills, selectedCategory, selectedPlatform }) 
   const totalIncome = ref(0)
 
   const comparisonSeries = ref([
-    { name: '收入', data: [] },
-    { name: '支出', data: [] }
+    { name: '', data: [] },
+    { name: '', data: [] }
   ])
   const comparisonCategories = ref([])
 
@@ -74,12 +77,13 @@ export function useDashboardData({ bills, selectedCategory, selectedPlatform }) 
 
     const expenseChange = prevExpense > 0 ? ((periodExpense - prevExpense) / prevExpense * 100).toFixed(0) : 0
     const incomeChange = prevIncome > 0 ? ((periodIncome - prevIncome) / prevIncome * 100).toFixed(0) : 0
+    const currency = t('common.currency')
 
     stats.value = [
-      { title: '期间支出', value: `¥${periodExpense.toLocaleString()}`, desc: prevExpense > 0 ? `${expenseChange >= 0 ? '+' : ''}${expenseChange}%` : '-', type: 'expense', trend: expenseChange >= 0 ? 'up' : 'down', change: expenseChange },
-      { title: '期间收入', value: `¥${periodIncome.toLocaleString()}`, desc: prevIncome > 0 ? `${incomeChange >= 0 ? '+' : ''}${incomeChange}%` : '-', type: 'income', trend: incomeChange >= 0 ? 'up' : 'down', change: incomeChange },
-      { title: '期间结余', value: `¥${periodBalance.toLocaleString()}`, desc: `结余率 ${periodIncome > 0 ? ((periodBalance / periodIncome) * 100).toFixed(0) : 0}%`, type: 'balance', trend: 'neutral', change: 0 },
-      { title: '账单笔数', value: String(billCount), desc: `${filteredBills.length}条`, type: 'count', trend: 'neutral', change: 0 },
+      { title: t('dashboard.periodExpense'), value: `${currency}${periodExpense.toLocaleString()}`, desc: prevExpense > 0 ? `${expenseChange >= 0 ? '+' : ''}${expenseChange}%` : '-', type: 'expense', trend: expenseChange >= 0 ? 'up' : 'down', change: expenseChange },
+      { title: t('dashboard.periodIncome'), value: `${currency}${periodIncome.toLocaleString()}`, desc: prevIncome > 0 ? `${incomeChange >= 0 ? '+' : ''}${incomeChange}%` : '-', type: 'income', trend: incomeChange >= 0 ? 'up' : 'down', change: incomeChange },
+      { title: t('dashboard.periodBalance'), value: `${currency}${periodBalance.toLocaleString()}`, desc: t('dashboard.balanceRate', { rate: periodIncome > 0 ? ((periodBalance / periodIncome) * 100).toFixed(0) : 0 }), type: 'balance', trend: 'neutral', change: 0 },
+      { title: t('dashboard.billCount'), value: String(billCount), desc: `${filteredBills.length}`, type: 'count', trend: 'neutral', change: 0 },
     ]
 
     generateTrendData(filteredBills, filterType, start, end)
@@ -92,25 +96,25 @@ export function useDashboardData({ bills, selectedCategory, selectedPlatform }) 
     const dailyData = {}
     trendCategories.value = []
 
-    if (filterType === '周报') {
+    if (filterType === 'weekly') {
       for (let i = 0; i < 7; i++) {
         const date = start.add(i, 'day')
         dailyData[date.format('YYYY-MM-DD')] = { income: 0, expense: 0 }
         trendCategories.value.push(date.format('ddd'))
       }
-    } else if (filterType === '月报') {
+    } else if (filterType === 'monthly') {
       for (let i = 0; i < days && i <= 31; i++) {
         const date = start.add(i, 'day')
         dailyData[date.format('YYYY-MM-DD')] = { income: 0, expense: 0 }
         const dayNum = date.date()
         trendCategories.value.push(dayNum % 3 === 1 || i === days - 1 ? String(dayNum) : '')
       }
-    } else if (filterType === '季报' || filterType === '年报') {
-      const monthCount = filterType === '季报' ? 3 : 12
+    } else if (filterType === 'quarterly' || filterType === 'yearly') {
+      const monthCount = filterType === 'quarterly' ? 3 : 12
       for (let i = 0; i < monthCount; i++) {
         const month = start.month() + i
         dailyData[`month-${month}`] = { income: 0, expense: 0 }
-        trendCategories.value.push(`${(month % 12) + 1}月`)
+        trendCategories.value.push(t('timeFilter.monthOnly', { month: (month % 12) + 1 }))
       }
     } else {
       for (let i = 0; i < days && i <= 31; i++) {
@@ -121,7 +125,7 @@ export function useDashboardData({ bills, selectedCategory, selectedPlatform }) 
     }
 
     filteredBills.forEach(bill => {
-      const key = (filterType === '季报' || filterType === '年报')
+      const key = (filterType === 'quarterly' || filterType === 'yearly')
         ? `month-${dayjs(bill.date).month()}`
         : bill.date
       if (dailyData[key]) {
@@ -136,7 +140,7 @@ export function useDashboardData({ bills, selectedCategory, selectedPlatform }) 
       incomeData.push(dailyData[key].income)
       expenseData.push(dailyData[key].expense)
     })
-    trendSeries.value = [{ name: '收入', data: incomeData }, { name: '支出', data: expenseData }]
+    trendSeries.value = [{ name: t('common.income'), data: incomeData }, { name: t('common.expense'), data: expenseData }]
   }
 
   const generateCategoryData = (filteredBills) => {
@@ -157,11 +161,11 @@ export function useDashboardData({ bills, selectedCategory, selectedPlatform }) 
     const totalExp = sortedExpense.reduce((sum, [, val]) => sum + val, 0)
     const totalInc = sortedIncome.reduce((sum, [, val]) => sum + val, 0)
 
-    expenseLabels.value = sortedExpense.map(([label]) => label)
+    expenseLabels.value = sortedExpense.map(([label]) => t('categories.' + label))
     expenseSeries.value = sortedExpense.map(([, value]) => totalExp > 0 ? Math.round((value / totalExp) * 100) : 0)
     totalExpense.value = totalExp
 
-    incomeLabels.value = sortedIncome.map(([label]) => label)
+    incomeLabels.value = sortedIncome.map(([label]) => t('categories.' + label))
     incomeSeries.value = sortedIncome.map(([, value]) => totalInc > 0 ? Math.round((value / totalInc) * 100) : 0)
     totalIncome.value = totalInc
   }
@@ -170,29 +174,29 @@ export function useDashboardData({ bills, selectedCategory, selectedPlatform }) 
     const periods = []
     const days = end.diff(start, 'day') + 1
 
-    if (filterType === '周报') {
+    if (filterType === 'weekly') {
       for (let i = 3; i >= 0; i--) {
         const periodStart = start.subtract(i * 7, 'day')
-        periods.push({ label: i === 0 ? '本周' : `前${i}周`, start: periodStart, end: periodStart.add(6, 'day') })
+        periods.push({ label: i === 0 ? t('dashboard.thisWeek') : t('dashboard.prevWeeks', { n: i }), start: periodStart, end: periodStart.add(6, 'day') })
       }
-    } else if (filterType === '月报') {
+    } else if (filterType === 'monthly') {
       const currentMonth = start.month()
       for (let i = 3; i >= 0; i--) {
         const periodStart = start.subtract(i, 'month').startOf('month')
-        periods.push({ label: `${(currentMonth - i + 12) % 12 + 1}月`, start: periodStart, end: periodStart.endOf('month') })
+        periods.push({ label: t('timeFilter.monthOnly', { month: (currentMonth - i + 12) % 12 + 1 }), start: periodStart, end: periodStart.endOf('month') })
       }
-    } else if (filterType === '季报') {
+    } else if (filterType === 'quarterly') {
       const quarterNames = ['Q1', 'Q2', 'Q3', 'Q4']
       const currentQuarter = Math.floor(start.month() / 3)
       for (let i = 3; i >= 0; i--) {
         const q = (currentQuarter - i + 4) % 4
         periods.push({ label: quarterNames[q], start: start.startOf('year').add(q * 3, 'month'), end: start.startOf('year').add((q + 1) * 3 - 1, 'month').endOf('month') })
       }
-    } else if (filterType === '年报') {
+    } else if (filterType === 'yearly') {
       const currentYear = start.year()
       for (let i = 3; i >= 0; i--) {
         const year = currentYear - i
-        periods.push({ label: `${year}年`, start: dayjs(`${year}-01-01`), end: dayjs(`${year}-12-31`) })
+        periods.push({ label: t('timeFilter.yearOnly', { year }), start: dayjs(`${year}-01-01`), end: dayjs(`${year}-12-31`) })
       }
     } else {
       if (days <= 14) {
@@ -205,13 +209,13 @@ export function useDashboardData({ bills, selectedCategory, selectedPlatform }) 
         const weekCount = Math.min(Math.ceil(days / 7), 6)
         for (let i = weekCount - 1; i >= 0; i--) {
           const periodStart = start.subtract(i * 7, 'day')
-          periods.push({ label: `第${weekCount - i}周`, start: periodStart, end: periodStart.add(6, 'day') })
+          periods.push({ label: t('dashboard.weekLabel', { n: weekCount - i }), start: periodStart, end: periodStart.add(6, 'day') })
         }
       } else {
         const monthCount = Math.min(Math.ceil(days / 30), 6)
         for (let i = monthCount - 1; i >= 0; i--) {
           const periodStart = start.subtract(i, 'month').startOf('month')
-          periods.push({ label: periodStart.format('M月'), start: periodStart, end: periodStart.endOf('month') })
+          periods.push({ label: t('timeFilter.monthOnly', { month: periodStart.month() + 1 }), start: periodStart, end: periodStart.endOf('month') })
         }
       }
     }
@@ -229,7 +233,7 @@ export function useDashboardData({ bills, selectedCategory, selectedPlatform }) 
       expenseData.push(periodBills.filter(b => b.amount < 0).reduce((sum, b) => sum + Math.abs(b.amount), 0))
     })
 
-    comparisonSeries.value = [{ name: '收入', data: incomeData }, { name: '支出', data: expenseData }]
+    comparisonSeries.value = [{ name: t('common.income'), data: incomeData }, { name: t('common.expense'), data: expenseData }]
   }
 
   const clearPieFilter = () => {

@@ -1,5 +1,5 @@
 // 账单分类
-export const CATEGORIES = ['餐饮', '交通', '购物', '工资', '投资', '娱乐', '医疗', '转账', '其他']
+export const CATEGORIES = ['餐饮', '交通', '购物', '工资', '投资', '娱乐', '医疗', '教育', '转账', '其他']
 
 // 带有"全部"选项的分类列表（用于筛选）
 export const CATEGORIES_WITH_ALL = ['all', ...CATEGORIES]
@@ -12,9 +12,9 @@ export const PLATFORMS_WITH_ALL = ['all', ...PLATFORMS]
 
 // 平台显示信息
 export const PLATFORM_INFO = {
-  wechat: { name: '微信', color: 'from-green-500 to-green-600' },
-  alipay: { name: '支付宝', color: 'from-blue-500 to-blue-600' },
-  bank: { name: '银行卡', color: 'from-yellow-500 to-yellow-600' }
+  wechat: { color: 'from-green-500 to-green-600' },
+  alipay: { color: 'from-blue-500 to-blue-600' },
+  bank: { color: 'from-yellow-500 to-yellow-600' }
 }
 
 // 新增账单默认值

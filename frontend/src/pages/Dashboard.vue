@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import VueApexCharts from 'vue3-apexcharts'
 import TimeFilter from '../components/TimeFilter.vue'
 import PlatformIcon from '../components/PlatformIcon.vue'
@@ -17,6 +18,8 @@ import BillItem from '../components/BillItem.vue'
 import StatCards from '../components/StatCards.vue'
 import BillFormModal from '../components/BillFormModal.vue'
 import DeleteConfirmModal from '../components/DeleteConfirmModal.vue'
+
+const { t } = useI18n()
 
 // --- Composables ---
 const { toast, showToast } = useToast()
@@ -45,7 +48,7 @@ const {
 } = useDashboardData({ bills, selectedCategory, selectedPlatform })
 
 // --- Local State ---
-const currentFilterType = ref('月报')
+const currentFilterType = ref('monthly')
 const currentRange = ref({ start: dayjs().startOf('month').format('YYYY-MM-DD'), end: dayjs().endOf('month').format('YYYY-MM-DD') })
 const currentTheme = ref(getCurrentTheme())
 const showBillList = ref(true)
@@ -117,7 +120,7 @@ const onTimeFilterChange = (data) => {
 
 onMounted(async () => {
   await fetchBills()
-  processBillsData('月报', currentRange.value)
+  processBillsData('monthly', currentRange.value)
 })
 </script>
 
@@ -125,7 +128,7 @@ onMounted(async () => {
   <div class="p-6 lg:p-8 max-w-[1600px] mx-auto">
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight">仪表盘</h1>
+        <h1 class="text-2xl font-bold tracking-tight">{{ t('dashboard.title') }}</h1>
       </div>
       <div class="flex gap-3">
         <button
@@ -135,7 +138,7 @@ onMounted(async () => {
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
           </svg>
-          导入
+          {{ t('dashboard.import') }}
         </button>
         <button
           @click="openAddModal"
@@ -144,7 +147,7 @@ onMounted(async () => {
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
-          记账
+          {{ t('dashboard.addBill') }}
         </button>
       </div>
     </div>
@@ -171,8 +174,8 @@ onMounted(async () => {
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       </div>
-      <h2 class="text-xl font-bold text-base-content/80 mb-2">暂无账单数据</h2>
-      <p class="text-base-content/50 mb-6">导入账单文件或手动添加记录</p>
+      <h2 class="text-xl font-bold text-base-content/80 mb-2">{{ t('bill.noBills') }}</h2>
+      <p class="text-base-content/50 mb-6">{{ t('bill.noBillsHint') }}</p>
       <button
         @click="showImportModal = true"
         class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-white font-medium text-sm shadow-lg shadow-primary/25 hover:shadow-xl transition-all"
@@ -180,7 +183,7 @@ onMounted(async () => {
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
         </svg>
-        导入账单
+        {{ t('dashboard.importBtn') }}
       </button>
     </div>
 
@@ -190,12 +193,10 @@ onMounted(async () => {
         <AppleSelect
           v-model="selectedCategory"
           :options="categoryOptions"
-          placeholder="全部分类"
         />
         <AppleSelect
           v-model="selectedPlatform"
           :options="platformOptions"
-          placeholder="全部平台"
         />
         <div v-if="pieSelectedCategory" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium">
           <span>{{ pieSelectedCategory }}</span>
@@ -211,28 +212,28 @@ onMounted(async () => {
 
       <div class="grid gap-6 lg:grid-cols-2 mb-6">
         <div class="rounded-2xl bg-gradient-to-br from-base-100 to-base-200/30 border border-base-200/50 p-5">
-          <h3 class="text-base font-bold mb-4">收支趋势</h3>
+          <h3 class="text-base font-bold mb-4">{{ t('dashboard.trendTitle') }}</h3>
           <VueApexCharts type="area" height="220" :options="trendOptions" :series="trendSeries" />
         </div>
 
         <div class="rounded-2xl bg-gradient-to-br from-base-100 to-base-200/30 border border-base-200/50 p-5">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-base font-bold">分类统计</h3>
+            <h3 class="text-base font-bold">{{ t('dashboard.categoryTitle') }}</h3>
             <div class="flex gap-1 p-0.5 bg-base-200/50 rounded-lg">
               <button
                 class="px-2 py-1 rounded-md text-xs font-medium transition-all"
                 :class="categoryType === 'expense' ? 'bg-base-100 shadow-sm' : 'text-base-content/60'"
                 @click="categoryType = 'expense'; pieSelectedCategory = null"
-              >支出</button>
+              >{{ t('common.expense') }}</button>
               <button
                 class="px-2 py-1 rounded-md text-xs font-medium transition-all"
                 :class="categoryType === 'income' ? 'bg-base-100 shadow-sm' : 'text-base-content/60'"
                 @click="categoryType = 'income'; pieSelectedCategory = null"
-              >收入</button>
+              >{{ t('common.income') }}</button>
             </div>
           </div>
           <div v-if="categorySeries.length === 0" class="py-6 text-center text-base-content/40 text-sm">
-            暂无数据
+            {{ t('common.noData') }}
           </div>
           <VueApexCharts v-else type="donut" height="220" :options="categoryOptionsChart" :series="categorySeries" />
         </div>
@@ -241,8 +242,8 @@ onMounted(async () => {
       <div class="rounded-2xl bg-gradient-to-br from-base-100 to-base-200/30 border border-base-200/50 p-5 mb-6">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-2">
-            <h3 class="text-base font-bold">账单明细</h3>
-            <span class="text-xs text-base-content/40 px-2 py-0.5 rounded-full bg-base-200/50">{{ displayBills.length }} 条</span>
+            <h3 class="text-base font-bold">{{ t('dashboard.billDetail') }}</h3>
+            <span class="text-xs text-base-content/40 px-2 py-0.5 rounded-full bg-base-200/50">{{ displayBills.length }}</span>
             <div v-if="pieSelectedCategory" class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
               {{ pieSelectedCategory }}
               <button @click="clearPieFilter" class="hover:bg-primary/20 rounded-full p-0.5 transition-colors">
@@ -256,7 +257,7 @@ onMounted(async () => {
             @click="showBillList = !showBillList"
             class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-base-200/50 hover:bg-base-200 transition-colors text-xs font-medium text-base-content/60"
           >
-            {{ showBillList ? '收起' : '展开' }}
+            {{ showBillList ? t('dashboard.collapse') : t('dashboard.expand') }}
             <svg class="w-3.5 h-3.5 transition-transform duration-300" :class="{ 'rotate-180': !showBillList }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
@@ -274,16 +275,16 @@ onMounted(async () => {
           />
           
           <div v-if="displayBills.length === 0" class="py-8 text-center text-base-content/40 text-sm">
-            暂无符合条件的账单
+            {{ t('bill.noMatchingBills') }}
           </div>
           <div v-else class="py-3 text-center text-xs text-base-content/30">
-            仅展示最近 20 条记录
+            {{ t('bill.onlyShowRecent', { n: 20 }) }}
           </div>
         </div>
       </div>
 
       <div class="rounded-2xl bg-gradient-to-br from-base-100 to-base-200/30 border border-base-200/50 p-5">
-        <h3 class="text-base font-bold mb-4">周期对比</h3>
+        <h3 class="text-base font-bold mb-4">{{ t('dashboard.periodComparison') }}</h3>
         <VueApexCharts type="bar" height="220" :options="comparisonOptions" :series="comparisonSeries" />
       </div>
     </template>
@@ -293,7 +294,7 @@ onMounted(async () => {
       <div class="relative w-full max-w-md bg-base-100 rounded-3xl shadow-2xl overflow-hidden">
         <div class="p-6">
           <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-bold">导入账单</h2>
+            <h2 class="text-xl font-bold">{{ t('import.title') }}</h2>
             <button @click="showImportModal = false" class="p-2 rounded-xl hover:bg-base-200 transition-colors">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -312,7 +313,7 @@ onMounted(async () => {
           </div>
 
           <div class="mb-5">
-            <label class="block text-sm font-medium text-base-content/60 mb-2">选择平台</label>
+            <label class="block text-sm font-medium text-base-content/60 mb-2">{{ t('import.selectPlatform') }}</label>
             <div class="grid grid-cols-3 gap-3">
               <button
                 v-for="(info, key) in platformInfo"
@@ -324,7 +325,7 @@ onMounted(async () => {
                   : 'bg-base-200/50 hover:bg-base-200'"
               >
                 <PlatformIcon :platform="key" size="md" />
-                <div class="text-xs font-medium mt-1">{{ info.name }}</div>
+                <div class="text-xs font-medium mt-1">{{ t('platforms.' + key) }}</div>
               </button>
             </div>
           </div>
@@ -346,10 +347,10 @@ onMounted(async () => {
             />
             <div class="p-6 text-center">
               <p v-if="!uploadedFile" class="text-sm text-base-content/50">
-                拖拽文件或<span class="text-primary">点击上传</span>
+                {{ t('import.dragHintShort') }}
               </p>
               <p v-else class="text-sm text-primary font-medium">{{ uploadedFile.name }}</p>
-              <p class="text-xs text-base-content/30 mt-1">支持 CSV、Excel</p>
+              <p class="text-xs text-base-content/30 mt-1">{{ t('import.supportedFormatShort') }}</p>
             </div>
           </div>
 
@@ -366,23 +367,23 @@ onMounted(async () => {
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              导入中...
+              {{ t('import.importing') }}
             </span>
-            <span v-else>开始导入</span>
+            <span v-else>{{ t('import.startImport') }}</span>
           </button>
         </div>
       </div>
     </div>
 
-    <BillFormModal :visible="showAddModal" :bill="newBill" title="手动记账" :is-saving="isSaving" @close="closeAddModal" @save="saveBill" />
+    <BillFormModal :visible="showAddModal" :bill="newBill" :title="t('bill.addTitle')" :is-saving="isSaving" @close="closeAddModal" @save="saveBill" />
 
-    <BillFormModal :visible="showEditModal" :bill="editingBill" title="编辑账单" :is-saving="isSaving" @close="closeEditModal" @save="updateBill" />
+    <BillFormModal :visible="showEditModal" :bill="editingBill" :title="t('bill.editTitle')" :is-saving="isSaving" @close="closeEditModal" @save="updateBill" />
 
     <DeleteConfirmModal :visible="showDeleteModal" :bill="deletingBill" @close="closeDeleteModal" @confirm="confirmDelete" />
 
     <div v-if="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl shadow-lg text-white text-sm font-medium animate-slide-down"
-      :class="toast.includes('成功') ? 'bg-success' : 'bg-error'">
-      {{ toast }}
+      :class="toast.type === 'success' ? 'bg-success' : 'bg-error'">
+      {{ toast.message }}
     </div>
   </div>
 </template>
