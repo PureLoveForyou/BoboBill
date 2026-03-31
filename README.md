@@ -139,9 +139,21 @@ npm run dev
 ```
 BoboBill/
 ├── backend/                    # FastAPI 后端
-│   ├── main.py                # API 接口和业务逻辑
+│   ├── main.py                # 应用入口
+│   ├── database.py            # TinyDB 数据库配置
+│   ├── models.py              # Pydantic 数据模型
+│   ├── mock_data.py           # 测试数据
 │   ├── requirements.txt       # Python 依赖
-│   └── db.json               # 账单数据存储（自动创建）
+│   ├── database/              # 数据存储目录
+│   │   └── db.json           # 账单数据库文件
+│   ├── routers/               # API 路由模块
+│   │   ├── bills.py          # 账单 CRUD、搜索、统计、导出
+│   │   ├── upload.py         # 微信/支付宝文件导入解析
+│   │   └── backup.py         # 数据备份/恢复
+│   └── parsers/               # 账单解析器
+│       ├── base.py           # 基础解析器
+│       ├── wechat.py         # 微信账单解析
+│       └── alipay.py         # 支付宝账单解析
 ├── frontend/                  # Vue 3 前端
 │   ├── src/
 │   │   ├── App.vue           # 主应用组件
@@ -151,13 +163,27 @@ BoboBill/
 │   │   │   └── index.js
 │   │   ├── components/       # 可复用组件
 │   │   │   ├── Navbar.vue
-│   │   │   └── Sidebar.vue
+│   │   │   ├── Sidebar.vue
+│   │   │   ├── BillItem.vue      # 账单列表项
+│   │   │   ├── TimeFilter.vue    # 时间筛选器
+│   │   │   └── AppleSelect.vue   # 自定义选择器
+│   │   ├── composables/      # 组合式函数
+│   │   │   └── useBillApi.js     # 账单 API 封装
+│   │   ├── locales/          # 多语言文件
+│   │   │   ├── zh-CN.js
+│   │   │   └── en.js
+│   │   ├── utils/            # 工具函数
+│   │   │   └── theme.js      # 主题切换工具
 │   │   └── pages/            # 页面组件
-│   │       ├── Dashboard.vue
-│   │       └── Settings.vue
+│   │       ├── Dashboard.vue     # 仪表盘
+│   │       ├── Bills.vue         # 账单管理
+│   │       └── Settings.vue      # 设置
 │   ├── index.html            # HTML 模板
 │   ├── package.json          # 前端依赖
 │   └── vite.config.js        # Vite 配置
+├── start_frontend.sh         # 前端启动脚本（Linux/macOS）
+├── start_frontend.bat        # 前端启动脚本（Windows）
+├── LICENSE                   # 开源协议
 └── README.md                 # 项目说明文档
 ```
 
