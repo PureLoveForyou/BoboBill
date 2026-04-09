@@ -7,7 +7,7 @@ from sqlalchemy import func, desc
 from typing import Optional
 import json
 import httpx
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from database import get_db, Bill, User, UserAIConfig, ChatSession as DBChatSession, ChatMessage as DBChatMessage
 from auth import get_current_user
@@ -309,7 +309,7 @@ def _execute_get_category_ranking(db: Session, user_id: int, args: dict) -> str:
 
 # 工具名 -> 执行函数 映射（扩展点：以后加技能只需在此注册）
 TOOL_HANDLERS = {
-    "get_current_time": lambda db, uid, args: datetime.now().strftime("%Y-%m-%d %H:%M:%S %A"),
+    "get_current_time": lambda db, uid, args: datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M:%S %A"),
     "query_bills": _execute_query_bills,
     "get_bill_summary": _execute_get_bill_summary,
     "get_category_ranking": _execute_get_category_ranking,
