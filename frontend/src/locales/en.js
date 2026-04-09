@@ -244,6 +244,15 @@ export default {
     deepseekDesc: 'DeepSeek Official API',
     openaiDesc: 'OpenAI Compatible API',
     customDesc: 'Custom OpenAI Compatible Endpoint',
-    thinking: 'Thinking'
+    thinking: 'Thinking',
+    configDesc: 'Configure AI services to query bills and get spending analysis via natural language. Supports DeepSeek and OpenAI-compatible APIs. Add multiple model configs and switch between them during chat.',
+    addConfig: 'Add Model Config',
+    editConfig: 'Edit Config',
+    configName: 'Config Name',
+    configNamePlaceholder: 'e.g. DeepSeek-Main, GPT-4o',
+    configDeleted: 'Config deleted',
+    deleteFailed: 'Delete failed',
+    loadFailed: 'Load failed',
+    saveFailed: 'Save failed'
   }
 }

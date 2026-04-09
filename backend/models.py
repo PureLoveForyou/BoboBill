@@ -47,3 +47,40 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+# ===== AI 配置模型 =====
+
+class AIConfigCreate(BaseModel):
+    name: str = "Default"
+    provider: str = "deepseek"
+    api_key: str
+    api_url: str = ""
+    model: str = "deepseek-chat"
+
+
+class AIConfigUpdate(BaseModel):
+    name: Optional[str] = None
+    provider: Optional[str] = None
+    api_key: Optional[str] = None
+    api_url: Optional[str] = None
+    model: Optional[str] = None
+
+
+class AIConfigResponse(BaseModel):
+    id: int
+    name: str
+    provider: str
+    api_key: str  # 脱敏：仅返回后4位
+    api_url: str
+    model: str
+
+
+class AIConfigDetail(BaseModel):
+    """完整配置（仅保存时使用，不对外暴露完整 key）"""
+    id: int
+    name: str
+    provider: str
+    api_key: str
+    api_url: str
+    model: str

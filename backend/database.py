@@ -39,6 +39,18 @@ class User(Base):
     hashed_password = Column(String(200), nullable=False)
 
 
+class UserAIConfig(Base):
+    __tablename__ = "user_ai_configs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    name = Column(String(50), nullable=False, default="Default")  # 配置名称/别名
+    provider = Column(String(30), default="deepseek")
+    api_key = Column(String(200), nullable=False)
+    api_url = Column(String(300), default="")
+    model = Column(String(100), default="deepseek-chat")
+
+
 class Budget(Base):
     __tablename__ = "budgets"
 

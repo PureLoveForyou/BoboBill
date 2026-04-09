@@ -8,8 +8,9 @@ import json
 import httpx
 from datetime import datetime
 
-from database import get_db, Bill, User
+from database import get_db, Bill, User, UserAIConfig
 from auth import get_current_user
+from models import AIConfigCreate, AIConfigUpdate, AIConfigResponse, AIConfigDetail
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -247,24 +248,42 @@ async def chat_with_config(req: ChatRequest, db: Session = Depends(get_db), curr
 
 
 class ConfiguredChatRequest(ChatRequest):
+    ai_config_id: int = 0  # 用户选择的 AI 配置 ID
+    # 兼容旧客户端：仍可传 provider/key/url/model
     ai_provider: str = "deepseek"
     ai_api_key: str = ""
     ai_api_url: str = ""
     ai_model: str = "deepseek-chat"
 
 
+def _resolve_settings(req: ConfiguredChatRequest, db: Session, user: User) -> AISettings:
+    """解析 AI 设置：优先从数据库配置读取，回退到请求体参数"""
+    if req.ai_config_id:
+        config = db.query(UserAIConfig).filter_by(id=req.ai_config_id, user_id=user.id).first()
+        if config:
+            return AISettings(
+                provider=config.provider,
+                api_key=config.api_key,
+                api_url=config.api_url,
+                model=config.model,
+            )
+    # 回退：从请求体读取（兼容旧前端）
+    if req.ai_api_key:
+        return AISettings(
+            provider=req.ai_provider,
+            api_key=req.ai_api_key,
+            api_url=req.ai_api_url,
+            model=req.ai_model,
+        )
+    return None
+
+
 @router.post("/chat-full")
 async def chat_full(req: ConfiguredChatRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """完整配置的 AI 对话接口（非流式，保留兼容）"""
-    if not req.ai_api_key:
-        raise HTTPException(status_code=400, detail="请先在设置中配置 AI API Key")
-
-    settings = AISettings(
-        provider=req.ai_provider,
-        api_key=req.ai_api_key,
-        api_url=req.ai_api_url,
-        model=req.ai_model
-    )
+    settings = _resolve_settings(req, db, current_user)
+    if not settings or not settings.api_key:
+        raise HTTPException(status_code=400, detail="请先在设置中配置 AI 服务")
 
     messages = [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
     bill_context = _build_bill_context(db, current_user)
@@ -290,15 +309,9 @@ async def chat_full(req: ConfiguredChatRequest, db: Session = Depends(get_db), c
 @router.post("/chat-stream")
 async def chat_stream(req: ConfiguredChatRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """流式 AI 对话接口（SSE），支持思考过程显示"""
-    if not req.ai_api_key:
-        raise HTTPException(status_code=400, detail="请先在设置中配置 AI API Key")
-
-    settings = AISettings(
-        provider=req.ai_provider,
-        api_key=req.ai_api_key,
-        api_url=req.ai_api_url,
-        model=req.ai_model
-    )
+    settings = _resolve_settings(req, db, current_user)
+    if not settings or not settings.api_key:
+        raise HTTPException(status_code=400, detail="请先在设置中配置 AI 服务")
 
     messages = [{"role": "system", "content": DEFAULT_SYSTEM_PROMPT}]
     bill_context = _build_bill_context(db, current_user)
@@ -356,3 +369,87 @@ async def test_connection(provider: str, api_key: str, api_url: str = "", model:
         return {"success": False, "message": "连接超时"}
     except Exception as e:
         return {"success": False, "message": str(e)}
+
+
+# ===== AI 配置管理 =====
+
+def _mask_key(key: str) -> str:
+    """脱敏 API Key，仅保留后4位"""
+    if not key or len(key) <= 4:
+        return "****"
+    return "*" * (len(key) - 4) + key[-4:]
+
+
+@router.get("/my-configs")
+async def get_my_configs(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """获取当前用户的所有 AI 配置（API Key 脱敏）"""
+    configs = db.query(UserAIConfig).filter_by(user_id=current_user.id).order_by(UserAIConfig.id).all()
+    return [
+        {
+            "id": c.id,
+            "name": c.name,
+            "provider": c.provider,
+            "api_key": _mask_key(c.api_key),
+            "api_url": c.api_url,
+            "model": c.model,
+        }
+        for c in configs
+    ]
+
+
+@router.post("/save-config")
+async def save_config(req: AIConfigCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """新增 AI 配置"""
+    config = UserAIConfig(
+        user_id=current_user.id,
+        name=req.name,
+        provider=req.provider,
+        api_key=req.api_key,
+        api_url=req.api_url,
+        model=req.model,
+    )
+    db.add(config)
+    db.commit()
+    db.refresh(config)
+    return {"id": config.id, "message": "配置已保存"}
+
+
+@router.put("/update-config/{config_id}")
+async def update_config(config_id: int, req: AIConfigUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """更新 AI 配置（只传需要更新的字段）"""
+    config = db.query(UserAIConfig).filter_by(id=config_id, user_id=current_user.id).first()
+    if not config:
+        raise HTTPException(status_code=404, detail="配置不存在")
+
+    update_data = req.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(config, key, value)
+    db.commit()
+    return {"message": "配置已更新"}
+
+
+@router.delete("/delete-config/{config_id}")
+async def delete_config(config_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """删除 AI 配置"""
+    config = db.query(UserAIConfig).filter_by(id=config_id, user_id=current_user.id).first()
+    if not config:
+        raise HTTPException(status_code=404, detail="配置不存在")
+    db.delete(config)
+    db.commit()
+    return {"message": "配置已删除"}
+
+
+@router.get("/config/{config_id}")
+async def get_config_detail(config_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """获取单个配置详情（含完整 API Key，用于测试连接等场景）"""
+    config = db.query(UserAIConfig).filter_by(id=config_id, user_id=current_user.id).first()
+    if not config:
+        raise HTTPException(status_code=404, detail="配置不存在")
+    return {
+        "id": config.id,
+        "name": config.name,
+        "provider": config.provider,
+        "api_key": config.api_key,
+        "api_url": config.api_url,
+        "model": config.model,
+    }

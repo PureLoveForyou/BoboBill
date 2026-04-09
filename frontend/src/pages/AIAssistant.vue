@@ -1,11 +1,12 @@
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAiApi } from '../composables/useAiApi'
 import { marked } from 'marked'
 
 const { t } = useI18n()
-const { chatStream, isConfigured, reloadConfig } = useAiApi()
+const { chatStream, isConfigured, aiConfigs, activeConfigId, activeConfig,
+  activeModelName, fetchConfigs, selectConfig } = useAiApi()
 
 // ====== 对话历史管理 ======
 const CHATS_KEY = 'bobobill_ai_chats'
@@ -102,7 +103,9 @@ if (!chats.value.length || !chats.value.find(c => c.id === activeChatId.value)) 
   }
 }
 
-reloadConfig()
+onMounted(() => {
+  fetchConfigs()
+})
 
 // ====== 聊天功能 ======
 const inputText = ref('')
@@ -318,7 +321,19 @@ const renderMarkdown = (text) => {
             </p>
           </div>
         </div>
-        <div class="flex items-center gap-1">
+        <div class="flex items-center gap-2">
+          <!-- 模型选择 -->
+          <div v-if="isConfigured" class="relative">
+            <select
+              :value="activeConfigId"
+              @change="selectConfig(parseInt($event.target.value))"
+              class="select select-sm select-bordered bg-base-200 pr-8 text-xs"
+            >
+              <option v-for="cfg in aiConfigs" :key="cfg.id" :value="cfg.id">
+                {{ cfg.name }} ({{ cfg.model }})
+              </option>
+            </select>
+          </div>
           <button @click="createNewChat" class="btn btn-ghost btn-sm text-base-content/50 hover:text-primary gap-1" :title="t('ai.newChat')">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>

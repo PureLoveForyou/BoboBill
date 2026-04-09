@@ -2,51 +2,171 @@ import { ref, computed } from 'vue'
 import { API_BASE } from '../config'
 
 // 模块级单例，所有组件共享
-const aiConfig = ref({
-  provider: 'deepseek',
-  apiKey: '',
-  apiUrl: '',
-  model: 'deepseek-chat'
-})
+const aiConfigs = ref([])       // 用户的 AI 配置列表（从后端加载）
+const activeConfigId = ref(0)   // 当前选中的配置 ID
+const isLoading = ref(false)    // 加载状态
 
-// 首次导入时从 localStorage 初始化
-;(function init() {
-  try {
-    const raw = JSON.parse(localStorage.getItem('bobobill_ai_config') || '{}')
-    if (raw.apiKey) {
-      aiConfig.value = {
-        provider: raw.provider || 'deepseek',
-        apiKey: raw.apiKey || '',
-        apiUrl: raw.apiUrl || '',
-        model: raw.model || 'deepseek-chat'
-      }
-    }
-  } catch { /* ignore */ }
-})()
+// 清理旧的 localStorage 配置（迁移到数据库后不再需要）
+try {
+  localStorage.removeItem('bobobill_ai_config')
+} catch { /* ignore */ }
+
+// 从 localStorage 恢复上次选中的配置 ID
+try {
+  const savedId = localStorage.getItem('bobobill_ai_active_config')
+  if (savedId) activeConfigId.value = parseInt(savedId) || 0
+} catch { /* ignore */ }
 
 export function useAiApi() {
-  const config = computed(() => aiConfig.value)
-  const isConfigured = computed(() => !!aiConfig.value.apiKey)
+  // 当前激活的配置
+  const activeConfig = computed(() => {
+    return aiConfigs.value.find(c => c.id === activeConfigId.value) || null
+  })
 
-  const saveConfig = (newConfig) => {
-    aiConfig.value = { ...aiConfig.value, ...newConfig }
-    localStorage.setItem('bobobill_ai_config', JSON.stringify(aiConfig.value))
-  }
+  const isConfigured = computed(() => aiConfigs.value.length > 0)
 
-  const reloadConfig = () => {
+  // 当前选中的配置名（用于显示）
+  const activeModelName = computed(() => {
+    const c = activeConfig.value
+    return c ? `${c.name} (${c.model})` : ''
+  })
+
+  // 从后端加载配置列表
+  const fetchConfigs = async () => {
     try {
-      const raw = JSON.parse(localStorage.getItem('bobobill_ai_config') || '{}')
-      aiConfig.value = {
-        provider: raw.provider || 'deepseek',
-        apiKey: raw.apiKey || '',
-        apiUrl: raw.apiUrl || '',
-        model: raw.model || 'deepseek-chat'
+      const token = localStorage.getItem('bobobill_token')
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+
+      const response = await fetch(`${API_BASE}/ai/my-configs`, { headers })
+      if (!response.ok) return
+      const data = await response.json()
+      aiConfigs.value = data
+
+      // 如果当前选中的 ID 不在列表中，自动选第一个
+      if (data.length && !data.find(c => c.id === activeConfigId.value)) {
+        activeConfigId.value = data[0].id
+        localStorage.setItem('bobobill_ai_active_config', String(data[0].id))
       }
     } catch { /* ignore */ }
   }
 
+  // 选择配置
+  const selectConfig = (id) => {
+    activeConfigId.value = id
+    localStorage.setItem('bobobill_ai_active_config', String(id))
+  }
+
+  // 保存配置（新增）
+  const saveConfig = async (config) => {
+    try {
+      const token = localStorage.getItem('bobobill_token')
+      if (!token) {
+        return { success: false, message: '请先登录' }
+      }
+      const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+
+      const response = await fetch(`${API_BASE}/ai/save-config`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(config),
+      })
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+        if (response.status === 401 || response.status === 403) {
+          return { success: false, message: '登录已过期，请重新登录' }
+        }
+        return { success: false, message: data.detail || '保存失败' }
+      }
+      const data = await response.json()
+      await fetchConfigs()
+      // 自动选中新创建的配置
+      if (data.id) selectConfig(data.id)
+      return { success: true, id: data.id }
+    } catch {
+      return { success: false, message: '网络错误' }
+    }
+  }
+
+  // 更新配置
+  const updateConfig = async (id, config) => {
+    try {
+      const token = localStorage.getItem('bobobill_token')
+      if (!token) {
+        return { success: false, message: '请先登录' }
+      }
+      const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+
+      const response = await fetch(`${API_BASE}/ai/update-config/${id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(config),
+      })
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+        if (response.status === 401 || response.status === 403) {
+          return { success: false, message: '登录已过期，请重新登录' }
+        }
+        return { success: false, message: data.detail || '更新失败' }
+      }
+      await fetchConfigs()
+      return { success: true }
+    } catch {
+      return { success: false, message: '网络错误' }
+    }
+  }
+
+  // 删除配置
+  const deleteConfig = async (id) => {
+    try {
+      const token = localStorage.getItem('bobobill_token')
+      if (!token) {
+        return { success: false, message: '请先登录' }
+      }
+      const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+
+      const response = await fetch(`${API_BASE}/ai/delete-config/${id}`, {
+        method: 'DELETE',
+        headers,
+      })
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+        if (response.status === 401 || response.status === 403) {
+          return { success: false, message: '登录已过期，请重新登录' }
+        }
+        return { success: false, message: data.detail || '删除失败' }
+      }
+      await fetchConfigs()
+      return { success: true }
+    } catch {
+      return { success: false, message: '网络错误' }
+    }
+  }
+
+  // 获取完整配置详情（含完整 API Key）
+  const getConfigDetail = async (id) => {
+    try {
+      const token = localStorage.getItem('bobobill_token')
+      if (!token) return null
+      const headers = { 'Authorization': `Bearer ${token}` }
+
+      const response = await fetch(`${API_BASE}/ai/config/${id}`, { headers })
+      if (!response.ok) return null
+      return await response.json()
+    } catch {
+      return null
+    }
+  }
+
+  const _getAuthHeaders = () => {
+    const token = localStorage.getItem('bobobill_token')
+    const headers = { 'Content-Type': 'application/json' }
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    return headers
+  }
+
   const chat = async (message, history = []) => {
-    if (!isConfigured.value) {
+    if (!isConfigured.value || !activeConfigId.value) {
       return { success: false, message: '请先在设置中配置 AI 服务' }
     }
 
@@ -54,21 +174,13 @@ export function useAiApi() {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 60000)
 
-      const token = localStorage.getItem('bobobill_token')
-      const headers = { 'Content-Type': 'application/json' }
-      if (token) headers['Authorization'] = `Bearer ${token}`
-
-      // 字段名必须和后端 ConfiguredChatRequest 一致！
       const response = await fetch(`${API_BASE}/ai/chat-full`, {
         method: 'POST',
-        headers,
+        headers: _getAuthHeaders(),
         body: JSON.stringify({
           message,
           history: history.map(m => ({ role: m.role, content: m.content })),
-          ai_provider: aiConfig.value.provider,
-          ai_api_key: aiConfig.value.apiKey,
-          ai_api_url: aiConfig.value.apiUrl,
-          ai_model: aiConfig.value.model
+          ai_config_id: activeConfigId.value,
         }),
         signal: controller.signal
       })
@@ -94,31 +206,20 @@ export function useAiApi() {
 
   /**
    * 流式聊天，回调实时接收 chunk
-   * @param {string} message - 用户消息
-   * @param {Array} history - 历史消息
-   * @param {Function} onChunk - (event) => void, event = { type: 'content'|'reasoning'|'error'|'done', content?: string }
-   * @returns {Promise<{success: boolean, message?: string}>}
    */
   const chatStream = async (message, history = [], onChunk = () => {}) => {
-    if (!isConfigured.value) {
+    if (!isConfigured.value || !activeConfigId.value) {
       return { success: false, message: '请先在设置中配置 AI 服务' }
     }
 
     try {
-      const token = localStorage.getItem('bobobill_token')
-      const headers = { 'Content-Type': 'application/json' }
-      if (token) headers['Authorization'] = `Bearer ${token}`
-
       const response = await fetch(`${API_BASE}/ai/chat-stream`, {
         method: 'POST',
-        headers,
+        headers: _getAuthHeaders(),
         body: JSON.stringify({
           message,
           history: history.map(m => ({ role: m.role, content: m.content })),
-          ai_provider: aiConfig.value.provider,
-          ai_api_key: aiConfig.value.apiKey,
-          ai_api_url: aiConfig.value.apiUrl,
-          ai_model: aiConfig.value.model
+          ai_config_id: activeConfigId.value,
         }),
       })
 
@@ -139,7 +240,6 @@ export function useAiApi() {
 
         buffer += decoder.decode(value, { stream: true })
         const lines = buffer.split('\n')
-        // 保留最后一行（可能不完整）
         buffer = lines.pop() || ''
 
         for (const line of lines) {
@@ -164,24 +264,36 @@ export function useAiApi() {
     }
   }
 
-  const testConnection = async () => {
-    if (!isConfigured.value) {
-      return { success: false, message: '请先配置 API Key' }
-    }
+  const testConnection = async (config) => {
     try {
       const params = new URLSearchParams({
-        provider: aiConfig.value.provider,
-        api_key: aiConfig.value.apiKey,
-        api_url: aiConfig.value.apiUrl,
-        model: aiConfig.value.model
+        provider: config.provider,
+        api_key: config.apiKey || config.api_key || '',
+        api_url: config.apiUrl || config.api_url || '',
+        model: config.model || '',
       })
       const response = await fetch(`${API_BASE}/ai/test-connection?${params}`)
-      const data = await response.json()
-      return data
+      return await response.json()
     } catch {
       return { success: false, message: '网络错误' }
     }
   }
 
-  return { config, isConfigured, saveConfig, reloadConfig, chat, chatStream, testConnection }
+  return {
+    aiConfigs,
+    activeConfigId,
+    activeConfig,
+    activeModelName,
+    isConfigured,
+    isLoading,
+    fetchConfigs,
+    selectConfig,
+    saveConfig,
+    updateConfig,
+    deleteConfig,
+    getConfigDetail,
+    chat,
+    chatStream,
+    testConnection,
+  }
 }

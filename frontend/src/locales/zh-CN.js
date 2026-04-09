@@ -246,6 +246,15 @@ export default {
     deepseekDesc: 'DeepSeek 官方 API',
     openaiDesc: 'OpenAI 兼容接口',
     customDesc: '自定义 OpenAI 兼容接口',
-    thinking: '思考过程'
+    thinking: '思考过程',
+    configDesc: '配置 AI 服务后，可在「AI 助手」页面通过自然语言查询账单、获取消费分析建议。支持 DeepSeek 和 OpenAI 兼容接口。可添加多个模型配置，在聊天时切换使用。',
+    addConfig: '添加模型配置',
+    editConfig: '编辑配置',
+    configName: '配置名称',
+    configNamePlaceholder: '如：DeepSeek-主力、GPT-4o',
+    configDeleted: '配置已删除',
+    deleteFailed: '删除失败',
+    loadFailed: '加载失败',
+    saveFailed: '保存失败'
   }
 }
