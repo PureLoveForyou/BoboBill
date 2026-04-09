@@ -96,6 +96,8 @@ const {
 const searchQuery = ref('')
 const startDate = ref('')
 const endDate = ref('')
+const minAmount = ref('')
+const maxAmount = ref('')
 const { selectedCategory, selectedPlatform, categoryOptions, platformOptions } = useBillFilters()
 
 const platformInfo = PLATFORM_INFO
@@ -111,6 +113,8 @@ const getFetchParams = () => ({
   platform: selectedPlatform.value !== 'all' ? selectedPlatform.value : undefined,
   start_date: startDate.value || undefined,
   end_date: endDate.value || undefined,
+  min_amount: minAmount.value ? parseFloat(minAmount.value) : undefined,
+  max_amount: maxAmount.value ? parseFloat(maxAmount.value) : undefined,
 })
 
 const doFetch = () => {
@@ -125,12 +129,16 @@ const doExport = () => {
     platform: selectedPlatform.value !== 'all' ? selectedPlatform.value : undefined,
     start_date: startDate.value || undefined,
     end_date: endDate.value || undefined,
+    min_amount: minAmount.value ? parseFloat(minAmount.value) : undefined,
+    max_amount: maxAmount.value ? parseFloat(maxAmount.value) : undefined,
   })
 }
 
 const clearDateFilter = () => {
   startDate.value = ''
   endDate.value = ''
+  minAmount.value = ''
+  maxAmount.value = ''
 }
 
 const doLoadMore = async () => {
@@ -143,6 +151,8 @@ const doLoadMore = async () => {
     platform: selectedPlatform.value !== 'all' ? selectedPlatform.value : undefined,
     start_date: startDate.value || undefined,
     end_date: endDate.value || undefined,
+    min_amount: minAmount.value ? parseFloat(minAmount.value) : undefined,
+    max_amount: maxAmount.value ? parseFloat(maxAmount.value) : undefined,
   })
   isLoadingMore.value = false
 }
@@ -153,7 +163,7 @@ watch(searchQuery, () => {
   debounceTimer = setTimeout(doFetch, 300)
 })
 
-watch([selectedCategory, selectedPlatform, startDate, endDate], doFetch)
+watch([selectedCategory, selectedPlatform, startDate, endDate, minAmount, maxAmount], doFetch)
 
 onMounted(doFetch)
 </script>
@@ -391,12 +401,38 @@ onMounted(doFetch)
                 class="px-3 py-2 rounded-lg bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm text-base-content/70"
               />
               <button
-                v-if="startDate || endDate"
+                v-if="startDate || endDate || minAmount || maxAmount"
                 @click="clearDateFilter"
                 class="px-2 py-1 rounded-lg text-xs text-base-content/40 hover:text-base-content/60 hover:bg-base-200/60 transition-all"
               >
                 {{ t('common.clear') }}
               </button>
+            </div>
+
+            <!-- Amount Range Filter -->
+            <div class="flex items-center gap-3 mb-6 text-sm">
+              <svg class="w-4 h-4 text-base-content/30 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.822l.894-.894a1.5 1.5 0 01-.894-.784V10.5m0 5.25V15m0-4.5V9m0 4.5h3M3 21h18M3 7h18M5 10h14" />
+              </svg>
+              <span class="text-base-content/40 text-xs">{{ t('bill.amountRange') }}</span>
+              <input
+                v-model.number="minAmount"
+                type="number"
+                :placeholder="t('bill.minAmount')"
+                step="100"
+                min="0"
+                class="px-3 py-2 w-28 rounded-lg bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm text-base-content/70 placeholder:text-base-content/30"
+              />
+              <span class="text-base-content/30">—</span>
+              <input
+                v-model.number="maxAmount"
+                type="number"
+                :placeholder="t('bill.maxAmount')"
+                step="100"
+                min="0"
+                class="px-3 py-2 w-28 rounded-lg bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm text-base-content/70 placeholder:text-base-content/30"
+              />
+              <span class="text-xs text-base-content/30">{{ t('common.currency') }}</span>
             </div>
 
             <div v-if="isLoading" class="py-16 text-center">

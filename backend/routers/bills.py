@@ -34,6 +34,8 @@ def get_bills(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     search: Optional[str] = None,
+    min_amount: Optional[float] = None,
+    max_amount: Optional[float] = None,
 ):
     result = []
     search_lower = (search or "").lower()
@@ -50,6 +52,12 @@ def get_bills(
         if start_date and bill.get("date", "") < start_date:
             continue
         if end_date and bill.get("date", "") > end_date:
+            continue
+        # 金额范围筛选（取绝对值比较）
+        abs_amount = abs(bill.get("amount", 0))
+        if min_amount is not None and abs_amount < min_amount:
+            continue
+        if max_amount is not None and abs_amount > max_amount:
             continue
         if search_lower:
             # 搜索名称、备注、商户、分类
@@ -164,6 +172,8 @@ def export_bills(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     search: Optional[str] = None,
+    min_amount: Optional[float] = None,
+    max_amount: Optional[float] = None,
 ):
     result = []
     search_lower = (search or "").lower()
@@ -179,6 +189,12 @@ def export_bills(
         if start_date and bill.get("date", "") < start_date:
             continue
         if end_date and bill.get("date", "") > end_date:
+            continue
+        # 金额范围筛选
+        abs_amount = abs(bill.get("amount", 0))
+        if min_amount is not None and abs_amount < min_amount:
+            continue
+        if max_amount is not None and abs_amount > max_amount:
             continue
         if search_lower:
             # 搜索名称、备注、商户、分类
