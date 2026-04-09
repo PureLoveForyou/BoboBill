@@ -18,6 +18,8 @@ import BillItem from '../components/BillItem.vue'
 import StatCards from '../components/StatCards.vue'
 import BillFormModal from '../components/BillFormModal.vue'
 import DeleteConfirmModal from '../components/DeleteConfirmModal.vue'
+import BudgetCard from '../components/BudgetCard.vue'
+import { useBudgetApi } from '../composables/useBudgetApi'
 
 const { t } = useI18n()
 
@@ -60,6 +62,9 @@ const { trendOptions, categoryOptionsChart, comparisonOptions } = useChartConfig
   pieSelectedCategory, expenseLabels, incomeLabels, totalExpense, totalIncome,
   comparisonCategories
 })
+
+// --- Budget ---
+const { budgetStatus, fetchBudgetStatus } = useBudgetApi()
 
 // --- Theme & Modal ---
 const themeChangeHandler = (e) => {
@@ -121,6 +126,7 @@ const onTimeFilterChange = (data) => {
 onMounted(async () => {
   await fetchBills()
   processBillsData('monthly', currentRange.value)
+  fetchBudgetStatus()
 })
 </script>
 
@@ -209,6 +215,10 @@ onMounted(async () => {
       </div>
 
       <StatCards :stats="stats" />
+
+      <div class="mb-6">
+        <BudgetCard :status="budgetStatus" />
+      </div>
 
       <div class="grid gap-6 lg:grid-cols-2 mb-6">
         <div class="rounded-2xl bg-gradient-to-br from-base-100 to-base-200/30 border border-base-200/50 p-5">

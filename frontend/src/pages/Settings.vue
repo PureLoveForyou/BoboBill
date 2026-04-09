@@ -4,13 +4,44 @@ import { useI18n } from 'vue-i18n'
 import { getCurrentTheme, toggleDarkLight } from '../utils/theme.js'
 import { API_BASE } from '../config'
 import { useToast } from '../composables/useToast'
+import { useBudgetApi } from '../composables/useBudgetApi'
+import { CATEGORIES } from '../constants/bill'
 
 const { t, locale } = useI18n()
 const { showToast } = useToast()
+const { budget, fetchBudget, saveBudget } = useBudgetApi()
 const currentTheme = ref('light')
 const fileInput = ref(null)
 const showImportConfirm = ref(false)
 const importFile = ref(null)
+
+// Budget
+const monthlyTotal = ref(0)
+const categoryBudgets = ref({})
+const isSavingBudget = ref(false)
+
+const expenseCategories = computed(() => CATEGORIES.filter(c => c !== '工资' && c !== '投资'))
+
+const loadBudget = async () => {
+  await fetchBudget()
+  monthlyTotal.value = budget.value.monthly_total || 0
+  categoryBudgets.value = { ...budget.value.category_budgets } || {}
+}
+
+const handleSaveBudget = async () => {
+  isSavingBudget.value = true
+  const data = {
+    monthly_total: parseFloat(monthlyTotal.value) || 0,
+    category_budgets: {}
+  }
+  for (const [cat, val] of Object.entries(categoryBudgets.value)) {
+    if (val && parseFloat(val) > 0) {
+      data.category_budgets[cat] = parseFloat(val)
+    }
+  }
+  await saveBudget(data)
+  isSavingBudget.value = false
+}
 
 const localeOptions = computed(() => [
   { value: 'zh-CN', label: t('settings.langZh') },
@@ -30,6 +61,7 @@ const onThemeChange = (event) => {
 onMounted(() => {
   currentTheme.value = getCurrentTheme()
   window.addEventListener('themechange', onThemeChange)
+  loadBudget()
 })
 
 onUnmounted(() => {
@@ -153,6 +185,65 @@ const cancelImport = () => {
       </div>
     </div>
     
+    <!-- Budget -->
+    <div class="card bg-base-100 shadow-lg mb-6">
+      <div class="card-body">
+        <h2 class="card-title text-xl mb-4">{{ t('budget.title') }}</h2>
+
+        <div class="space-y-5">
+          <!-- Monthly Total -->
+          <div class="p-4 bg-base-200 rounded-lg">
+            <label class="block text-sm font-semibold mb-2">{{ t('budget.monthlyTotal') }}</label>
+            <div class="flex items-center gap-2">
+              <span class="text-base-content/60 text-sm">¥</span>
+              <input
+                v-model="monthlyTotal"
+                type="number"
+                min="0"
+                step="100"
+                :placeholder="t('budget.monthlyTotalPlaceholder')"
+                class="input input-sm input-bordered flex-1 bg-base-100"
+              />
+            </div>
+          </div>
+
+          <!-- Category Budgets -->
+          <div>
+            <h3 class="text-sm font-semibold mb-3">{{ t('budget.categoryBudget') }}</h3>
+            <div class="space-y-2">
+              <div
+                v-for="cat in expenseCategories"
+                :key="cat"
+                class="flex items-center justify-between p-3 bg-base-200/60 rounded-lg"
+              >
+                <span class="text-sm font-medium">{{ t('categories.' + cat) }}</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-base-content/60 text-xs">¥</span>
+                  <input
+                    v-model="categoryBudgets[cat]"
+                    type="number"
+                    min="0"
+                    step="100"
+                    :placeholder="t('budget.categoryBudgetPlaceholder')"
+                    class="input input-xs input-bordered w-28 bg-base-100"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            @click="handleSaveBudget"
+            :disabled="isSavingBudget"
+            class="btn btn-primary btn-sm w-full"
+          >
+            <span v-if="isSavingBudget" class="loading loading-spinner loading-xs"></span>
+            {{ t('common.save') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Backup & Restore -->
     <div class="card bg-base-100 shadow-lg mb-6">
       <div class="card-body">

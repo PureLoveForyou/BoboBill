@@ -39,6 +39,9 @@ def get_bills(
     search_lower = (search or "").lower()
 
     for bill in db.all():
+        # 跳过非账单文档（如预算配置）
+        if bill.get("type") == "budget":
+            continue
         bill["id"] = bill.doc_id
         if category and bill.get("category") != category:
             continue
@@ -127,7 +130,7 @@ def clear_all_bills():
 
 @router.get("/stats")
 def get_stats():
-    bills = db.all()
+    bills = [b for b in db.all() if b.get("type") != "budget"]
     total_income = sum(b.get('amount', 0) for b in bills if b.get('amount', 0) > 0)
     total_expense = sum(abs(b.get('amount', 0)) for b in bills if b.get('amount', 0) < 0)
 
@@ -166,6 +169,9 @@ def export_bills(
     search_lower = (search or "").lower()
 
     for bill in db.all():
+        # 跳过非账单文档
+        if bill.get("type") == "budget":
+            continue
         if category and bill.get("category") != category:
             continue
         if platform and bill.get("platform") != platform:

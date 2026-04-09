@@ -167,5 +167,25 @@ export default {
     wechat: 'WeChat',
     alipay: 'Alipay',
     bank: 'Bank Card'
+  },
+  budget: {
+    title: 'Budget',
+    monthlyTotal: 'Monthly Budget',
+    monthlyTotalPlaceholder: 'Set monthly budget amount',
+    categoryBudget: 'Category Budget',
+    categoryBudgetPlaceholder: 'Enter budget amount',
+    noBudget: 'No Budget Set',
+    noBudgetHint: 'Configure monthly budget in Settings',
+    totalSpent: 'Spent',
+    remaining: 'Remaining',
+    overBudget: 'Over Budget',
+    percentage: '{percent}%',
+    overBudgetAlert: 'Over budget by {amount} this month',
+    nearBudgetAlert: '{percent}% of budget used this month',
+    saveSuccess: 'Budget saved',
+    saveFailed: 'Failed to save budget',
+    setBudget: 'Set Budget',
+    editBudget: 'Edit Budget',
+    budgetStatus: 'Budget Overview'
   }
 }

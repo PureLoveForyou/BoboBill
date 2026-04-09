@@ -169,5 +169,25 @@ export default {
     wechat: '微信',
     alipay: '支付宝',
     bank: '银行卡'
+  },
+  budget: {
+    title: '预算管理',
+    monthlyTotal: '月度总预算',
+    monthlyTotalPlaceholder: '设置每月总预算金额',
+    categoryBudget: '分类预算',
+    categoryBudgetPlaceholder: '输入预算金额',
+    noBudget: '未设置预算',
+    noBudgetHint: '在设置页面配置月度预算',
+    totalSpent: '已支出',
+    remaining: '剩余',
+    overBudget: '超支',
+    percentage: '{percent}%',
+    overBudgetAlert: '本月已超支 {amount}',
+    nearBudgetAlert: '本月预算已使用 {percent}%',
+    saveSuccess: '预算设置已保存',
+    saveFailed: '保存预算失败',
+    setBudget: '设置预算',
+    editBudget: '编辑预算',
+    budgetStatus: '预算概览'
   }
 }

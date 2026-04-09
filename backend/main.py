@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers.bills import router as bills_router
 from routers.upload import router as upload_router
 from routers.backup import router as backup_router
+from routers.budget import router as budget_router
 
 app = FastAPI(title="BoboBill API", description="智能账单管理助手", version="0.2.0")
 
@@ -17,6 +18,7 @@ app.add_middleware(
 app.include_router(bills_router)
 app.include_router(upload_router)
 app.include_router(backup_router)
+app.include_router(budget_router)
 
 
 @app.get("/")
