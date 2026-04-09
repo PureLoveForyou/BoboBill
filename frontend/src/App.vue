@@ -72,7 +72,11 @@ watch(() => router.currentRoute.value.path, () => {
       
       <!-- Page content -->
       <div class="flex-1 p-4 relative z-0">
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <keep-alive :include="['Dashboard', 'Bills', 'AIAssistant', 'Settings']">
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
       </div>
     </div>
     

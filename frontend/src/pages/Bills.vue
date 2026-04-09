@@ -1,4 +1,5 @@
 <script setup>
+defineOptions({ name: 'Bills' })
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getCurrentTheme } from '../utils/theme'

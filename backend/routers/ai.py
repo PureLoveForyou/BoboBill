@@ -8,9 +8,10 @@ import json
 import httpx
 from datetime import datetime
 
-from database import get_db, Bill, User, UserAIConfig
+from database import get_db, Bill, User, UserAIConfig, ChatSession as DBChatSession, ChatMessage as DBChatMessage
 from auth import get_current_user
-from models import AIConfigCreate, AIConfigUpdate, AIConfigResponse, AIConfigDetail
+from models import (AIConfigCreate, AIConfigUpdate, AIConfigResponse, AIConfigDetail,
+                    ChatSessionCreate, ChatMessageCreate, ChatSessionResponse, ChatMessageResponse)
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -453,3 +454,123 @@ async def get_config_detail(config_id: int, db: Session = Depends(get_db), curre
         "api_url": config.api_url,
         "model": config.model,
     }
+
+
+# ===== AI 对话历史管理 =====
+
+@router.get("/chats", response_model=list[ChatSessionResponse])
+async def get_chat_sessions(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """获取当前用户的所有对话列表"""
+    sessions = db.query(DBChatSession).filter_by(user_id=current_user.id).order_by(DBChatSession.updated_at.desc()).all()
+    result = []
+    for s in sessions:
+        msg_count = db.query(DBChatMessage).filter_by(session_id=s.id).count()
+        last_msg = db.query(DBChatMessage).filter_by(session_id=s.id).order_by(DBChatMessage.id.desc()).first()
+        preview = ""
+        if last_msg:
+            preview = (last_msg.content or "")[:60]
+        result.append({
+            "id": s.id,
+            "title": s.title,
+            "created_at": s.created_at or 0,
+            "updated_at": s.updated_at or 0,
+            "message_count": msg_count,
+            "preview": preview,
+        })
+    return result
+
+
+@router.post("/chats", response_model=ChatSessionResponse)
+async def create_chat_session(req: ChatSessionCreate = ChatSessionCreate(), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """创建新对话"""
+    now = __import__('time').time()
+    session = DBChatSession(
+        user_id=current_user.id,
+        title=req.title,
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    return {"id": session.id, "title": session.title, "created_at": now, "updated_at": now, "message_count": 0, "preview": ""}
+
+
+@router.put("/chats/{session_id}/title")
+async def update_chat_title(session_id: int, req: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """更新对话标题"""
+    session = db.query(DBChatSession).filter_by(id=session_id, user_id=current_user.id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="对话不存在")
+    session.title = req.get("title", session.title)
+    db.commit()
+    return {"message": "标题已更新"}
+
+
+@router.delete("/chats/{session_id}")
+async def delete_chat_session(session_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """删除对话（同时删除其所有消息）"""
+    session = db.query(DBChatSession).filter_by(id=session_id, user_id=current_user.id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="对话不存在")
+    # 删除所有消息
+    db.query(DBChatMessage).filter_by(session_id=session_id).delete()
+    db.delete(session)
+    db.commit()
+    return {"message": "对话已删除"}
+
+
+@router.get("/chats/{session_id}/messages", response_model=list[ChatMessageResponse])
+async def get_chat_messages(session_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """获取某个对话的所有消息"""
+    session = db.query(DBChatSession).filter_by(id=session_id, user_id=current_user.id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="对话不存在")
+    messages = db.query(DBChatMessage).filter_by(session_id=session_id).order_by(DBChatMessage.id.asc()).all()
+    return [
+        {"id": m.id, "role": m.role, "content": m.content, "reasoning": m.reasoning}
+        for m in messages
+    ]
+
+
+@router.post("/chats/{session_id}/messages", response_model=ChatMessageResponse)
+async def add_chat_message(session_id: int, req: ChatMessageCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """添加消息到对话"""
+    session = db.query(DBChatSession).filter_by(id=session_id, user_id=current_user.id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="对话不存在")
+    now = __import__('time').time()
+    message = DBChatMessage(
+        session_id=session_id,
+        role=req.role,
+        content=req.content,
+        reasoning=req.reasoning,
+    )
+    db.add(message)
+    # 更新会话时间
+    session.updated_at = now
+    # 如果第一条是用户消息，自动生成标题
+    if req.role == "user":
+        existing_msgs = db.query(DBChatMessage).filter_by(session_id=session_id).count()
+        if existing_msgs == 0 or not session.title or session.title == "新对话":
+            session.title = req.content[:30].replace("\n", " ")
+    db.commit()
+    db.refresh(message)
+    return {"id": message.id, "role": message.role, "content": message.content, "reasoning": message.reasoning}
+
+
+@router.put("/chats/{session_id}/messages/{message_id}")
+async def update_chat_message(session_id: int, message_id: int, req: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """更新消息内容（用于流式完成后保存最终结果）"""
+    session = db.query(DBChatSession).filter_by(id=session_id, user_id=current_user.id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="对话不存在")
+    msg = db.query(DBChatMessage).filter_by(id=message_id, session_id=session_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="消息不存在")
+    if "content" in req:
+        msg.content = req["content"]
+    if "reasoning" in req:
+        msg.reasoning = req["reasoning"]
+    db.commit()
+    return {"message": "消息已更新"}

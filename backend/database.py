@@ -51,6 +51,26 @@ class UserAIConfig(Base):
     model = Column(String(100), default="deepseek-chat")
 
 
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    title = Column(String(200), nullable=False, default="新对话")
+    created_at = Column(Float, default=0)
+    updated_at = Column(Float, default=0)
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    session_id = Column(Integer, nullable=False, index=True)
+    role = Column(String(20), nullable=False)  # user / assistant
+    content = Column(Text, nullable=False, default="")
+    reasoning = Column(Text, nullable=True, default=None)  # DeepSeek 思考过程
+
+
 class Budget(Base):
     __tablename__ = "budgets"
 

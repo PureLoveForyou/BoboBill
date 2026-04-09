@@ -84,3 +84,31 @@ class AIConfigDetail(BaseModel):
     api_key: str
     api_url: str
     model: str
+
+
+# ===== AI 对话历史模型 =====
+
+class ChatSessionCreate(BaseModel):
+    title: str = "新对话"
+
+
+class ChatMessageCreate(BaseModel):
+    role: str
+    content: str
+    reasoning: Optional[str] = None
+
+
+class ChatMessageResponse(BaseModel):
+    id: int
+    role: str
+    content: str
+    reasoning: Optional[str] = None
+
+
+class ChatSessionResponse(BaseModel):
+    id: int
+    title: str
+    created_at: float
+    updated_at: float
+    message_count: Optional[int] = 0
+    preview: Optional[str] = ""  # 最后一条消息预览
