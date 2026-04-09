@@ -5,7 +5,7 @@ from routers.upload import router as upload_router
 from routers.backup import router as backup_router
 from routers.budget import router as budget_router
 
-app = FastAPI(title="BoboBill API", description="智能账单管理助手", version="0.2.0")
+app = FastAPI(title="BoboBill API", description="智能账单管理助手", version="0.3.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,4 +23,4 @@ app.include_router(budget_router)
 
 @app.get("/")
 def read_root():
-    return {"message": "欢迎使用 BoboBill API! 访问 /docs 查看文档"}
+    return {"message": "欢迎使用 BoboBill API! 访问 /docs 查看文档", "version": "0.3.0", "db": "sqlite"}

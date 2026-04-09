@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import StreamingResponse
+from sqlalchemy.orm import Session
 from typing import Optional
 import csv
 import io
 from models import BillModel, PaginatedResponse
-from database import db
+from database import get_db, Bill
 
 router = APIRouter(prefix="/bills", tags=["bills"])
 
@@ -25,6 +26,41 @@ CATEGORY_ALIASES = {
 }
 
 
+def _bill_to_dict(bill: Bill) -> dict:
+    """SQLAlchemy Bill 对象转字典"""
+    return {
+        "id": bill.id,
+        "name": bill.name,
+        "amount": bill.amount,
+        "type": bill.type,
+        "date": bill.date,
+        "category": bill.category,
+        "platform": bill.platform,
+        "merchant": bill.merchant,
+        "note": bill.note,
+        "transaction_id": bill.transaction_id,
+    }
+
+
+def _apply_filters(query, category=None, platform=None, start_date=None, end_date=None, min_amount=None, max_amount=None):
+    """应用通用筛选条件"""
+    if category:
+        query = query.filter(Bill.category == category)
+    if platform:
+        query = query.filter(Bill.platform == platform)
+    if start_date:
+        query = query.filter(Bill.date >= start_date)
+    if end_date:
+        query = query.filter(Bill.date <= end_date)
+    if min_amount is not None:
+        from sqlalchemy import func
+        query = query.filter(func.abs(Bill.amount) >= min_amount)
+    if max_amount is not None:
+        from sqlalchemy import func
+        query = query.filter(func.abs(Bill.amount) <= max_amount)
+    return query
+
+
 @router.get("", response_model=PaginatedResponse)
 def get_bills(
     page: int = Query(0, ge=0),
@@ -36,43 +72,29 @@ def get_bills(
     search: Optional[str] = None,
     min_amount: Optional[float] = None,
     max_amount: Optional[float] = None,
+    db: Session = Depends(get_db),
 ):
+    # 基础查询：排除预算数据（type != 'budget'）
+    query = db.query(Bill).filter(Bill.type != "budget")
+    query = _apply_filters(query, category, platform, start_date, end_date, min_amount, max_amount)
+
+    # 搜索过滤（需要在 Python 侧处理，因为涉及别名模糊匹配）
+    all_bills = query.all()
     result = []
     search_lower = (search or "").lower()
 
-    for bill in db.all():
-        # 跳过非账单文档（如预算配置）
-        if bill.get("type") == "budget":
-            continue
-        bill["id"] = bill.doc_id
-        if category and bill.get("category") != category:
-            continue
-        if platform and bill.get("platform") != platform:
-            continue
-        if start_date and bill.get("date", "") < start_date:
-            continue
-        if end_date and bill.get("date", "") > end_date:
-            continue
-        # 金额范围筛选（取绝对值比较）
-        abs_amount = abs(bill.get("amount", 0))
-        if min_amount is not None and abs_amount < min_amount:
-            continue
-        if max_amount is not None and abs_amount > max_amount:
-            continue
+    for bill in all_bills:
         if search_lower:
-            # 搜索名称、备注、商户、分类
-            bill_category = bill.get("category") or ""
+            bill_category = bill.category or ""
             searchable_text = " ".join([
-                bill.get("name") or "",
-                bill.get("note") or "",
-                bill.get("merchant") or "",
-                bill_category
+                bill.name or "",
+                bill.note or "",
+                bill.merchant or "",
+                bill_category,
             ]).lower()
             
-            # 检查是否匹配基本文本
             text_match = search_lower in searchable_text
             
-            # 检查是否匹配分类别名（支持双向模糊匹配：foo能匹配food，food也能匹配food）
             alias_match = False
             if not text_match and bill_category in CATEGORY_ALIASES:
                 alias_match = any(
@@ -82,7 +104,8 @@ def get_bills(
             
             if not text_match and not alias_match:
                 continue
-        result.append(bill)
+        
+        result.append(_bill_to_dict(bill))
 
     result.sort(key=lambda x: x.get("date", ""), reverse=True)
     total = len(result)
@@ -97,63 +120,75 @@ def get_bills(
 
 
 @router.post("", response_model=BillModel)
-def add_bill(bill: BillModel):
-    bill_dict = bill.model_dump()
-    bill_dict.pop("id", None)
-    doc_id = db.insert(bill_dict)
-    bill_dict["id"] = doc_id
-    return bill_dict
+def add_bill(bill: BillModel, db: Session = Depends(get_db)):
+    bill_dict = bill.model_dump(exclude={"id"})
+    new_bill = Bill(**bill_dict)
+    db.add(new_bill)
+    db.commit()
+    db.refresh(new_bill)
+    return _bill_to_dict(new_bill)
 
 
 @router.put("/{bill_id}", response_model=BillModel)
-def update_bill(bill_id: int, bill: BillModel):
-    if not db.get(doc_id=bill_id):
+def update_bill(bill_id: int, bill: BillModel, db: Session = Depends(get_db)):
+    existing = db.query(Bill).filter_by(id=bill_id).first()
+    if not existing:
         raise HTTPException(status_code=404, detail="账单未找到")
-    bill_dict = bill.model_dump()
-    bill_dict.pop("id", None)
-    db.update(bill_dict, doc_ids=[bill_id])
-    bill_dict["id"] = bill_id
-    return bill_dict
+
+    update_data = bill.model_dump(exclude={"id"}, exclude_none=True)
+    for key, value in update_data.items():
+        setattr(existing, key, value)
+    
+    db.commit()
+    db.refresh(existing)
+    return _bill_to_dict(existing)
 
 
 @router.delete("/{bill_id}")
-def delete_bill(bill_id: int):
-    if db.remove(doc_ids=[bill_id]):
+def delete_bill(bill_id: int, db: Session = Depends(get_db)):
+    deleted = db.query(Bill).filter_by(id=bill_id).delete()
+    if deleted:
+        db.commit()
         return {"message": "删除成功"}
     raise HTTPException(status_code=404, detail="账单未找到")
 
 
 @router.post("/batch-delete")
-def batch_delete_bills(ids: list[int]):
+def batch_delete_bills(ids: list[int], db: Session = Depends(get_db)):
     """批量删除账单"""
-    deleted = db.remove(doc_ids=ids)
+    deleted = db.query(Bill).filter(Bill.id.in_(ids)).delete(synchronize_session=False)
+    db.commit()
     return {"message": f"成功删除 {deleted} 条账单", "deleted": deleted}
 
 
 @router.delete("")
-def clear_all_bills():
-    db.truncate()
+def clear_all_bills(db: Session = Depends(get_db)):
+    db.query(Bill).delete(synchronize_session=False)
+    db.commit()
     return {"message": "所有账单已清空"}
 
 
 @router.get("/stats")
-def get_stats():
-    bills = [b for b in db.all() if b.get("type") != "budget"]
-    total_income = sum(b.get('amount', 0) for b in bills if b.get('amount', 0) > 0)
-    total_expense = sum(abs(b.get('amount', 0)) for b in bills if b.get('amount', 0) < 0)
+def get_stats(db: Session = Depends(get_db)):
+    from sqlalchemy import func
+    
+    bills_query = db.query(Bill).filter(Bill.type != "budget").all()
+    
+    total_income = sum(b.amount for b in bills_query if b.amount > 0)
+    total_expense = sum(abs(b.amount) for b in bills_query if b.amount < 0)
 
     category_stats = {}
     platform_stats = {}
-    for bill in bills:
-        amount = abs(bill.get('amount', 0))
-        if bill.get('amount', 0) < 0:
-            cat = bill.get('category', '其他')
+    for bill in bills_query:
+        amount = abs(bill.amount)
+        if bill.amount < 0:
+            cat = bill.category or '其他'
             category_stats[cat] = category_stats.get(cat, 0) + amount
-        plat = bill.get('platform', 'unknown')
+        plat = bill.platform or 'unknown'
         platform_stats[plat] = platform_stats.get(plat, 0) + 1
 
     return {
-        "total_count": len(bills),
+        "total_count": len(bills_query),
         "total_income": total_income,
         "total_expense": total_expense,
         "balance": total_income - total_expense,
@@ -174,39 +209,23 @@ def export_bills(
     search: Optional[str] = None,
     min_amount: Optional[float] = None,
     max_amount: Optional[float] = None,
+    db: Session = Depends(get_db),
 ):
-    result = []
+    query = db.query(Bill).filter(Bill.type != "budget")
+    query = _apply_filters(query, category, platform, start_date, end_date, min_amount, max_amount)
+
+    all_bills = query.all()
     search_lower = (search or "").lower()
 
-    for bill in db.all():
-        # 跳过非账单文档
-        if bill.get("type") == "budget":
-            continue
-        if category and bill.get("category") != category:
-            continue
-        if platform and bill.get("platform") != platform:
-            continue
-        if start_date and bill.get("date", "") < start_date:
-            continue
-        if end_date and bill.get("date", "") > end_date:
-            continue
-        # 金额范围筛选
-        abs_amount = abs(bill.get("amount", 0))
-        if min_amount is not None and abs_amount < min_amount:
-            continue
-        if max_amount is not None and abs_amount > max_amount:
-            continue
+    result = []
+    for bill in all_bills:
         if search_lower:
-            # 搜索名称、备注、商户、分类
             searchable_text = " ".join([
-                bill.get("name") or "",
-                bill.get("note") or "",
-                bill.get("merchant") or "",
-                bill.get("category") or ""
+                bill.name or "", bill.note or "", bill.merchant or "", bill.category or ""
             ]).lower()
             if search_lower not in searchable_text:
                 continue
-        result.append(bill)
+        result.append(_bill_to_dict(bill))
 
     result.sort(key=lambda x: x.get("date", ""), reverse=True)
 

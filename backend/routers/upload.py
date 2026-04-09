@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
+from sqlalchemy.orm import Session
 from models import ImportResult
-from database import db
+from database import get_db, Bill
 from parsers.base import detect_platform, decode_content
 from parsers.wechat import parse_wechat_csv, parse_wechat_excel
 from parsers.alipay import parse_alipay_csv, parse_alipay_excel
@@ -24,7 +25,11 @@ async def detect_bill_platform(file: UploadFile = File(...)):
 
 
 @router.post("/upload", response_model=ImportResult)
-async def upload_bills(file: UploadFile = File(...), platform: str = Form(...)):
+async def upload_bills(
+    file: UploadFile = File(...),
+    platform: str = Form(...),
+    db: Session = Depends(get_db),
+):
     if platform not in ['wechat', 'alipay', 'bank']:
         raise HTTPException(status_code=400, detail="不支持的平台类型")
     if not file.filename.lower().endswith(('.csv', '.xlsx', '.xls')):
@@ -47,15 +52,35 @@ async def upload_bills(file: UploadFile = File(...), platform: str = Form(...)):
             return ImportResult(success=0, skipped=0, total=0, message="未解析到有效账单数据")
 
         # Deduplicate by transaction_id
-        existing_ids = {b.get('transaction_id') for b in db.all() if b.get('transaction_id')}
+        existing_ids = set()
+        existing_txns = db.query(Bill.transaction_id).filter(
+            Bill.transaction_id != None,
+            Bill.transaction_id != ""
+        ).all()
+        existing_ids = {t[0] for t in existing_txns}
+
         success_count = skipped_count = 0
 
-        for bill in bills:
-            if bill.get('transaction_id') and bill['transaction_id'] in existing_ids:
+        for bill_data in bills:
+            if bill_data.get('transaction_id') and bill_data['transaction_id'] in existing_ids:
                 skipped_count += 1
                 continue
-            db.insert(bill)
+            
+            new_bill = Bill(
+                name=bill_data.get("name", ""),
+                amount=float(bill_data.get("amount", 0)),
+                type=bill_data.get("type", "expense"),
+                date=bill_data.get("date", ""),
+                category=bill_data.get("category"),
+                platform=bill_data.get("platform"),
+                merchant=bill_data.get("merchant"),
+                note=bill_data.get("note"),
+                transaction_id=bill_data.get("transaction_id"),
+            )
+            db.add(new_bill)
             success_count += 1
+
+        db.commit()
 
         message = f"成功导入 {success_count} 条{PLATFORM_NAMES.get(actual_platform, actual_platform)}账单"
         if auto_corrected:

@@ -2,12 +2,15 @@
 import sys
 import os
 sys.path.insert(0, os.path.dirname(__file__))
-from tinydb import TinyDB
 from datetime import datetime, timedelta
 import random
+from database import init_db, Bill, SessionLocal
 
-db = TinyDB("database/db.json")
-db.truncate()
+init_db()
+
+db = SessionLocal()
+db.query(Bill).delete(synchronize_session=False)
+db.commit()
 
 categories = ['餐饮', '交通', '购物', '娱乐', '医疗', '教育', '转账', '工资', '投资', '其他']
 expense_categories = ['餐饮', '交通', '购物', '娱乐', '医疗', '教育', '其他']
@@ -46,49 +49,47 @@ for day_offset in range(180):
         if cat == '交通' and merchant == '12306':
             amount = round(random.uniform(50, 800), 2)
 
-        bills.append({
-            'name': merchant,
-            'amount': -amount,
-            'type': 'expense',
-            'date': date_str,
-            'category': cat,
-            'platform': random.choice(platforms),
-            'merchant': merchant,
-            'note': '',
-        })
+        db.add(Bill(
+            name=merchant,
+            amount=-amount,
+            type='expense',
+            date=date_str,
+            category=cat,
+            platform=random.choice(platforms),
+            merchant=merchant,
+            note='',
+        ))
 
     # Occasional income
     if date.day == 15 or date.day == 28:  # payday
         salary = round(random.uniform(8000, 15000), 2)
-        bills.append({
-            'name': 'XX科技有限公司',
-            'amount': salary,
-            'type': 'income',
-            'date': date_str,
-            'category': '工资',
-            'platform': 'alipay',
-            'merchant': 'XX科技有限公司',
-            'note': '月工资',
-        })
+        db.add(Bill(
+            name='XX科技有限公司',
+            amount=salary,
+            type='income',
+            date=date_str,
+            category='工资',
+            platform='alipay',
+            merchant='XX科技有限公司',
+            note='月工资',
+        ))
 
     if random.random() > 0.85:
         cat = random.choice(['投资', '转账'])
         merchant = random.choice(merchants[cat])
         amount = round(random.uniform(100, 5000), 2)
-        bills.append({
-            'name': merchant,
-            'amount': amount,
-            'type': 'income',
-            'date': date_str,
-            'category': cat,
-            'platform': random.choice(platforms),
-            'merchant': merchant,
-            'note': '',
-        })
+        db.add(Bill(
+            name=merchant,
+            amount=amount,
+            type='income',
+            date=date_str,
+            category=cat,
+            platform=random.choice(platforms),
+            merchant=merchant,
+            note='',
+        ))
 
-# Insert all
-for bill in bills:
-    db.insert(bill)
-
-print(f"Inserted {len(bills)} bills ({sum(1 for b in bills if b['type']=='expense')} expenses, {sum(1 for b in bills if b['type']=='income')} incomes)")
-print(f"Date range: {bills[-1]['date']} ~ {bills[0]['date']}")
+db.commit()
+total_bills = db.query(Bill).count()
+print(f"Inserted {total_bills} bills")
+db.close()

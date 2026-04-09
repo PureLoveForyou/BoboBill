@@ -1,12 +1,11 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Optional, Dict
-from database import db
-from tinydb import Query
+import json as json_lib
+from sqlalchemy.orm import Session
+from database import get_db, Budget, Bill
 
 router = APIRouter(prefix="/budget", tags=["budget"])
-
-BudgetQuery = Query()
 
 
 class BudgetModel(BaseModel):
@@ -14,68 +13,83 @@ class BudgetModel(BaseModel):
     category_budgets: Optional[Dict[str, float]] = {}
 
 
-def _get_budget_doc():
-    """获取预算文档，不存在则创建"""
-    result = db.search(BudgetQuery.type == "budget")
-    if result:
-        return result[0]
-    doc_id = db.insert({"type": "budget", "monthly_total": 0, "category_budgets": {}})
-    return db.get(doc_id=doc_id)
+def _get_budget(db: Session, user_id: int = 1):
+    """获取预算记录，不存在则创建"""
+    budget = db.query(Budget).filter_by(user_id=user_id).first()
+    if not budget:
+        budget = Budget(user_id=user_id, monthly_total=0, category_budgets="{}")
+        db.add(budget)
+        db.commit()
+        db.refresh(budget)
+    return budget
 
 
 @router.get("")
-def get_budget():
-    doc = _get_budget_doc()
+def get_budget(db: Session = Depends(get_db)):
+    doc = _get_budget(db)
+    try:
+        category_budgets = json_lib.loads(doc.category_budgets) if doc.category_budgets else {}
+    except (json_lib.JSONDecodeError, TypeError):
+        category_budgets = {}
+    
     return {
-        "monthly_total": doc.get("monthly_total", 0),
-        "category_budgets": doc.get("category_budgets", {}),
+        "monthly_total": doc.monthly_total or 0,
+        "category_budgets": category_budgets,
     }
 
 
 @router.put("")
-def update_budget(budget: BudgetModel):
-    doc = _get_budget_doc()
-    update_data = {}
+def update_budget(budget: BudgetModel, db: Session = Depends(get_db)):
+    doc = _get_budget(db)
     if budget.monthly_total is not None:
-        update_data["monthly_total"] = budget.monthly_total
+        doc.monthly_total = budget.monthly_total
     if budget.category_budgets is not None:
-        update_data["category_budgets"] = budget.category_budgets
-    db.update(update_data, doc_ids=[doc.doc_id])
-    updated = db.get(doc_id=doc.doc_id)
+        doc.category_budgets = json_lib.dumps(budget.category_budgets, ensure_ascii=False)
+    db.commit()
+    db.refresh(doc)
+
+    try:
+        category_budgets = json_lib.loads(doc.category_budgets) if doc.category_budgets else {}
+    except (json_lib.JSONDecodeError, TypeError):
+        category_budgets = {}
+
     return {
-        "monthly_total": updated.get("monthly_total", 0),
-        "category_budgets": updated.get("category_budgets", {}),
+        "monthly_total": doc.monthly_total or 0,
+        "category_budgets": category_budgets,
     }
 
 
 @router.get("/status")
-def get_budget_status():
+def get_budget_status(db: Session = Depends(get_db)):
     """获取当月预算使用情况"""
     from datetime import datetime
 
-    doc = _get_budget_doc()
-    monthly_total = doc.get("monthly_total", 0)
-    category_budgets = doc.get("category_budgets", {})
+    doc = _get_budget(db)
+    monthly_total = doc.monthly_total or 0
+    try:
+        category_budgets = json_lib.loads(doc.category_budgets) if doc.category_budgets else {}
+    except (json_lib.JSONDecodeError, TypeError):
+        category_budgets = {}
 
     now = datetime.now()
     month_start = f"{now.year}-{now.month:02d}-01"
     month_end = f"{now.year}-{now.month:02d}-{now.day:02d}"
 
-    all_bills = [b for b in db.all() if b.get("type") != "budget"]
-    month_bills = [
-        b for b in all_bills
-        if b.get("date", "") >= month_start and b.get("date", "") <= month_end
-    ]
+    month_bills = db.query(Bill).filter(
+        Bill.type != "budget",
+        Bill.date >= month_start,
+        Bill.date <= month_end,
+    ).all()
 
     # 月度总支出
-    total_spent = sum(abs(b.get("amount", 0)) for b in month_bills if b.get("amount", 0) < 0)
+    total_spent = sum(abs(b.amount) for b in month_bills if b.amount < 0)
 
     # 分类支出
     category_spent = {}
     for b in month_bills:
-        if b.get("amount", 0) < 0:
-            cat = b.get("category", "其他")
-            category_spent[cat] = category_spent.get(cat, 0) + abs(b.get("amount", 0))
+        if b.amount < 0:
+            cat = b.category or "其他"
+            category_spent[cat] = category_spent.get(cat, 0) + abs(b.amount)
 
     # 分类预算状态
     category_status = {}
