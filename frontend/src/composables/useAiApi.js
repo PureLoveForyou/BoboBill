@@ -155,7 +155,15 @@ export function useAiApi() {
       if (!res.ok) { currentMessages.value = []; return false }
       const msgs = await res.json()
       // 过滤掉空的 assistant 消息（思考阶段中断产生的空气泡）
-      currentMessages.value = msgs.filter(m => !(m.role === 'assistant' && !m.content && !m.reasoning))
+      currentMessages.value = msgs
+        .filter(m => !(m.role === 'assistant' && !m.content && !m.reasoning && !m.tool_calls))
+        .map(m => {
+          // 解析 tool_calls JSON
+          if (m.tool_calls) {
+            try { m.toolCalls = JSON.parse(m.tool_calls) } catch { m.toolCalls = [] }
+          }
+          return m
+        })
       return true
     } catch { currentMessages.value = []; return false }
   }
@@ -191,12 +199,14 @@ export function useAiApi() {
   }
 
   // 添加消息到数据库
-  const addMessage = async (sessionId, role, content, reasoning = null) => {
+  const addMessage = async (sessionId, role, content, reasoning = null, toolCalls = null) => {
     try {
+      const body = { role, content, reasoning }
+      if (toolCalls) body.tool_calls = JSON.stringify(toolCalls)
       const res = await fetch(`${API_BASE}/ai/chats/${sessionId}/messages`, {
         method: 'POST',
         headers: _authHeaders(),
-        body: JSON.stringify({ role, content, reasoning }),
+        body: JSON.stringify(body),
       })
       if (!res.ok) return null
       return await res.json()

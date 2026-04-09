@@ -69,6 +69,7 @@ class ChatMessage(Base):
     role = Column(String(20), nullable=False)  # user / assistant
     content = Column(Text, nullable=False, default="")
     reasoning = Column(Text, nullable=True, default=None)  # DeepSeek 思考过程
+    tool_calls = Column(Text, nullable=True, default=None)  # 工具调用记录 JSON
 
 
 class Budget(Base):

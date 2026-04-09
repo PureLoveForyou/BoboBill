@@ -846,7 +846,7 @@ async def get_chat_messages(session_id: int, db: Session = Depends(get_db), curr
         raise HTTPException(status_code=404, detail="对话不存在")
     messages = db.query(DBChatMessage).filter_by(session_id=session_id).order_by(DBChatMessage.id.asc()).all()
     return [
-        {"id": m.id, "role": m.role, "content": m.content, "reasoning": m.reasoning}
+        {"id": m.id, "role": m.role, "content": m.content, "reasoning": m.reasoning, "tool_calls": m.tool_calls}
         for m in messages
     ]
 
@@ -863,6 +863,7 @@ async def add_chat_message(session_id: int, req: ChatMessageCreate, db: Session 
         role=req.role,
         content=req.content,
         reasoning=req.reasoning,
+        tool_calls=req.tool_calls,
     )
     db.add(message)
     # 更新会话时间
@@ -874,7 +875,7 @@ async def add_chat_message(session_id: int, req: ChatMessageCreate, db: Session 
             session.title = req.content[:30].replace("\n", " ")
     db.commit()
     db.refresh(message)
-    return {"id": message.id, "role": message.role, "content": message.content, "reasoning": message.reasoning}
+    return {"id": message.id, "role": message.role, "content": message.content, "reasoning": message.reasoning, "tool_calls": message.tool_calls}
 
 
 @router.put("/chats/{session_id}/messages/{message_id}")
@@ -890,5 +891,7 @@ async def update_chat_message(session_id: int, message_id: int, req: dict, db: S
         msg.content = req["content"]
     if "reasoning" in req:
         msg.reasoning = req["reasoning"]
+    if "tool_calls" in req:
+        msg.tool_calls = req["tool_calls"]
     db.commit()
     return {"message": "消息已更新"}

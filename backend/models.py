@@ -96,6 +96,7 @@ class ChatMessageCreate(BaseModel):
     role: str
     content: str
     reasoning: Optional[str] = None
+    tool_calls: Optional[str] = None  # JSON 字符串，如 [{"name":"get_current_time","description":"获取当前时间","status":"done"}]
 
 
 class ChatMessageResponse(BaseModel):
@@ -103,6 +104,7 @@ class ChatMessageResponse(BaseModel):
     role: str
     content: str
     reasoning: Optional[str] = None
+    tool_calls: Optional[str] = None
 
 
 class ChatSessionResponse(BaseModel):

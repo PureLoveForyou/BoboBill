@@ -138,8 +138,9 @@ const handleSend = async () => {
     // 流完成后才保存 AI 消息到数据库（避免存入空消息导致空气泡）
     const finalContent = finalMsg?.content || null
     const finalReasoning = finalMsg?.reasoning || null
-    if (finalContent || finalReasoning) {
-      addMessage(sid, 'assistant', finalContent, finalReasoning).catch(() => {})
+    const finalToolCalls = finalMsg?.toolCalls || null
+    if (finalContent || finalReasoning || finalToolCalls) {
+      addMessage(sid, 'assistant', finalContent, finalReasoning, finalToolCalls).catch(() => {})
     }
 
     // 更新会话标题（取第一条用户消息前30字）
