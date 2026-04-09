@@ -2,6 +2,13 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { API_BASE } from '../config'
 
+function getAuthHeaders() {
+  const token = localStorage.getItem('bobobill_token')
+  const headers = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  return headers
+}
+
 export function useFileImport({ showToast, onImportSuccess }) {
   const { t } = useI18n()
   const showImportModal = ref(false)
@@ -47,6 +54,7 @@ export function useFileImport({ showToast, onImportSuccess }) {
     try {
       const response = await fetch(`${API_BASE}/bills/detect`, {
         method: 'POST',
+        headers: getAuthHeaders(),
         body: formData
       })
 
@@ -74,6 +82,7 @@ export function useFileImport({ showToast, onImportSuccess }) {
     try {
       const response = await fetch(`${API_BASE}/bills/upload`, {
         method: 'POST',
+        headers: getAuthHeaders(),
         body: formData
       })
 

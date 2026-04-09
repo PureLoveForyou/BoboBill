@@ -74,8 +74,9 @@ const toggleTheme = () => {
 
 // Backup & Restore
 const exportDatabase = () => {
+  const token = localStorage.getItem('bobobill_token')
   const a = document.createElement('a')
-  a.href = `${API_BASE}/backup/export`
+  a.href = `${API_BASE}/backup/export?token=${token}`
   a.target = '_blank'
   document.body.appendChild(a)
   a.click()
@@ -106,8 +107,13 @@ const confirmImport = async () => {
     const formData = new FormData()
     formData.append('file', importFile.value)
 
+    const token = localStorage.getItem('bobobill_token')
+    const headers = {}
+    if (token) headers['Authorization'] = `Bearer ${token}`
+
     const response = await fetch(`${API_BASE}/backup/import`, {
       method: 'POST',
+      headers,
       body: formData
     })
 

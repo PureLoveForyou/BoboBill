@@ -4,6 +4,7 @@ from routers.bills import router as bills_router
 from routers.upload import router as upload_router
 from routers.backup import router as backup_router
 from routers.budget import router as budget_router
+from routers.auth import router as auth_router
 
 app = FastAPI(title="BoboBill API", description="智能账单管理助手", version="0.3.0")
 
@@ -19,6 +20,7 @@ app.include_router(bills_router)
 app.include_router(upload_router)
 app.include_router(backup_router)
 app.include_router(budget_router)
+app.include_router(auth_router)
 
 
 @app.get("/")

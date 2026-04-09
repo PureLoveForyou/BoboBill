@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
 from sqlalchemy.orm import Session
 from models import ImportResult
-from database import get_db, Bill
+from database import get_db, Bill, User
+from auth import get_current_user
 from parsers.base import detect_platform, decode_content
 from parsers.wechat import parse_wechat_csv, parse_wechat_excel
 from parsers.alipay import parse_alipay_csv, parse_alipay_excel
@@ -29,6 +30,7 @@ async def upload_bills(
     file: UploadFile = File(...),
     platform: str = Form(...),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     if platform not in ['wechat', 'alipay', 'bank']:
         raise HTTPException(status_code=400, detail="不支持的平台类型")
@@ -51,9 +53,8 @@ async def upload_bills(
         if not bills:
             return ImportResult(success=0, skipped=0, total=0, message="未解析到有效账单数据")
 
-        # Deduplicate by transaction_id
-        existing_ids = set()
         existing_txns = db.query(Bill.transaction_id).filter(
+            Bill.user_id == current_user.id,
             Bill.transaction_id != None,
             Bill.transaction_id != ""
         ).all()
@@ -76,6 +77,7 @@ async def upload_bills(
                 merchant=bill_data.get("merchant"),
                 note=bill_data.get("note"),
                 transaction_id=bill_data.get("transaction_id"),
+                user_id=current_user.id,
             )
             db.add(new_bill)
             success_count += 1

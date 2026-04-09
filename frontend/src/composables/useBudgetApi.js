@@ -3,6 +3,13 @@ import { useI18n } from 'vue-i18n'
 import { API_BASE } from '../config'
 import { useToast } from './useToast'
 
+function getAuthHeaders() {
+  const token = localStorage.getItem('bobobill_token')
+  const headers = { 'Content-Type': 'application/json' }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  return headers
+}
+
 export function useBudgetApi() {
   const { t } = useI18n()
   const { showToast } = useToast()
@@ -13,7 +20,9 @@ export function useBudgetApi() {
 
   const fetchBudget = async () => {
     try {
-      const response = await fetch(`${API_BASE}/budget`)
+      const response = await fetch(`${API_BASE}/budget`, {
+        headers: getAuthHeaders()
+      })
       if (response.ok) {
         budget.value = await response.json()
       }
@@ -25,7 +34,9 @@ export function useBudgetApi() {
   const fetchBudgetStatus = async () => {
     isLoading.value = true
     try {
-      const response = await fetch(`${API_BASE}/budget/status`)
+      const response = await fetch(`${API_BASE}/budget/status`, {
+        headers: getAuthHeaders()
+      })
       if (response.ok) {
         budgetStatus.value = await response.json()
       }
@@ -40,7 +51,7 @@ export function useBudgetApi() {
     try {
       const response = await fetch(`${API_BASE}/budget`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(data)
       })
       if (response.ok) {

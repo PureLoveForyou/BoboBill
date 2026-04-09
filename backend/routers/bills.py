@@ -1,11 +1,13 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import Optional
 import csv
 import io
 from models import BillModel, PaginatedResponse
-from database import get_db, Bill
+from database import get_db, Bill, User
+from auth import get_current_user, get_current_user_from_query
 
 router = APIRouter(prefix="/bills", tags=["bills"])
 
@@ -27,7 +29,6 @@ CATEGORY_ALIASES = {
 
 
 def _bill_to_dict(bill: Bill) -> dict:
-    """SQLAlchemy Bill 对象转字典"""
     return {
         "id": bill.id,
         "name": bill.name,
@@ -43,7 +44,6 @@ def _bill_to_dict(bill: Bill) -> dict:
 
 
 def _apply_filters(query, category=None, platform=None, start_date=None, end_date=None, min_amount=None, max_amount=None):
-    """应用通用筛选条件"""
     if category:
         query = query.filter(Bill.category == category)
     if platform:
@@ -53,10 +53,8 @@ def _apply_filters(query, category=None, platform=None, start_date=None, end_dat
     if end_date:
         query = query.filter(Bill.date <= end_date)
     if min_amount is not None:
-        from sqlalchemy import func
         query = query.filter(func.abs(Bill.amount) >= min_amount)
     if max_amount is not None:
-        from sqlalchemy import func
         query = query.filter(func.abs(Bill.amount) <= max_amount)
     return query
 
@@ -73,12 +71,11 @@ def get_bills(
     min_amount: Optional[float] = None,
     max_amount: Optional[float] = None,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    # 基础查询：排除预算数据（type != 'budget'）
-    query = db.query(Bill).filter(Bill.type != "budget")
+    query = db.query(Bill).filter(Bill.user_id == current_user.id, Bill.type != "budget")
     query = _apply_filters(query, category, platform, start_date, end_date, min_amount, max_amount)
 
-    # 搜索过滤（需要在 Python 侧处理，因为涉及别名模糊匹配）
     all_bills = query.all()
     result = []
     search_lower = (search or "").lower()
@@ -87,24 +84,17 @@ def get_bills(
         if search_lower:
             bill_category = bill.category or ""
             searchable_text = " ".join([
-                bill.name or "",
-                bill.note or "",
-                bill.merchant or "",
-                bill_category,
+                bill.name or "", bill.note or "", bill.merchant or "", bill_category,
             ]).lower()
-            
             text_match = search_lower in searchable_text
-            
             alias_match = False
             if not text_match and bill_category in CATEGORY_ALIASES:
                 alias_match = any(
                     search_lower in alias or alias in search_lower
                     for alias in CATEGORY_ALIASES[bill_category]
                 )
-            
             if not text_match and not alias_match:
                 continue
-        
         result.append(_bill_to_dict(bill))
 
     result.sort(key=lambda x: x.get("date", ""), reverse=True)
@@ -120,8 +110,9 @@ def get_bills(
 
 
 @router.post("", response_model=BillModel)
-def add_bill(bill: BillModel, db: Session = Depends(get_db)):
+def add_bill(bill: BillModel, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     bill_dict = bill.model_dump(exclude={"id"})
+    bill_dict["user_id"] = current_user.id
     new_bill = Bill(**bill_dict)
     db.add(new_bill)
     db.commit()
@@ -130,23 +121,22 @@ def add_bill(bill: BillModel, db: Session = Depends(get_db)):
 
 
 @router.put("/{bill_id}", response_model=BillModel)
-def update_bill(bill_id: int, bill: BillModel, db: Session = Depends(get_db)):
-    existing = db.query(Bill).filter_by(id=bill_id).first()
+def update_bill(bill_id: int, bill: BillModel, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    existing = db.query(Bill).filter_by(id=bill_id, user_id=current_user.id).first()
     if not existing:
         raise HTTPException(status_code=404, detail="账单未找到")
 
     update_data = bill.model_dump(exclude={"id"}, exclude_none=True)
     for key, value in update_data.items():
         setattr(existing, key, value)
-    
     db.commit()
     db.refresh(existing)
     return _bill_to_dict(existing)
 
 
 @router.delete("/{bill_id}")
-def delete_bill(bill_id: int, db: Session = Depends(get_db)):
-    deleted = db.query(Bill).filter_by(id=bill_id).delete()
+def delete_bill(bill_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    deleted = db.query(Bill).filter_by(id=bill_id, user_id=current_user.id).delete()
     if deleted:
         db.commit()
         return {"message": "删除成功"}
@@ -154,26 +144,23 @@ def delete_bill(bill_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/batch-delete")
-def batch_delete_bills(ids: list[int], db: Session = Depends(get_db)):
-    """批量删除账单"""
-    deleted = db.query(Bill).filter(Bill.id.in_(ids)).delete(synchronize_session=False)
+def batch_delete_bills(ids: list[int], db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    deleted = db.query(Bill).filter(Bill.id.in_(ids), Bill.user_id == current_user.id).delete(synchronize_session=False)
     db.commit()
     return {"message": f"成功删除 {deleted} 条账单", "deleted": deleted}
 
 
 @router.delete("")
-def clear_all_bills(db: Session = Depends(get_db)):
-    db.query(Bill).delete(synchronize_session=False)
+def clear_all_bills(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    db.query(Bill).filter_by(user_id=current_user.id).delete(synchronize_session=False)
     db.commit()
     return {"message": "所有账单已清空"}
 
 
 @router.get("/stats")
-def get_stats(db: Session = Depends(get_db)):
-    from sqlalchemy import func
-    
-    bills_query = db.query(Bill).filter(Bill.type != "budget").all()
-    
+def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    bills_query = db.query(Bill).filter(Bill.user_id == current_user.id, Bill.type != "budget").all()
+
     total_income = sum(b.amount for b in bills_query if b.amount > 0)
     total_expense = sum(abs(b.amount) for b in bills_query if b.amount < 0)
 
@@ -210,8 +197,9 @@ def export_bills(
     min_amount: Optional[float] = None,
     max_amount: Optional[float] = None,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_query),
 ):
-    query = db.query(Bill).filter(Bill.type != "budget")
+    query = db.query(Bill).filter(Bill.user_id == current_user.id, Bill.type != "budget")
     query = _apply_filters(query, category, platform, start_date, end_date, min_amount, max_amount)
 
     all_bills = query.all()

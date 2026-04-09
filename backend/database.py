@@ -31,6 +31,14 @@ class Bill(Base):
     user_id = Column(Integer, default=1)
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(50), unique=True, nullable=False, index=True)
+    hashed_password = Column(String(200), nullable=False)
+
+
 class Budget(Base):
     __tablename__ = "budgets"
 

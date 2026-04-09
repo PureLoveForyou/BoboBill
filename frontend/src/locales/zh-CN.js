@@ -192,5 +192,27 @@ export default {
     setBudget: '设置预算',
     editBudget: '编辑预算',
     budgetStatus: '预算概览'
+  },
+  auth: {
+    loginTitle: '登录',
+    registerTitle: '注册',
+    username: '用户名',
+    password: '密码',
+    usernamePlaceholder: '请输入用户名',
+    passwordPlaceholder: '请输入密码',
+    loginBtn: '登 录',
+    registerBtn: '注 册',
+    noAccount: '还没有账号？',
+    hasAccount: '已有账号？',
+    goRegister: '去注册',
+    goLogin: '去登录',
+    loginFailed: '用户名或密码错误',
+    registerFailed: '注册失败',
+    usernameExists: '用户名已存在',
+    pleaseInput: '请输入用户名和密码',
+    passwordTooShort: '密码至少4位',
+    networkError: '网络错误，请检查服务',
+    logout: '退出登录',
+    sessionExpired: '登录已过期，请重新登录'
   }
 }

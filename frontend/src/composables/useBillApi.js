@@ -3,6 +3,13 @@ import { useI18n } from 'vue-i18n'
 import { API_BASE } from '../config'
 import { DEFAULT_BILL } from '../constants/bill'
 
+function getAuthHeaders() {
+  const token = localStorage.getItem('bobobill_token')
+  const headers = { 'Content-Type': 'application/json' }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  return headers
+}
+
 function buildQuery(params) {
   const qs = new URLSearchParams()
   for (const [k, v] of Object.entries(params)) {
@@ -22,7 +29,9 @@ export function useBillApi({ showToast, onBillsChanged }) {
     isLoading.value = true
     try {
       const query = buildQuery(params)
-      const response = await fetch(`${API_BASE}/bills${query}`)
+      const response = await fetch(`${API_BASE}/bills${query}`, {
+        headers: getAuthHeaders()
+      })
       if (response.ok) {
         const data = await response.json()
         if (Array.isArray(data)) {
@@ -33,6 +42,8 @@ export function useBillApi({ showToast, onBillsChanged }) {
           total.value = data.total
         }
         onBillsChanged?.()
+      } else if (response.status === 401) {
+        showToast(t('auth.sessionExpired'), 'error')
       } else {
         showToast(t('bill.fetchFailed') + ': ' + response.status, 'error')
       }
@@ -48,7 +59,9 @@ export function useBillApi({ showToast, onBillsChanged }) {
     const currentPage = Math.ceil(bills.value.length / (params.page_size || 20)) + 1
     try {
       const query = buildQuery({ ...params, page: currentPage })
-      const response = await fetch(`${API_BASE}/bills${query}`)
+      const response = await fetch(`${API_BASE}/bills${query}`, {
+        headers: getAuthHeaders()
+      })
       if (response.ok) {
         const data = await response.json()
         const newItems = Array.isArray(data) ? data : data.items
@@ -93,7 +106,7 @@ export function useBillApi({ showToast, onBillsChanged }) {
 
       const response = await fetch(`${API_BASE}/bills`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(billData)
       })
 
@@ -163,7 +176,7 @@ export function useBillApi({ showToast, onBillsChanged }) {
 
       const response = await fetch(`${API_BASE}/bills/${editingBill.value.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(billData)
       })
 
@@ -202,7 +215,8 @@ export function useBillApi({ showToast, onBillsChanged }) {
 
     try {
       const response = await fetch(`${API_BASE}/bills/${deletingBill.value.id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAuthHeaders()
       })
 
       if (response.ok) {
@@ -222,7 +236,9 @@ export function useBillApi({ showToast, onBillsChanged }) {
   const exportBills = async (params = {}) => {
     try {
       const query = buildQuery(params)
-      const url = `${API_BASE}/bills/export${query}`
+      const token = localStorage.getItem('bobobill_token')
+      // Export needs token in query param for browser download
+      const url = `${API_BASE}/bills/export${query}${query ? '&' : '?'}token=${token}`
       const a = document.createElement('a')
       a.href = url
       a.download = 'bills.csv'
@@ -243,7 +259,7 @@ export function useBillApi({ showToast, onBillsChanged }) {
     try {
       const response = await fetch(`${API_BASE}/bills/batch-delete`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(ids)
       })
 

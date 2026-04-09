@@ -190,5 +190,27 @@ export default {
     setBudget: 'Set Budget',
     editBudget: 'Edit Budget',
     budgetStatus: 'Budget Overview'
+  },
+  auth: {
+    loginTitle: 'Login',
+    registerTitle: 'Register',
+    username: 'Username',
+    password: 'Password',
+    usernamePlaceholder: 'Enter username',
+    passwordPlaceholder: 'Enter password',
+    loginBtn: 'Login',
+    registerBtn: 'Register',
+    noAccount: "Don't have an account?",
+    hasAccount: 'Already have an account?',
+    goRegister: 'Register',
+    goLogin: 'Login',
+    loginFailed: 'Invalid username or password',
+    registerFailed: 'Registration failed',
+    usernameExists: 'Username already exists',
+    pleaseInput: 'Please enter username and password',
+    passwordTooShort: 'Password must be at least 4 characters',
+    networkError: 'Network error, check server',
+    logout: 'Logout',
+    sessionExpired: 'Session expired, please login again'
   }
 }

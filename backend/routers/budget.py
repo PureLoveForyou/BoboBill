@@ -3,7 +3,8 @@ from pydantic import BaseModel
 from typing import Optional, Dict
 import json as json_lib
 from sqlalchemy.orm import Session
-from database import get_db, Budget, Bill
+from database import get_db, Budget, Bill, User
+from auth import get_current_user
 
 router = APIRouter(prefix="/budget", tags=["budget"])
 
@@ -13,7 +14,7 @@ class BudgetModel(BaseModel):
     category_budgets: Optional[Dict[str, float]] = {}
 
 
-def _get_budget(db: Session, user_id: int = 1):
+def _get_budget(db: Session, user_id: int):
     """获取预算记录，不存在则创建"""
     budget = db.query(Budget).filter_by(user_id=user_id).first()
     if not budget:
@@ -25,13 +26,12 @@ def _get_budget(db: Session, user_id: int = 1):
 
 
 @router.get("")
-def get_budget(db: Session = Depends(get_db)):
-    doc = _get_budget(db)
+def get_budget(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    doc = _get_budget(db, current_user.id)
     try:
         category_budgets = json_lib.loads(doc.category_budgets) if doc.category_budgets else {}
     except (json_lib.JSONDecodeError, TypeError):
         category_budgets = {}
-    
     return {
         "monthly_total": doc.monthly_total or 0,
         "category_budgets": category_budgets,
@@ -39,8 +39,8 @@ def get_budget(db: Session = Depends(get_db)):
 
 
 @router.put("")
-def update_budget(budget: BudgetModel, db: Session = Depends(get_db)):
-    doc = _get_budget(db)
+def update_budget(budget: BudgetModel, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    doc = _get_budget(db, current_user.id)
     if budget.monthly_total is not None:
         doc.monthly_total = budget.monthly_total
     if budget.category_budgets is not None:
@@ -60,11 +60,11 @@ def update_budget(budget: BudgetModel, db: Session = Depends(get_db)):
 
 
 @router.get("/status")
-def get_budget_status(db: Session = Depends(get_db)):
+def get_budget_status(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """获取当月预算使用情况"""
     from datetime import datetime
 
-    doc = _get_budget(db)
+    doc = _get_budget(db, current_user.id)
     monthly_total = doc.monthly_total or 0
     try:
         category_budgets = json_lib.loads(doc.category_budgets) if doc.category_budgets else {}
@@ -76,22 +76,20 @@ def get_budget_status(db: Session = Depends(get_db)):
     month_end = f"{now.year}-{now.month:02d}-{now.day:02d}"
 
     month_bills = db.query(Bill).filter(
+        Bill.user_id == current_user.id,
         Bill.type != "budget",
         Bill.date >= month_start,
         Bill.date <= month_end,
     ).all()
 
-    # 月度总支出
     total_spent = sum(abs(b.amount) for b in month_bills if b.amount < 0)
 
-    # 分类支出
     category_spent = {}
     for b in month_bills:
         if b.amount < 0:
             cat = b.category or "其他"
             category_spent[cat] = category_spent.get(cat, 0) + abs(b.amount)
 
-    # 分类预算状态
     category_status = {}
     for cat, budget_amount in category_budgets.items():
         spent = category_spent.get(cat, 0)

@@ -1,12 +1,20 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getCurrentTheme, toggleDarkLight } from '../utils/theme.js'
+import { useAuth } from '../composables/useAuth'
 
 const { t, locale } = useI18n()
+const router = useRouter()
+const { user, logout } = useAuth()
 const currentTheme = ref('light')
 const route = useRoute()
+
+const handleLogout = () => {
+  logout()
+  router.push('/login')
+}
 
 const onThemeChange = (event) => {
   currentTheme.value = event.detail.theme
@@ -76,6 +84,23 @@ const isActive = (path) => route.path === path
             <div v-if="isActive(item.path)" class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent"></div>
           </router-link>
         </nav>
+      </div>
+
+      <!-- User Info -->
+      <div v-if="user" class="px-5 pb-2 pt-2">
+        <div class="flex items-center gap-3 px-4 py-3 rounded-[14px] bg-base-200/40">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/80 to-primary/40 flex items-center justify-center text-base-100 font-bold text-sm shadow-sm">
+            {{ user.username.charAt(0).toUpperCase() }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-base-content truncate">{{ user.username }}</p>
+          </div>
+          <button @click="handleLogout" class="p-1.5 rounded-lg hover:bg-base-200/80 transition-all text-base-content/40 hover:text-error" :title="t('auth.logout')">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- Theme Toggle -->

@@ -1,13 +1,16 @@
 <script setup>
-import { useRouter } from 'vue-router'
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { initTheme, toggleDarkLight, getCurrentTheme } from './utils/theme.js'
 import Sidebar from './components/Sidebar.vue'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const currentTheme = ref('light')
+
+const isLoginPage = computed(() => route.path === '/login')
 
 // Theme
 const onThemeChange = (event) => {
@@ -39,7 +42,13 @@ watch(() => router.currentRoute.value.path, () => {
 </script>
 
 <template>
-  <div class="drawer lg:drawer-open">
+  <!-- Login page: no sidebar -->
+  <div v-if="isLoginPage">
+    <router-view />
+  </div>
+
+  <!-- Main layout with sidebar -->
+  <div v-else class="drawer lg:drawer-open">
     <input id="sidebar-drawer" type="checkbox" class="drawer-toggle" />
     
     <div class="drawer-content flex flex-col">
