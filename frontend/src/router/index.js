@@ -3,12 +3,14 @@ import Dashboard from '../pages/Dashboard.vue'
 import Bills from '../pages/Bills.vue'
 import Settings from '../pages/Settings.vue'
 import Login from '../pages/Login.vue'
+import AIAssistant from '../pages/AIAssistant.vue'
 
 const routes = [
     { path: '/login', component: Login, meta: { guest: true } },
     { path: '/', redirect: '/dashboard' },
     { path: '/dashboard', component: Dashboard, meta: { auth: true } },
     { path: '/bills', component: Bills, meta: { auth: true } },
+    { path: '/ai', component: AIAssistant, meta: { auth: true } },
     { path: '/settings', component: Settings, meta: { auth: true } }
 ]
 

@@ -6,6 +6,7 @@ export default {
   nav: {
     dashboard: '仪表盘',
     bills: '账单',
+    ai: 'AI 助手',
     settings: '设置'
   },
   theme: {
@@ -214,5 +215,37 @@ export default {
     networkError: '网络错误，请检查服务',
     logout: '退出登录',
     sessionExpired: '登录已过期，请重新登录'
+  },
+  ai: {
+    title: 'AI 账单助手',
+    notConfigured: '请先在设置中配置 AI 服务',
+    welcome: '你好，我是你的智能账单助手',
+    welcomeHint: '我可以帮你分析消费、查询账单、给出理财建议。有什么想了解的？',
+    suggest1: '上个月我花了多少钱？主要花在哪里？',
+    suggest2: '帮我分析一下我的消费习惯',
+    suggest3: '有没有什么节省开支的建议？',
+    inputPlaceholder: '输入你的问题...',
+    clearChat: '清空对话',
+    configHint: '请在设置页面配置 AI API Key 后使用',
+    newChat: '新建对话',
+    chatHistory: '对话历史',
+    toggleHistory: '显示/隐藏历史',
+    noChats: '暂无对话记录',
+    provider: 'AI 服务商',
+    apiKey: 'API Key',
+    apiKeyPlaceholder: '输入你的 API Key',
+    apiUrl: 'API 地址（可选）',
+    apiUrlPlaceholder: '自定义 API 地址',
+    model: '模型名称',
+    modelPlaceholder: '模型名称',
+    testConnection: '测试连接',
+    connectionSuccess: '连接成功！',
+    connectionFailed: '连接失败',
+    saving: '保存中...',
+    saved: '配置已保存',
+    deepseekDesc: 'DeepSeek 官方 API',
+    openaiDesc: 'OpenAI 兼容接口',
+    customDesc: '自定义 OpenAI 兼容接口',
+    thinking: '思考过程'
   }
 }

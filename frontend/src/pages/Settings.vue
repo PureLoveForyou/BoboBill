@@ -5,11 +5,13 @@ import { getCurrentTheme, toggleDarkLight } from '../utils/theme.js'
 import { API_BASE } from '../config'
 import { useToast } from '../composables/useToast'
 import { useBudgetApi } from '../composables/useBudgetApi'
+import { useAiApi } from '../composables/useAiApi'
 import { CATEGORIES } from '../constants/bill'
 
 const { t, locale } = useI18n()
-const { showToast } = useToast()
+const { toast, showToast } = useToast()
 const { budget, fetchBudget, saveBudget } = useBudgetApi()
+const { saveConfig: saveAiConfigSync } = useAiApi()
 const currentTheme = ref('light')
 const fileInput = ref(null)
 const showImportConfirm = ref(false)
@@ -58,10 +60,86 @@ const onThemeChange = (event) => {
   currentTheme.value = event.detail.theme
 }
 
+// AI Configuration
+const aiProvider = ref('deepseek')
+const aiApiKey = ref('')
+const aiApiUrl = ref('')
+const aiModel = ref('deepseek-chat')
+const isTestingAi = ref(false)
+const isSavingAi = ref(false)
+
+const providerOptions = computed(() => [
+  { value: 'deepseek', label: 'DeepSeek', desc: t('ai.deepseekDesc'), defaultModel: 'deepseek-chat' },
+  { value: 'openai', label: 'OpenAI', desc: t('ai.openaiDesc'), defaultModel: 'gpt-3.5-turbo' },
+  { value: 'custom', label: 'Custom', desc: t('ai.customDesc'), defaultModel: '' }
+])
+
+const loadAiConfig = () => {
+  const saved = JSON.parse(localStorage.getItem('bobobill_ai_config') || '{}')
+  aiProvider.value = saved.provider || 'deepseek'
+  aiApiKey.value = saved.apiKey || ''
+  aiApiUrl.value = saved.apiUrl || ''
+  aiModel.value = saved.model || 'deepseek-chat'
+}
+
+const currentProviderDefaultModel = () => {
+  const found = providerOptions.value.find(p => p.value === aiProvider.value)
+  return found ? found.defaultModel : ''
+}
+
+const handleProviderChange = () => {
+  const def = currentProviderDefaultModel()
+  if (def) aiModel.value = def
+}
+
+const handleTestConnection = async () => {
+  if (!aiApiKey.value.trim()) {
+    showToast(t('ai.apiKey'), 'warning')
+    return
+  }
+  isTestingAi.value = true
+  try {
+    const params = new URLSearchParams({
+      provider: aiProvider.value,
+      api_key: aiApiKey.value.trim(),
+      api_url: aiApiUrl.value.trim(),
+      model: aiModel.value.trim() || currentProviderDefaultModel()
+    })
+    const response = await fetch(`${API_BASE}/ai/test-connection?${params}`)
+    const data = await response.json()
+    if (data.success) {
+      showToast(t('ai.connectionSuccess'), 'success')
+    } else {
+      showToast(`${t('ai.connectionFailed')}: ${data.message}`, 'error')
+    }
+  } catch {
+    showToast(t('ai.connectionFailed'), 'error')
+  }
+  isTestingAi.value = false
+}
+
+const handleSaveAiConfig = () => {
+  if (!aiApiKey.value.trim()) {
+    showToast(t('ai.apiKey'), 'warning')
+    return
+  }
+  isSavingAi.value = true
+  const config = {
+    provider: aiProvider.value,
+    apiKey: aiApiKey.value.trim(),
+    apiUrl: aiApiUrl.value.trim(),
+    model: aiModel.value.trim() || currentProviderDefaultModel()
+  }
+  saveAiConfigSync(config)
+  showToast(t('ai.saved'), 'success')
+  isSavingAi.value = false
+}
+
 onMounted(() => {
   currentTheme.value = getCurrentTheme()
   window.addEventListener('themechange', onThemeChange)
   loadBudget()
+  loadAiConfig()
 })
 
 onUnmounted(() => {
@@ -250,6 +328,96 @@ const cancelImport = () => {
       </div>
     </div>
 
+    <!-- AI Assistant -->
+    <div class="card bg-base-100 shadow-lg mb-6">
+      <div class="card-body">
+        <h2 class="card-title text-xl mb-4">{{ t('ai.title') }}</h2>
+
+        <p class="text-sm text-base-content/60 mb-6">
+          配置 AI 服务后，可在「AI 助手」页面通过自然语言查询账单、获取消费分析建议。
+          支持 DeepSeek 和 OpenAI 兼容接口。
+        </p>
+
+        <div class="space-y-5">
+          <!-- Provider -->
+          <div class="p-4 bg-base-200 rounded-lg">
+            <label class="block text-sm font-semibold mb-3">{{ t('ai.provider') }}</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button
+                v-for="opt in providerOptions"
+                :key="opt.value"
+                @click="aiProvider = opt.value; handleProviderChange()"
+                class="px-3 py-2.5 rounded-xl text-xs font-medium transition-all border"
+                :class="aiProvider === opt.value
+                  ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                  : 'border-transparent bg-base-200/80 text-base-content/60 hover:bg-base-300'"
+              >
+                <div class="font-semibold">{{ opt.label }}</div>
+              </button>
+            </div>
+            <p class="text-xs text-base-content/40 mt-2">{{ providerOptions.find(p => p.value === aiProvider)?.desc }}</p>
+          </div>
+
+          <!-- API Key -->
+          <div>
+            <label class="block text-sm font-semibold mb-1.5">{{ t('ai.apiKey') }} <span class="text-error">*</span></label>
+            <input
+              v-model="aiApiKey"
+              type="password"
+              :placeholder="t('ai.apiKeyPlaceholder')"
+              class="input input-bordered w-full text-sm"
+            />
+          </div>
+
+          <!-- API URL (for custom) -->
+          <div v-if="aiProvider === 'custom' || aiProvider === 'openai'">
+            <label class="block text-sm font-semibold mb-1.5">{{ t('ai.apiUrl') }}</label>
+            <input
+              v-model="aiApiUrl"
+              type="text"
+              :placeholder="aiProvider === 'openai' ? 'https://api.openai.com (留空使用默认)' : t('ai.apiUrlPlaceholder')"
+              class="input input-bordered w-full text-sm"
+            />
+            <p class="text-xs text-base-content/40 mt-1">DeepSeek 默认: https://api.deepseek.com | OpenAI 默认: https://api.openai.com</p>
+          </div>
+
+          <!-- Model -->
+          <div>
+            <label class="block text-sm font-semibold mb-1.5">{{ t('ai.model') }}</label>
+            <input
+              v-model="aiModel"
+              type="text"
+              :placeholder="t('ai.modelPlaceholder')"
+              class="input input-bordered w-full text-sm"
+            />
+            <p class="text-xs text-base-content/40 mt-1">
+              推荐模型: deepseek-chat / deepseek-reasoner / gpt-4o-mini / gpt-3.5-turbo / claude-3-haiku 等
+            </p>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-3 pt-1">
+            <button
+              @click="handleTestConnection"
+              :disabled="isTestingAi || !aiApiKey.trim()"
+              class="flex-1 btn btn-outline btn-sm"
+            >
+              <span v-if="isTestingAi" class="loading loading-spinner loading-xs"></span>
+              {{ isTestingAi ? '' : t('ai.testConnection') }}
+            </button>
+            <button
+              @click="handleSaveAiConfig"
+              :disabled="isSavingAi || !aiApiKey.trim()"
+              class="flex-1 btn btn-primary btn-sm"
+            >
+              <span v-if="isSavingAi" class="loading loading-spinner loading-xs"></span>
+              {{ isSavingAi ? t('ai.saving') : t('common.save') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Backup & Restore -->
     <div class="card bg-base-100 shadow-lg mb-6">
       <div class="card-body">
@@ -319,6 +487,11 @@ const cancelImport = () => {
           </div>
         </div>
       </div>
+    </div>
+    <!-- Toast -->
+    <div v-if="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 rounded-xl shadow-lg text-white text-sm font-medium animate-slide-down"
+      :class="toast.type === 'success' ? 'bg-success' : toast.type === 'warning' ? 'bg-warning text-warning-content' : 'bg-error'">
+      {{ toast.message }}
     </div>
   </div>
 </template>

@@ -6,6 +6,7 @@ export default {
   nav: {
     dashboard: 'Dashboard',
     bills: 'Bills',
+    ai: 'AI Assistant',
     settings: 'Settings'
   },
   theme: {
@@ -212,5 +213,37 @@ export default {
     networkError: 'Network error, check server',
     logout: 'Logout',
     sessionExpired: 'Session expired, please login again'
+  },
+  ai: {
+    title: 'AI Bill Assistant',
+    notConfigured: 'Please configure AI service in Settings first',
+    welcome: 'Hello, I am your smart bill assistant',
+    welcomeHint: 'I can help you analyze spending, query bills, and provide financial advice. What would you like to know?',
+    suggest1: 'How much did I spend last month? Where did it go?',
+    suggest2: 'Analyze my spending habits',
+    suggest3: 'Any tips to save money?',
+    inputPlaceholder: 'Ask me anything...',
+    clearChat: 'Clear Chat',
+    configHint: 'Please configure AI API Key in Settings page',
+    newChat: 'New Chat',
+    chatHistory: 'Chat History',
+    toggleHistory: 'Toggle History',
+    noChats: 'No chat history',
+    provider: 'AI Provider',
+    apiKey: 'API Key',
+    apiKeyPlaceholder: 'Enter your API Key',
+    apiUrl: 'API URL (optional)',
+    apiUrlPlaceholder: 'Custom API endpoint URL',
+    model: 'Model Name',
+    modelPlaceholder: 'Model name',
+    testConnection: 'Test Connection',
+    connectionSuccess: 'Connected!',
+    connectionFailed: 'Connection failed',
+    saving: 'Saving...',
+    saved: 'Configuration saved',
+    deepseekDesc: 'DeepSeek Official API',
+    openaiDesc: 'OpenAI Compatible API',
+    customDesc: 'Custom OpenAI Compatible Endpoint',
+    thinking: 'Thinking'
   }
 }

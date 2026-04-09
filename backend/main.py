@@ -5,8 +5,9 @@ from routers.upload import router as upload_router
 from routers.backup import router as backup_router
 from routers.budget import router as budget_router
 from routers.auth import router as auth_router
+from routers.ai import router as ai_router
 
-app = FastAPI(title="BoboBill API", description="智能账单管理助手", version="0.3.0")
+app = FastAPI(title="BoboBill API", description="智能账单管理助手", version="0.4.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,6 +22,7 @@ app.include_router(upload_router)
 app.include_router(backup_router)
 app.include_router(budget_router)
 app.include_router(auth_router)
+app.include_router(ai_router)
 
 
 @app.get("/")
