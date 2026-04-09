@@ -91,6 +91,22 @@ const handleSend = async () => {
         curReasoning += event.content
         msg.reasoning = curReasoning
         scrollToBottom()
+      } else if (event.type === 'tool_start') {
+        // AI 开始调用工具
+        if (!msg.toolCalls) msg.toolCalls = []
+        msg.toolCalls.push({
+          name: event.content.name,
+          description: event.content.description,
+          status: 'running' // running | done
+        })
+        scrollToBottom()
+      } else if (event.type === 'tool_end') {
+        // 工具执行完成
+        if (msg.toolCalls) {
+          const tc = msg.toolCalls.find(t => t.name === event.content.name)
+          if (tc) tc.status = 'done'
+        }
+        scrollToBottom()
       } else if (event.type === 'content') {
         curContent += event.content
         msg.content = curContent
@@ -102,6 +118,7 @@ const handleSend = async () => {
       } else if (event.type === 'error') {
         msg.content = `[错误] ${event.content}`
         msg.loading = false
+        msg.toolStatus = ''
       }
     }, controller.signal)
 
@@ -312,10 +329,26 @@ onActivated(() => {
             </div>
             <div class="rounded-2xl px-4 py-2.5 text-sm leading-relaxed break-words"
               :class="msg.role === 'user' ? 'bg-primary text-white rounded-tr-sm whitespace-pre-wrap' : 'bg-base-200/80 rounded-tl-sm'">
-              <div v-if="msg.loading && !msg.content && !msg.reasoning" class="flex items-center gap-1.5 py-1">
+              <div v-if="msg.loading && !msg.content && !msg.reasoning && (!msg.toolCalls || !msg.toolCalls.length)" class="flex items-center gap-1.5 py-1">
                 <span class="w-2 h-2 rounded-full bg-base-content/40 animate-bounce" style="animation-delay:0ms"></span>
                 <span class="w-2 h-2 rounded-full bg-base-content/40 animate-bounce" style="animation-delay:150ms"></span>
                 <span class="w-2 h-2 rounded-full bg-base-content/40 animate-bounce" style="animation-delay:300ms"></span>
+              </div>
+              <!-- 工具调用记录（用户可见，分阶段展示） -->
+              <div v-if="msg.toolCalls && msg.toolCalls.length" class="space-y-1.5 py-1">
+                <div v-for="(tc, tcIdx) in msg.toolCalls" :key="tcIdx"
+                  class="flex items-center gap-2 text-xs rounded-lg px-3 py-1.5 transition-all"
+                  :class="tc.status === 'done'
+                    ? 'bg-success/5 border border-success/10 text-success/80'
+                    : 'bg-primary/5 border border-primary/10 text-primary/70'">
+                  <!-- 运行中：转圈 -->
+                  <span v-if="tc.status === 'running'" class="loading loading-spinner loading-xs"></span>
+                  <!-- 已完成：勾选 -->
+                  <svg v-else class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  <span>{{ tc.description }}</span>
+                </div>
               </div>
               <div v-if="msg.reasoning" class="mb-2">
                 <button @click="msg.reasoningExpanded = !msg.reasoningExpanded"
