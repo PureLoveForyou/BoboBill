@@ -79,8 +79,11 @@ npm run dev
 ### 后端
 - **FastAPI** - 现代、快速的 Python Web 框架
 - **Python 3.8+** - 编程语言
-- **TinyDB** - 轻量级文档数据库
+- **SQLAlchemy** - Python ORM 框架
+- **SQLite** - 轻量级关系数据库
 - **Uvicorn** - ASGI 服务器
+- **httpx** - 异步 HTTP 客户端（AI API 调用）
+- **python-jose** - JWT 认证
 
 ## 📋 功能规划与进度
 
@@ -111,9 +114,22 @@ npm run dev
 - [x] **关键词搜索**：搜索商户名、备注、分类等信息 ✓
 - [x] **高级筛选**：多条件组合筛选（分类+平台+时间+搜索）✓
 
+### 🤖 AI 智能助手
+- [x] **AI 对话**：支持 DeepSeek / OpenAI 兼容接口 ✓
+- [x] **流式输出**：真正逐 token 流式响应（SSE）✓
+- [x] **思考过程展示**：实时显示 DeepSeek 推理过程 ✓
+- [x] **Function Calling**：AI 按需查询账单数据，而非全量注入 ✓
+- [x] **工具调用可视化**：分阶段展示工具调用状态（执行中→完成）✓
+- [x] **多工具支持**：获取时间、查询账单、汇总统计、分类排行 ✓
+- [x] **多轮 Agent 循环**：AI 可连续调用工具直到获取完整信息 ✓
+- [x] **多 AI 配置**：支持保存多套 API 配置并切换 ✓
+- [x] **对话历史管理**：多会话、历史记录持久化 ✓
+- [ ] **技能扩展机制**：可安装的技能插件系统
+- [ ] **MCP 适配**：支持 Model Context Protocol
+
 ### 🛠️ 辅助功能
 - [x] **手动记账**：补充无法导入的现金交易等 ✓
-- [ ] **预算管理**：设置月度预算，超支提醒
+- [x] **预算管理**：设置月度预算，分类预算，超支提醒 ✓
 - [x] **账单导出**：导出整理后的账单数据为CSV ✓
 - [x] **数据备份**：本地数据备份与恢复 ✓
 - [ ] **多账户支持**：支持家庭多成员账户
@@ -121,18 +137,22 @@ npm run dev
 ### 🎨 界面与体验
 - [x] **响应式布局**：移动端/桌面端自适应 ✓
 - [x] **侧边栏导航**：清晰的页面导航结构 ✓
-- [x] **路由管理**：Dashboard / Bills / Settings 页面 ✓
+- [x] **路由管理**：Dashboard / Bills / AIAssistant / Settings 页面 ✓
 - [x] **数据可视化**：图表组件集成 (ApexCharts) ✓
 - [x] **暗色模式**：支持深色/浅色主题切换 ✓
 - [x] **多语言支持**：中英文界面切换 ✓
+- [x] **用户认证**：注册/登录、JWT Token 鉴权 ✓
 
 ### ⚙️ 技术实现
 - [x] **前端框架**：Vue 3 + Vite + DaisyUI ✓
 - [x] **后端框架**：FastAPI + Python ✓
-- [x] **数据存储**：TinyDB 本地数据库 ✓
+- [x] **数据存储**：SQLite + SQLAlchemy ORM ✓
+- [x] **数据迁移**：TinyDB → SQLite 自动迁移 ✓
 - [x] **文件解析**：CSV/Excel 文件解析器 ✓
 - [x] **数据清洗**：账单数据清洗和标准化 ✓
 - [x] **图表库集成**：ApexCharts ✓
+- [x] **用户认证**：JWT + bcrypt 密码哈希 ✓
+- [x] **AI Agent 架构**：Function Calling + 流式 Agent Loop ✓
 
 ## 📁 项目结构
 
@@ -140,15 +160,20 @@ npm run dev
 BoboBill/
 ├── backend/                    # FastAPI 后端
 │   ├── main.py                # 应用入口
-│   ├── database.py            # TinyDB 数据库配置
+│   ├── database.py            # 数据库配置（SQLAlchemy + SQLite）
 │   ├── models.py              # Pydantic 数据模型
+│   ├── auth.py                # 用户认证（JWT）
 │   ├── mock_data.py           # 测试数据
 │   ├── requirements.txt       # Python 依赖
 │   ├── database/              # 数据存储目录
-│   │   └── db.json           # 账单数据库文件
+│   │   ├── bobobill.db       # SQLite 数据库
+│   │   └── db.json           # 旧 TinyDB 数据（已迁移）
 │   ├── routers/               # API 路由模块
 │   │   ├── bills.py          # 账单 CRUD、搜索、统计、导出
 │   │   ├── upload.py         # 微信/支付宝文件导入解析
+│   │   ├── ai.py             # AI 智能助手（Function Calling + 流式 Agent）
+│   │   ├── auth.py           # 用户注册/登录
+│   │   ├── budget.py         # 预算管理
 │   │   └── backup.py         # 数据备份/恢复
 │   └── parsers/               # 账单解析器
 │       ├── base.py           # 基础解析器
@@ -158,25 +183,44 @@ BoboBill/
 │   ├── src/
 │   │   ├── App.vue           # 主应用组件
 │   │   ├── main.js           # 应用入口
+│   │   ├── config.js         # 前端配置
 │   │   ├── style.css         # 全局样式
 │   │   ├── router/           # 路由配置
 │   │   │   └── index.js
 │   │   ├── components/       # 可复用组件
-│   │   │   ├── Navbar.vue
-│   │   │   ├── Sidebar.vue
 │   │   │   ├── BillItem.vue      # 账单列表项
+│   │   │   ├── BillFormModal.vue # 账单编辑弹窗
+│   │   │   ├── BudgetCard.vue    # 预算卡片
+│   │   │   ├── StatCards.vue     # 统计卡片
 │   │   │   ├── TimeFilter.vue    # 时间筛选器
-│   │   │   └── AppleSelect.vue   # 自定义选择器
+│   │   │   ├── PlatformIcon.vue  # 平台图标
+│   │   │   ├── AppleSelect.vue   # 自定义选择器
+│   │   │   ├── Sidebar.vue       # 侧边栏
+│   │   │   └── DeleteConfirmModal.vue
 │   │   ├── composables/      # 组合式函数
-│   │   │   └── useBillApi.js     # 账单 API 封装
+│   │   │   ├── useBillApi.js     # 账单 API 封装
+│   │   │   ├── useAiApi.js      # AI 助手 API 封装
+│   │   │   ├── useAuth.js       # 认证 API 封装
+│   │   │   ├── useBudgetApi.js  # 预算 API 封装
+│   │   │   ├── useDashboardData.js  # 仪表盘数据
+│   │   │   ├── useBillFilters.js    # 账单筛选
+│   │   │   ├── useFileImport.js     # 文件导入
+│   │   │   ├── useChartConfig.js    # 图表配置
+│   │   │   └── useToast.js         # 提示通知
+│   │   ├── constants/        # 常量定义
+│   │   │   └── bill.js           # 账单相关常量
 │   │   ├── locales/          # 多语言文件
 │   │   │   ├── zh-CN.js
-│   │   │   └── en.js
+│   │   │   ├── en.js
+│   │   │   └── index.js
 │   │   ├── utils/            # 工具函数
-│   │   │   └── theme.js      # 主题切换工具
+│   │   │   ├── format.js         # 格式化工具
+│   │   │   └── theme.js          # 主题切换工具
 │   │   └── pages/            # 页面组件
 │   │       ├── Dashboard.vue     # 仪表盘
 │   │       ├── Bills.vue         # 账单管理
+│   │       ├── AIAssistant.vue   # AI 智能助手
+│   │       ├── Login.vue         # 登录/注册
 │   │       └── Settings.vue      # 设置
 │   ├── index.html            # HTML 模板
 │   ├── package.json          # 前端依赖
@@ -199,7 +243,7 @@ BoboBill/
 - ⏱️ **节省时间**：导入账单只需几分钟，整理账单不再痛苦
 - 📈 **全面视角**：一眼看清所有平台的消费总和
 - 🎯 **消费洞察**：发现消费模式，优化消费习惯
-- 🔒 **隐私保护**：数据存储在本地，不上传云端
+- 🔒 **隐私保护**：数据自主掌控，支持本地部署
 - 💰 **财务健康**：更好的掌握个人财务状况
 
 ## 🔧 开发说明
