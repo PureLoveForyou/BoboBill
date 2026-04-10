@@ -1,6 +1,6 @@
 <script setup>
 defineOptions({ name: 'AIAssistant' })
-import { ref, computed, watch, nextTick, onMounted, onActivated } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onActivated, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAiApi } from '../composables/useAiApi'
 import { marked } from 'marked'
@@ -9,12 +9,47 @@ const { t } = useI18n()
 const {
   chatStream, isConfigured, aiConfigs, activeConfigId, activeConfig,
   activeModelName, fetchConfigs, selectConfig,
-  // 对话历史
   chats, activeChatId, activeChat, currentMessages,
   fetchChats, createChatSession, switchChatSession,
   deleteChatSession: deleteChat, clearChatSession, addMessage, updateMessage,
   streamAbortController,
 } = useAiApi()
+
+// ====== EVA 眼睛跟踪 ======
+const evaContainerRef = ref(null)
+const eyeLeftRef = ref(null)
+const eyeRightRef = ref(null)
+const eyeOffsetX = ref(0)
+const eyeOffsetY = ref(0)
+
+const updateEyePosition = (clientX, clientY) => {
+  if (!evaContainerRef.value) return
+  const rect = evaContainerRef.value.getBoundingClientRect()
+  const centerX = rect.left + rect.width / 2
+  const centerY = rect.top + rect.height / 2
+  const maxMove = 6
+  const dx = clientX - centerX
+  const dy = clientY - centerY
+  const dist = Math.sqrt(dx * dx + dy * dy)
+  const clampDist = Math.min(dist, 200)
+  eyeOffsetX.value = (dx / (dist || 1)) * (clampDist / 200) * maxMove
+  eyeOffsetY.value = (dy / (dist || 1)) * (clampDist / 200) * maxMove
+}
+
+const onMouseMove = (e) => updateEyePosition(e.clientX, e.clientY)
+const onTouchMove = (e) => {
+  if (e.touches.length > 0) updateEyePosition(e.touches[0].clientX, e.touches[0].clientY)
+}
+
+onMounted(() => {
+  window.addEventListener('mousemove', onMouseMove)
+  window.addEventListener('touchmove', onTouchMove, { passive: true })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('mousemove', onMouseMove)
+  window.removeEventListener('touchmove', onTouchMove)
+})
 
 // ====== 聊天功能 ======
 const inputText = ref('')
@@ -317,11 +352,23 @@ onActivated(async () => {
       <!-- Messages -->
       <div ref="chatContainer" @scroll="onChatScroll" class="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth relative">
         <div v-if="!currentMessages.length" class="flex flex-col items-center justify-center h-full text-center px-8">
-          <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/60 flex items-center justify-center shadow-xl shadow-primary/30 mb-6 relative overflow-hidden">
-            <div class="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent"></div>
-            <svg class="w-10 h-10 text-base-100 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"/>
-            </svg>
+          <div ref="evaContainerRef" class="eva-avatar mb-6 relative">
+            <div class="eva-glow"></div>
+            <div class="eva-ring eva-ring-1"></div>
+            <div class="eva-ring eva-ring-2"></div>
+            <div class="eva-ring eva-ring-3"></div>
+            <div class="eva-body">
+              <div class="eva-highlight"></div>
+              <div class="eva-eyes">
+                <div ref="eyeLeftRef" class="eva-eye" :style="{ transform: `translate(${eyeOffsetX}px, ${eyeOffsetY}px)` }">
+                  <div class="eva-eye-inner"></div>
+                </div>
+                <div ref="eyeRightRef" class="eva-eye" :style="{ transform: `translate(${eyeOffsetX}px, ${eyeOffsetY}px)` }">
+                  <div class="eva-eye-inner"></div>
+                </div>
+              </div>
+            </div>
+            <div class="eva-shadow"></div>
           </div>
           <h2 class="text-lg font-semibold mb-2">{{ t('ai.welcome') }}</h2>
           <p class="text-sm text-base-content/50 leading-relaxed max-w-md">{{ t('ai.welcomeHint') }}</p>
@@ -339,11 +386,15 @@ onActivated(async () => {
             class="flex gap-3 max-w-[85%] animate-fade-in"
             :class="msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''">
             <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-1"
-              :class="msg.role === 'user' ? 'bg-primary/80 text-white' : 'bg-gradient-to-br from-primary via-primary to-primary/60 text-white shadow-lg shadow-primary/20'">
+              :class="msg.role === 'user' ? 'bg-primary/80 text-white' : 'eva-avatar-mini'">
               <span v-if="msg.role === 'user'" class="text-xs font-bold">你</span>
-              <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456z"/>
-              </svg>
+              <div v-else class="eva-mini-body">
+                <div class="eva-mini-highlight"></div>
+                <div class="eva-mini-eyes">
+                  <div class="eva-mini-eye"></div>
+                  <div class="eva-mini-eye"></div>
+                </div>
+              </div>
             </div>
             <div class="rounded-2xl px-4 py-2.5 text-sm leading-relaxed break-words"
               :class="msg.role === 'user' ? 'bg-primary text-white rounded-tr-sm whitespace-pre-wrap' : 'bg-base-200/80 rounded-tl-sm'">
@@ -427,6 +478,233 @@ onActivated(async () => {
 .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(6px); }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 .cursor-blink { display:inline; animation:blink .8s step-end infinite; color:hsl(var(--p)/.6); font-weight:normal; }
+
+/* ====== EVA Avatar - 欢迎区域大头像 ====== */
+.eva-avatar {
+  width: 160px;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eva-glow {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56,189,248,0.15) 0%, transparent 70%);
+  animation: eva-glow-pulse 3s ease-in-out infinite;
+  filter: blur(20px);
+}
+
+@keyframes eva-glow-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+.eva-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid rgba(56,189,248,0.2);
+  animation: eva-ring-expand 3s ease-out infinite;
+}
+
+.eva-ring-1 { width: 190px; height: 190px; animation-delay: 0s; }
+.eva-ring-2 { width: 220px; height: 220px; animation-delay: 0.8s; }
+.eva-ring-3 { width: 250px; height: 250px; animation-delay: 1.6s; }
+
+@keyframes eva-ring-expand {
+  0% { transform: scale(0.85); opacity: 0.8; }
+  100% { transform: scale(1.15); opacity: 0; }
+}
+
+.eva-body {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #4a4a4a 0%, #1a1a1a 40%, #0a0a0a 70%, #000000 100%);
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.5),
+    0 8px 25px rgba(0,0,0,0.3),
+    inset 0 -15px 30px rgba(0,0,0,0.4),
+    inset 0 10px 20px rgba(255,255,255,0.05),
+    0 0 40px rgba(56,189,248,0.1);
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.eva-highlight {
+  position: absolute;
+  top: 12%;
+  left: 18%;
+  width: 35%;
+  height: 22%;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.25) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(3px);
+  transform: rotate(-25deg);
+}
+
+.eva-highlight::after {
+  content: '';
+  position: absolute;
+  top: 120%;
+  left: 60%;
+  width: 18%;
+  height: 10%;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(2px);
+}
+
+.eva-eyes {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -45%);
+  display: flex;
+  gap: 22px;
+  z-index: 3;
+}
+
+.eva-eye {
+  width: 28px;
+  height: 14px;
+  position: relative;
+  transition: transform 0.08s ease-out;
+}
+
+.eva-eye-inner {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #67e8f9 0%, #06b6d4 40%, #0891b2 100%);
+  border-radius: 50%;
+  box-shadow:
+    0 0 15px rgba(56,189,248,0.8),
+    0 0 30px rgba(56,189,248,0.4),
+    inset 0 -2px 4px rgba(0,0,0,0.2),
+    inset 0 2px 3px rgba(255,255,255,0.4);
+  clip-path: ellipse(50% 48% at 50% 52%);
+  animation: eva-eye-shimmer 3s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.eva-eye-inner::before {
+  content: '';
+  position: absolute;
+  top: 15%;
+  left: 15%;
+  width: 35%;
+  height: 40%;
+  background: rgba(255,255,255,0.5);
+  border-radius: 50%;
+  filter: blur(1.5px);
+}
+
+.eva-eye-inner::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,255,255,0.15) 45%,
+    rgba(255,255,255,0.3) 50%,
+    rgba(255,255,255,0.15) 55%,
+    transparent 100%
+  );
+  animation: eva-eye-scan 4s ease-in-out infinite;
+}
+
+@keyframes eva-eye-shimmer {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.85; filter: brightness(1.15); }
+}
+
+@keyframes eva-eye-scan {
+  0%, 100% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+}
+
+.eva-shadow {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 16px;
+  background: radial-gradient(ellipse at center, rgba(56,189,248,0.25) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(6px);
+  z-index: 1;
+}
+
+/* ====== EVA Mini Avatar - 聊天消息小头像 ====== */
+.eva-avatar-mini {
+  background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%) !important;
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.3),
+    inset 0 1px 2px rgba(255,255,255,0.05) !important;
+}
+
+.eva-mini-body {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: radial-gradient(circle at 35% 30%, #3a3a3a 0%, #151515 50%, #080808 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.eva-mini-highlight {
+  position: absolute;
+  top: 15%;
+  left: 20%;
+  width: 30%;
+  height: 18%;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(1px);
+}
+
+.eva-mini-eyes {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -42%);
+  display: flex;
+  gap: 5px;
+}
+
+.eva-mini-eye {
+  width: 9px;
+  height: 5px;
+  background: linear-gradient(180deg, #67e8f9 0%, #06b6d4 50%, #0891b2 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(56,189,248,0.7);
+  clip-path: ellipse(50% 48% at 50% 52%);
+  animation: eva-eye-shimmer 3s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.eva-mini-eye::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 15%;
+  width: 30%;
+  height: 35%;
+  background: rgba(255,255,255,0.5);
+  border-radius: 50%;
+  filter: blur(0.5px);
+}
+
 .markdown-body { line-height:1.7; }
 .markdown-body :deep(p) { margin:.4em 0; }
 .markdown-body :deep(p:first-child) { margin-top:0; }

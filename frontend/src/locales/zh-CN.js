@@ -258,12 +258,12 @@ export default {
     saveFailed: '保存失败'
   },
   echo: {
-    title: '念溪 Echo',
+    title: '念溪',
     online: '在线等你~',
     thinking: '思考中...',
     notConfigured: '还没配置 AI 呢~',
     goSettings: '去设置',
-    welcome: '嗨~我是念溪 Echo 👋 有什么可以帮你的吗？',
+    welcome: '我是念溪，你也可以叫我 Echo~',
     placeholder: '问念溪点什么...',
     configFirst: '先配置 AI 吧',
     send: '发送',

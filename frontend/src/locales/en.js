@@ -261,7 +261,7 @@ export default {
     thinking: 'Thinking...',
     notConfigured: 'AI is not configured yet~',
     goSettings: 'Go Settings',
-    welcome: 'Hi~ I\'m Echo 👋 How can I help you?',
+    welcome: 'I\'m Echo, you can also call me Niān Xī~',
     placeholder: 'Ask Echo something...',
     configFirst: 'Configure AI first',
     send: 'Send',

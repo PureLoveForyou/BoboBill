@@ -332,107 +332,110 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
       <div class="echo-orbit"></div>
       <div class="echo-glow"></div>
 
-      <!-- 主圆形 SVG 角色 -->
+      <!-- 主圆形 SVG 角色 - EVA Style -->
       <svg viewBox="0 0 100 100" class="echo-face">
         <defs>
-          <linearGradient id="bgG" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#6366f1"/>
-            <stop offset="50%" stop-color="#8b5cf6"/>
-            <stop offset="100%" stop-color="#a855f7"/>
-          </linearGradient>
-          <linearGradient id="shG" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#fff" stop-opacity="0.35"/>
-            <stop offset="50%" stop-color="#fff" stop-opacity="0.08"/>
+          <radialGradient id="evaBodyG" cx="38%" cy="32%" r="65%">
+            <stop offset="0%" stop-color="#4a4a4a"/>
+            <stop offset="35%" stop-color="#1a1a1a"/>
+            <stop offset="70%" stop-color="#0a0a0a"/>
+            <stop offset="100%" stop-color="#000000"/>
+          </radialGradient>
+          <radialGradient id="evaEyeG" cx="50%" cy="45%" r="55%">
+            <stop offset="0%" stop-color="#67e8f9"/>
+            <stop offset="40%" stop-color="#06b6d4"/>
+            <stop offset="100%" stop-color="#0891b2"/>
+          </radialGradient>
+          <linearGradient id="evaHighlightG" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#fff" stop-opacity="0.28"/>
+            <stop offset="50%" stop-color="#fff" stop-opacity="0.06"/>
             <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
           </linearGradient>
-          <radialGradient id="blushG">
-            <stop offset="0%" stop-color="#f472b6" stop-opacity="0.45"/>
-            <stop offset="100%" stop-color="#f472b6" stop-opacity="0"/>
-          </radialGradient>
+          <filter id="evaEyeGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="evaBodyShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000" flood-opacity="0.5"/>
+            <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#000" flood-opacity="0.3"/>
+          </filter>
         </defs>
 
-        <!-- 圆底 -->
-        <circle cx="50" cy="50" r="46" fill="url(#bgG)" />
+        <!-- EVA 黑色球体 -->
+        <circle cx="50" cy="50" r="46" fill="url(#evaBodyG)" filter="url(#evaBodyShadow)"/>
+
         <!-- 高光 -->
-        <ellipse cx="35" cy="32" rx="16" ry="11" fill="url(#shG)" transform="rotate(-15 35 32)"/>
+        <ellipse cx="36" cy="32" rx="15" ry="10" fill="url(#evaHighlightG)" transform="rotate(-22 36 32)"/>
 
-        <!-- 腮红（非思考态） -->
-        <g v-if="echoMood !== 'thinking'" class="echo-blush-group">
-          <ellipse cx="25" cy="58" rx="7" ry="4.5" fill="url(#blushG)"/>
-          <ellipse cx="75" cy="58" rx="7" ry="4.5" fill="url(#blushG)"/>
-        </g>
-
-        <!-- idle: 微笑 ^_^ -->
+        <!-- idle: 微眯笑眼 -_- -->
         <g v-if="echoMood === 'idle'" class="echo-eyes-g">
-          <path d="M30 44 Q36 38 42 44" stroke="#fff" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-          <path d="M58 44 Q64 38 70 44" stroke="#fff" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-          <path d="M43 61 Q50 66 57 61" stroke="#fff" stroke-width="2.3" fill="none" stroke-linecap="round"/>
+          <ellipse :cx="34 + eyeOffset.x * 0.8" :cy="44 + eyeOffset.y * 0.8" rx="8" ry="4.5" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-eye-ellipse"/>
+          <ellipse :cx="66 + eyeOffset.x * 0.8" :cy="44 + eyeOffset.y * 0.8" rx="8" ry="4.5" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-eye-ellipse"/>
+          <ellipse cx="34" cy="44" rx="3" ry="1.5" fill="rgba(255,255,255,0.45)" transform="translate(-1,-0.5)"/>
+          <ellipse cx="66" cy="44" rx="3" ry="1.5" fill="rgba(255,255,255,0.45)" transform="translate(-1,-0.5)"/>
         </g>
 
-        <!-- happy: 星星眼 ★ -->
+        <!-- happy: 弯弯笑眼 ^^ -->
         <g v-if="echoMood === 'happy'" class="echo-eyes-g">
-          <polygon points="36,38 38,45 45,45 39.5,49 41.5,56 36,52 30.5,56 32.5,49 27,45 34,45" fill="#fff" class="echo-star"/>
-          <polygon points="64,38 66,45 73,45 67.5,49 69.5,56 64,52 58.5,56 60.5,49 55,45 62,45" fill="#fff" class="echo-star"/>
-          <ellipse cx="50" cy="65" rx="9" ry="6" fill="#fff" opacity="0.95" class="echo-mouth-w"/>
-          <path d="M44 66 Q50 72 56 66" stroke="#c084fc" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <path d="M27 43 Q34 36 41 43" stroke="url(#evaEyeG)" stroke-width="4" fill="none" stroke-linecap="round" filter="url(#evaEyeGlow)" class="eva-eye-happy"/>
+          <path d="M59 43 Q66 36 73 43" stroke="url(#evaEyeG)" stroke-width="4" fill="none" stroke-linecap="round" filter="url(#evaEyeGlow)" class="eva-eye-happy"/>
+          <path d="M43 62 Q50 68 57 62" stroke="#06b6d4" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"/>
         </g>
 
-        <!-- excited: 打开时兴奋 ✨ -->
+        <!-- excited: 兴奋大眼 OvO -->
         <g v-if="echoMood === 'excited'" class="echo-eyes-g">
-          <polygon points="36,37 38,44 45,44 39.5,48 41.5,55 36,51 30.5,55 32.5,48 27,44 34,44" fill="#fff" class="echo-star-fast"/>
-          <polygon points="64,37 66,44 73,44 67.5,48 69.5,55 64,51 58.5,55 60.5,48 55,44 62,44" fill="#fff" class="echo-star-fast"/>
-          <ellipse cx="50" cy="66" rx="10" ry="7" fill="#fff" opacity="0.95" class="echo-mouth-bounce"/>
-          <path d="M43 67 Q50 74 57 67" stroke="#c084fc" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-          <circle cx="18" cy="28" r="2" fill="#fbbf24" class="echo-spark-dot"/><circle cx="84" cy="24" r="1.5" fill="#fbbf24" class="echo-spark-dot-d"/>
+          <ellipse :cx="34 + eyeOffset.x" :cy="43 + eyeOffset.y" rx="9" ry="6" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-eye-excited"/>
+          <ellipse :cx="66 + eyeOffset.x" :cy="43 + eyeOffset.y" rx="9" ry="6" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-eye-excited"/>
+          <ellipse :cx="33 + eyeOffset.x * 0.7" :cy="42 + eyeOffset.y * 0.7" rx="3.5" ry="2" fill="rgba(255,255,255,0.5)"/>
+          <ellipse :cx="65 + eyeOffset.x * 0.7" :cy="42 + eyeOffset.y * 0.7" rx="3.5" ry="2" fill="rgba(255,255,255,0.5)"/>
+          <ellipse cx="50" cy="64" rx="8" ry="5" fill="#06b6d4" opacity="0.6" class="eva-mouth-open"/>
+          <circle cx="18" cy="26" r="2" fill="#22d3ee" class="echo-spark-dot"/><circle cx="84" cy="24" r="1.5" fill="#22d3ee" class="echo-spark-dot-d"/>
         </g>
 
-        <!-- mischievous: 调皮眨眼 😏 -->
+        <!-- mischievous: 调皮眨眼 >_• -->
         <g v-if="echoMood === 'mischievous'" class="echo-eyes-g">
-          <line x1="28" y1="44" x2="44" y2="44" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
-          <circle :cx="64 + eyeOffset.x * 0.8" :cy="44 + eyeOffset.y * 0.8" r="8.5" fill="#fff"/>
-          <circle :cx="66 + eyeOffset.x * 1.2" :cy="42 + eyeOffset.y * 1.2" r="4.2" fill="#6366f1"/>
-          <circle :cx="67.5 + eyeOffset.x * 1.4" :cy="40.5 + eyeOffset.y * 1.4" r="1.6" fill="#fff"/>
-          <path d="M42 62 Q50 57 58 63" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-          <text x="76" y="32" font-size="14" fill="#fbbf24" font-weight="bold" class="echo-float-sym">~</text>
+          <line x1="27" y1="44" x2="41" y2="44" stroke="url(#evaEyeG)" stroke-width="3.5" stroke-linecap="round" filter="url(#evaEyeGlow)"/>
+          <ellipse :cx="66 + eyeOffset.x * 0.9" :cy="44 + eyeOffset.y * 0.9" rx="8" ry="5" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)"/>
+          <ellipse :cx="65 + eyeOffset.x * 0.6" :cy="43 + eyeOffset.y * 0.6" rx="3" ry="1.8" fill="rgba(255,255,255,0.45)"/>
+          <path d="M42 61 Q50 56 58 62" stroke="#06b6d4" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+          <text x="76" y="30" font-size="13" fill="#22d3ee" font-weight="bold" class="echo-float-sym">~</text>
         </g>
 
-        <!-- sleepy: 困困 🥱 -->
+        <!-- sleepy: 困困 💤 -->
         <g v-if="echoMood === 'sleepy'" class="echo-eyes-g">
-          <path d="M30 45 Q36 40 42 45" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.55"/>
-          <path d="M58 45 Q64 40 70 45" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.55"/>
-          <ellipse cx="50" cy="63" rx="5" ry="5.5" fill="#fff" opacity="0.75"/>
-          <text x="74" y="34" font-size="11" fill="#94a3b8" opacity="0.6" font-style="italic" class="echo-z">z</text>
-          <text x="82" y="27" font-size="8.5" fill="#94a3b8" opacity="0.35" font-style="italic" class="echo-z-d1">z</text>
+          <ellipse cx="34" cy="44" rx="8" ry="4" fill="url(#evaEyeG)" opacity="0.35" filter="url(#evaEyeGlow)"/>
+          <ellipse cx="66" cy="44" rx="8" ry="4" fill="url(#evaEyeG)" opacity="0.35" filter="url(#evaEyeGlow)"/>
+          <text x="72" y="30" font-size="14" fill="#67e8f9" opacity="0.5" font-weight="300" letter-spacing="1" class="echo-zzz">💤</text>
+          <text x="82" y="22" font-size="10" fill="#06b6d4" opacity="0.25" class="echo-zzz-d1">💤</text>
         </g>
 
-        <!-- love: 心心眼 🥰 -->
+        <!-- love: 心心眼 <3 -->
         <g v-if="echoMood === 'love'" class="echo-eyes-g">
-          <path d="M36 43 C33 40 28 40 28 45 C28 49 33 52 36 55 C39 52 44 49 44 45 C44 40 39 40 36 43Z" fill="#fb7185" class="echo-heart-pulse"/>
-          <path d="M64 43 C61 40 56 40 56 45 C56 49 61 52 64 55 C67 52 72 49 72 45 C72 40 67 40 64 43Z" fill="#fb7185" class="echo-heart-pulse"/>
-          <path d="M44 62 Q50 67 56 62" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>
-          <text x="14" y="26" font-size="13" class="echo-float-hrt">&hearts;</text>
-          <text x="82" y="32" font-size="9" class="echo-float-hrt-d1">&hearts;</text>
+          <path d="M34 42 C31 39 27 39 27 43 C27 47 31 49 34 52 C37 49 41 47 41 43 C41 39 37 39 34 42Z" fill="#22d3ee" class="echo-heart-pulse"/>
+          <path d="M64 42 C61 39 57 39 57 43 C57 47 61 49 64 52 C67 49 71 47 71 43 C71 39 67 39 64 42Z" fill="#22d3ee" class="echo-heart-pulse"/>
+          <path d="M44 61 Q50 66 56 61" stroke="#06b6d4" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <text x="14" y="25" font-size="12" class="echo-float-hrt">&hearts;</text>
+          <text x="82" y="31" font-size="8" class="echo-float-hrt-d1">&hearts;</text>
         </g>
 
         <!-- surprised: 惊讶 O_O -->
         <g v-if="echoMood === 'surprised'" class="echo-eyes-g">
-          <circle cx="36" cy="44" r="9" fill="#fff"/>
-          <circle cx="36" cy="45" r="5" fill="#6366f1"/><circle cx="38" cy="43" r="2" fill="#fff"/>
-          <circle cx="64" cy="44" r="9" fill="#fff"/>
-          <circle cx="64" cy="45" r="5" fill="#6366f1"/><circle cx="66" cy="43" r="2" fill="#fff"/>
-          <ellipse cx="50" cy="64" rx="6" ry="8" fill="#fff" opacity="0.95"/>
-          <text x="79" y="28" font-size="14" fill="#fbbf24" font-weight="bold" class="echo-bang">!</text>
+          <ellipse cx="34" cy="43" rx="10" ry="7" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-eye-surprised"/>
+          <ellipse cx="66" cy="43" rx="10" ry="7" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-eye-surprised"/>
+          <ellipse cx="33" cy="41" rx="4" ry="2.5" fill="rgba(255,255,255,0.55)"/>
+          <ellipse cx="65" cy="41" rx="4" ry="2.5" fill="rgba(255,255,255,0.55)"/>
+          <text x="79" y="27" font-size="15" fill="#22d3ee" font-weight="bold" class="echo-bang">!</text>
         </g>
 
-        <!-- thinking: 思考 💭 -->
+        <!-- thinking: 思考中 •_• -->
         <g v-if="echoMood === 'thinking'" class="echo-eyes-g">
-          <circle cx="34" cy="44" r="7.5" fill="#fff"/><circle cx="31" cy="42" r="3.8" fill="#6366f1"/><circle cx="29.5" cy="40.5" r="1.3" fill="#fff"/>
-          <circle cx="66" cy="44" r="7.5" fill="#fff"/><circle cx="69" cy="42" r="3.8" fill="#6366f1"/><circle cx="70.5" cy="40.5" r="1.3" fill="#fff"/>
-          <line x1="43" y1="64" x2="57" y2="64" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="34" cy="44" rx="7" ry="4.5" fill="url(#evaEyeG)" opacity="0.7" filter="url(#evaEyeGlow)"/>
+          <ellipse cx="66" cy="44" rx="7" ry="4.5" fill="url(#evaEyeG)" opacity="0.7" filter="url(#evaEyeGlow)"/>
+          <line x1="43" y1="63" x2="57" y2="63" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
           <g class="echo-thought">
-            <circle cx="83" cy="30" r="3" fill="#fff" opacity="0.25"/>
-            <circle cx="89" cy="22" r="5" fill="#fff" opacity="0.18"/>
-            <ellipse cx="78" cy="13" rx="10" ry="7.5" fill="#fff" opacity="0.12"/>
+            <circle cx="82" cy="29" r="3" fill="#22d3ee" opacity="0.25"/>
+            <circle cx="88" cy="21" r="5" fill="#22d3ee" opacity="0.16"/>
+            <ellipse cx="78" cy="12" rx="10" ry="7.5" fill="#22d3ee" opacity="0.1"/>
           </g>
         </g>
       </svg>
@@ -459,7 +462,7 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
         <div class="echo-hdr">
           <div class="flex items-center gap-2.5">
             <div class="echo-ava">
-              <svg viewBox="0 0 100 100"><defs><linearGradient id="avG" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#a855f7"/></linearGradient></defs><circle cx="50" cy="50" r="46" fill="url(#avG)"/><path d="M36 46 Q43 40 50 46" stroke="#fff" stroke-width="2.8" fill="none" stroke-linecap="round"/><path d="M50 46 Q57 40 64 46" stroke="#fff" stroke-width="2.8" fill="none" stroke-linecap="round"/><path d="M43 62 Q50 68 57 62" stroke="#fff" stroke-width="2.3" fill="none" stroke-linecap="round"/></svg>
+              <svg viewBox="0 0 100 100"><defs><radialGradient id="avG" cx="38%" cy="32%" r="65%"><stop offset="0%" stop-color="#4a4a4a"/><stop offset="35%" stop-color="#1a1a1a"/><stop offset="70%" stop-color="#0a0a0a"/><stop offset="100%" stop-color="#000000"/></radialGradient><radialGradient id="avEyeG" cx="50%" cy="45%" r="55%"><stop offset="0%" stop-color="#67e8f9"/><stop offset="40%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#0891b2"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#avG)"/><ellipse cx="36" cy="32" rx="15" ry="10" fill="rgba(255,255,255,0.2)" transform="rotate(-22 36 32)"/><ellipse cx="34" cy="44" rx="8" ry="4.5" fill="url(#avEyeG)"/><ellipse cx="66" cy="44" rx="8" ry="4.5" fill="url(#avEyeG)"/><ellipse cx="34" cy="44" rx="3" ry="1.5" fill="rgba(255,255,255,0.45)" transform="translate(-1,-0.5)"/><ellipse cx="66" cy="44" rx="3" ry="1.5" fill="rgba(255,255,255,0.45)" transform="translate(-1,-0.5)"/></svg>
             </div>
             <div>
               <div class="font-semibold text-sm">{{ t('echo.title') || '念溪 Echo' }}</div>
@@ -486,7 +489,7 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
             <template v-for="(msg, i) in currentMessages" :key="i">
               <div v-if="msg.role==='user'" class="echo-m echo-m-u"><div class="echo-bub-u">{{ msg.content }}</div></div>
               <div v-else class="echo-m echo-m-a">
-                <div class="echo-av-sm"><svg viewBox="0 0 100 100"><defs><linearGradient id="smAvG" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#a855f7"/></linearGradient></defs><circle cx="50" cy="50" r="46" fill="url(#smAvG)"/></svg></div>
+                <div class="echo-av-sm"><svg viewBox="0 0 100 100"><defs><radialGradient id="smAvG" cx="38%" cy="32%" r="65%"><stop offset="0%" stop-color="#4a4a4a"/><stop offset="35%" stop-color="#1a1a1a"/><stop offset="70%" stop-color="#0a0a0a"/><stop offset="100%" stop-color="#000000"/></radialGradient><radialGradient id="smEyeG" cx="50%" cy="45%" r="55%"><stop offset="0%" stop-color="#67e8f9"/><stop offset="40%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#0891b2"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#smAvG)"/><ellipse cx="36" cy="32" rx="15" ry="10" fill="rgba(255,255,255,0.2)" transform="rotate(-22 36 32)"/><ellipse cx="34" cy="44" rx="8" ry="4.5" fill="url(#smEyeG)"/><ellipse cx="66" cy="44" rx="8" ry="4.5" fill="url(#smEyeG)"/></svg></div>
                 <div class="echo-bub-a">
                   <div v-if="msg.toolCalls && msg.toolCalls.length" class="space-y-1 mb-1.5">
                     <div v-for="(tc, ti) in msg.toolCalls" :key="ti" class="flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full" :class="tc.status==='done'?'bg-success/8 text-success/70':'bg-primary/8 text-primary/70'">
@@ -512,7 +515,6 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
             </template>
             <!-- 欢迎空态 -->
             <div v-if="!currentMessages.length" class="echo-welcome">
-              <div class="echo-wel-av"><svg viewBox="0 0 100 100"><defs><linearGradient id="welG" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#a855f7"/></linearGradient></defs><circle cx="50" cy="50" r="46" fill="url(#welG)"/><path d="M36 46 Q43 40 50 46" stroke="#fff" stroke-width="2.8" fill="none" stroke-linecap="round"/><path d="M50 46 Q57 40 64 46" stroke="#fff" stroke-width="2.8" fill="none" stroke-linecap="round"/><path d="M43 62 Q50 68 57 62" stroke="#fff" stroke-width="2.3" fill="none" stroke-linecap="round"/></svg></div>
               <div class="echo-wel-txt">{{ t('echo.welcome') || '\u55E8~ \u6211\u662F\u5FF5\u6EAA Echo \uD83D\uDC4B \u6709\u4EC0\u4E48\u53EF\u4EE5\u5E2E\u4F60\u7684\u5417?' }}</div>
             </div>
           </template>
@@ -549,23 +551,23 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   transition: transform .35s cubic-bezier(.34,1.56,.64,1);
-  filter: drop-shadow(0 4px 18px rgba(99,102,241,.35));
+  filter: drop-shadow(0 4px 18px rgba(6,182,212,.3));
 }
-.echo-ball:hover { transform: scale(1.08) translateY(-2px); filter: drop-shadow(0 6px 24px rgba(99,102,241,.45)); }
+.echo-ball:hover { transform: scale(1.08) translateY(-2px); filter: drop-shadow(0 6px 24px rgba(6,182,212,.45)); }
 .echo-ball:active { transform: scale(.92); cursor: grabbing; }
 .echo-dragging { cursor: grabbing; transform: scale(1.05)!important; transition: transform .1s ease!important; }
 
-/* 光晕 */
+/* EVA 光晕 - 青蓝色调 */
 @keyframes orbit-spin { to { transform: rotate(360deg); } }
 .echo-orbit {
-  position:absolute; inset:-5px; border-radius:50%; border:1.5px solid rgba(99,102,241,.2);
+  position:absolute; inset:-5px; border-radius:50%; border:1.5px solid rgba(6,182,212,.25);
   animation: orbit-spin 8s linear infinite;
 }
-@keyframes glow-pulse { 0%,100%{opacity:.35;transform:scale(1)} 50%{opacity:.6;transform:scale(1.12)} }
+@keyframes eva-glow-pulse { 0%,100%{opacity:.35;transform:scale(1)} 50%{opacity:.65;transform:scale(1.12)} }
 .echo-glow {
   position:absolute; inset:-8px; border-radius:50%;
-  background:radial-gradient(circle,rgba(99,102,241,.3) 0%,transparent 70%);
-  animation: glow-pulse 3s ease-in-out infinite;
+  background:radial-gradient(circle,rgba(6,182,212,.28) 0%,transparent 70%);
+  animation: eva-glow-pulse 3s ease-in-out infinite;
   pointer-events:none;
 }
 
@@ -578,6 +580,41 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
 
 /* 眼睛通用过渡 */
 .echo-eyes-g { transition: opacity .3s ease; }
+
+/* EVA 眼睛动画 */
+@keyframes eva-eye-shimmer {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.85; filter: brightness(1.2); }
+}
+@keyframes eva-eye-blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.15); }
+}
+.eva-eye-ellipse { animation: eva-eye-shimmer 3s ease-in-out infinite, eva-eye-blink 5s ease-in-out infinite; }
+
+@keyframes eva-happy-wiggle {
+  0%, 100% { d: path('M27 43 Q34 36 41 43'); }
+  50% { d: path('M27 43 Q34 34 41 43'); }
+}
+.eva-eye-happy { animation: eva-eye-shimmer 3s ease-in-out infinite; }
+
+@keyframes eva-excited-pulse {
+  0%, 100% { opacity: 1; rx: 9px; ry: 6px; }
+  50% { opacity: 0.88; rx: 10px; ry: 6.5px; }
+}
+.eva-eye-excited { animation: eva-excited-pulse 2s ease-in-out infinite; }
+
+@keyframes eva-mouth-open-bounce {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.12); }
+}
+.eva-mouth-open { animation: eva-mouth-open-bounce 1.8s ease-in-out infinite; transform-origin: center top; }
+
+@keyframes eva-surprised-pop {
+  0%, 100% { rx: 10px; ry: 7px; }
+  30% { rx: 11.5px; ry: 8px; }
+}
+.eva-eye-surprised { animation: eva-surprised-pop 1.2s ease-in-out infinite; }
 
 /* 星星闪烁 */
 @keyframes twinkle { 0%,100%{transform:scale(1);filter:brightness(1)} 50%{transform:scale(1.15);filter:brightness(1.3)} }
@@ -611,6 +648,17 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
 @keyframes z-drift { 0%{opacity:0;transform:translate(0,0)} 40%{opacity:.7;transform:translate(4px,-5px)} 100%{opacity:0;transform:translate(10px,-14px)} }
 .echo-z { animation:z-drift 2.5s ease-in-out infinite; display:inline-block; }
 .echo-z-d1 { animation:z-drift 2.5s ease-in-out infinite .7s; display:inline-block; }
+
+/* 💤 困困飘浮 */
+@keyframes zzz-float {
+  0% { opacity: 0; transform: translate(0, 2px) scale(0.8) rotate(-5deg); }
+  25% { opacity: 0.6; transform: translate(3px, -3px) scale(1) rotate(3deg); }
+  50% { opacity: 0.45; transform: translate(6px, -7px) scale(0.95) rotate(-2deg); }
+  75% { opacity: 0.25; transform: translate(9px, -11px) scale(0.88) rotate(4deg); }
+  100% { opacity: 0; transform: translate(12px, -15px) scale(0.75) rotate(-3deg); }
+}
+.echo-zzz { animation: zzz-float 3s ease-in-out infinite; display: inline-block; }
+.echo-zzz-d1 { animation: zzz-float 3s ease-in-out infinite 1s; display: inline-block; }
 
 /* 感叹号 */
 @keyframes bang-pop { 0%,100%{transform:translateY(0) scale(1)} 25%{transform:translateY(-3px) scale(1.15)} 50%{transform:translateY(1px) scale(.93)} 75%{transform:translateY(-2px) scale(1.05)} }
@@ -668,7 +716,7 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
 .echo-hdr { display:flex; align-items:center; justify-content:space-between; padding:13px 16px 10px; border-bottom:1px solid hsl(var(--bc)/.06); flex-shrink:0; }
 
 /* 头像 */
-.echo-ava { width:36px; height:36px; flex-shrink:0; border-radius:50%; overflow:hidden; box-shadow:0 2px 10px rgba(99,102,241,.18); transition:transform .3s cubic-bezier(.34,1.56,.64,1); }
+.echo-ava { width:36px; height:36px; flex-shrink:0; border-radius:50%; overflow:hidden; box-shadow:0 2px 10px rgba(6,182,212,.2); transition:transform .3s cubic-bezier(.34,1.56,.64,1); }
 .echo-ava:hover { transform:scale(1.08) rotate(-5deg); }
 .echo-ava svg { width:100%;height:100%;display:block; }
 
@@ -718,7 +766,7 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
 
 /* 欢迎 */
 .echo-welcome { display:flex; flex-direction:column; align-items:center; min-height:130px; gap:12px; padding:10px 0; }
-.echo-wel-av { width:52px;height:52px;border-radius:50%;overflow:hidden;box-shadow:0 4px 14px rgba(99,102,241,.15); animation:wpop .6s cubic-bezier(.34,1.56,.64,1) both; }
+.echo-wel-av { width:52px;height:52px;border-radius:50%;overflow:hidden;box-shadow:0 4px 14px rgba(6,182,212,.15); animation:wpop .6s cubic-bezier(.34,1.56,.64,1) both; }
 .echo-wel-av svg { width:100%;height:100%;display:block; }
 @keyframes wpop { 0%{transform:scale(0) rotate(-18deg);opacity:0} 60%{transform:scale(1.12) rotate(3deg);opacity:1} 100%{transform:scale(1) rotate(0);opacity:1} }
 .echo-wel-txt { font-size:13px;color:hsl(var(--bc)/.45);text-align:center;line-height:1.6;padding:0 12px; animation:fup .5s ease .2s both; }
