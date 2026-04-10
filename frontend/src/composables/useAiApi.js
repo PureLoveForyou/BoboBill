@@ -144,8 +144,8 @@ export function useAiApi() {
   }
 
   // 切换会话（加载消息）
-  const switchChatSession = async (chatId) => {
-    if (activeChatId.value === chatId && currentMessages.value.length > 0) {
+  const switchChatSession = async (chatId, forceReload = false) => {
+    if (!forceReload && activeChatId.value === chatId && currentMessages.value.length > 0) {
       activeChatId.value = chatId
       return true
     }

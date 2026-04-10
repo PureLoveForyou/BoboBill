@@ -254,5 +254,27 @@ export default {
     deleteFailed: 'Delete failed',
     loadFailed: 'Load failed',
     saveFailed: 'Save failed'
+  },
+  echo: {
+    title: 'Echo',
+    online: 'Online~',
+    thinking: 'Thinking...',
+    notConfigured: 'AI is not configured yet~',
+    goSettings: 'Go Settings',
+    welcome: 'Hi~ I\'m Echo 👋 How can I help you?',
+    placeholder: 'Ask Echo something...',
+    configFirst: 'Configure AI first',
+    send: 'Send',
+    newChat: 'Chat with Echo',
+    q1_dashboard: 'How much did I spend this month?',
+    q2_dashboard: 'Analyze my spending trends',
+    q3_dashboard: 'Any large expenses recently?',
+    q1_bills: 'Help me organize recent bills',
+    q2_bills: 'How much did I spend on dining?',
+    q3_bills: 'Are there any duplicate bills?',
+    q1_settings: 'How do I configure AI?',
+    q2_settings: 'Is my budget reasonable?',
+    q_default1: 'What time is it?',
+    q_default2: 'How are you today?'
   }
 }

@@ -46,6 +46,11 @@ const scrollToBottom = () => {
 
 watch(activeChatId, () => scrollToBottom())
 
+// 当 EchoAssistant 流式传输时，同步滚动到底部（共享 currentMessages）
+watch(currentMessages, () => {
+  if (isLoading.value) scrollToBottom()
+}, { deep: true })
+
 const handleSend = async () => {
   const text = inputText.value.trim().replace(/\n+$/, '')
   if (!text || isLoading.value || !isConfigured.value) return
@@ -209,7 +214,19 @@ onMounted(async () => {
 })
 
 // 从其他页面返回时激活
-onActivated(() => {
+onActivated(async () => {
+  await fetchChats()
+  // 如果正在流式传输中，不要重新加载（会覆盖掉实时流式消息）
+  if (isLoading.value) {
+    scrollToBottom()
+    return
+  }
+  // 如果当前有活跃会话，刷新其消息（从悬浮窗聊的可能有新内容）
+  if (activeChatId.value) {
+    await switchChatSession(activeChatId.value, true)
+  } else if (chats.value.length > 0) {
+    await switchChatSession(chats.value[0].id, true)
+  }
   scrollToBottom()
 })
 </script>

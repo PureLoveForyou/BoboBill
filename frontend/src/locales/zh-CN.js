@@ -256,5 +256,27 @@ export default {
     deleteFailed: '删除失败',
     loadFailed: '加载失败',
     saveFailed: '保存失败'
+  },
+  echo: {
+    title: '念溪 Echo',
+    online: '在线等你~',
+    thinking: '思考中...',
+    notConfigured: '还没配置 AI 呢~',
+    goSettings: '去设置',
+    welcome: '嗨~我是念溪 Echo 👋 有什么可以帮你的吗？',
+    placeholder: '问念溪点什么...',
+    configFirst: '先配置 AI 吧',
+    send: '发送',
+    newChat: '和念溪聊天',
+    q1_dashboard: '这个月花了多少？',
+    q2_dashboard: '帮我分析一下消费趋势',
+    q3_dashboard: '最近有什么大额支出？',
+    q1_bills: '帮我整理一下最近的账单',
+    q2_bills: '餐饮花了多少钱？',
+    q3_bills: '有没有重复的账单？',
+    q1_settings: '怎么配置 AI 助手？',
+    q2_settings: '我的预算合理吗？',
+    q_default1: '几点了？',
+    q_default2: '今天心情怎么样？'
   }
 }

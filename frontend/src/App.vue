@@ -4,6 +4,7 @@ import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { initTheme, toggleDarkLight, getCurrentTheme } from './utils/theme.js'
 import Sidebar from './components/Sidebar.vue'
+import EchoAssistant from './components/EchoAssistant.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -82,5 +83,8 @@ watch(() => router.currentRoute.value.path, () => {
     
     <!-- Sidebar -->
     <Sidebar />
+
+    <!-- 念溪 Echo 悬浮助手（登录后显示） -->
+    <EchoAssistant />
   </div>
 </template>
