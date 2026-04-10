@@ -367,71 +367,70 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
         <!-- 高光 -->
         <ellipse cx="36" cy="32" rx="15" ry="10" fill="url(#evaHighlightG)" transform="rotate(-22 36 32)"/>
 
-        <!-- idle: 微眯笑眼 -_- -->
+        <!-- ====== EVA 表情系统：眼睛即一切 ====== -->
+
+        <!-- idle: 自然待机 - 温柔注视 -->
         <g v-if="echoMood === 'idle'" class="echo-eyes-g">
-          <ellipse :cx="34 + eyeOffset.x * 0.8" :cy="44 + eyeOffset.y * 0.8" rx="8" ry="4.5" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-eye-ellipse"/>
-          <ellipse :cx="66 + eyeOffset.x * 0.8" :cy="44 + eyeOffset.y * 0.8" rx="8" ry="4.5" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-eye-ellipse"/>
-          <ellipse cx="34" cy="44" rx="3" ry="1.5" fill="rgba(255,255,255,0.45)" transform="translate(-1,-0.5)"/>
-          <ellipse cx="66" cy="44" rx="3" ry="1.5" fill="rgba(255,255,255,0.45)" transform="translate(-1,-0.5)"/>
+          <ellipse :cx="34 + eyeOffset.x * 0.8" :cy="44 + eyeOffset.y * 0.8" rx="8.5" ry="5" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-idle-eye"/>
+          <ellipse :cx="66 + eyeOffset.x * 0.8" :cy="44 + eyeOffset.y * 0.8" rx="8.5" ry="5" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-idle-eye"/>
+          <ellipse :cx="32.5 + eyeOffset.x * 0.5" :cy="42.5 + eyeOffset.y * 0.5" rx="2.8" ry="1.6" fill="rgba(255,255,255,0.55)" class="eva-idle-spark"/>
+          <ellipse :cx="64.5 + eyeOffset.x * 0.5" :cy="42.5 + eyeOffset.y * 0.5" rx="2.8" ry="1.6" fill="rgba(255,255,255,0.55)" class="eva-idle-spark"/>
         </g>
 
-        <!-- happy: 弯弯笑眼 ^^ -->
+        <!-- happy: 开心笑眼 ^^ 弯弯月牙 -->
         <g v-if="echoMood === 'happy'" class="echo-eyes-g">
-          <path d="M27 43 Q34 36 41 43" stroke="url(#evaEyeG)" stroke-width="4" fill="none" stroke-linecap="round" filter="url(#evaEyeGlow)" class="eva-eye-happy"/>
-          <path d="M59 43 Q66 36 73 43" stroke="url(#evaEyeG)" stroke-width="4" fill="none" stroke-linecap="round" filter="url(#evaEyeGlow)" class="eva-eye-happy"/>
-          <path d="M43 62 Q50 68 57 62" stroke="#06b6d4" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"/>
+          <path d="M26 45 Q34 33 42 45" stroke="url(#evaEyeG)" stroke-width="4.5" fill="none" stroke-linecap="round" filter="url(#evaEyeGlow)" class="eva-happy-curve"/>
+          <path d="M58 45 Q66 33 74 45" stroke="url(#evaEyeG)" stroke-width="4.5" fill="none" stroke-linecap="round" filter="url(#evaEyeGlow)" class="eva-happy-curve"/>
+          <circle cx="30" cy="40" r="1.5" fill="rgba(255,255,255,0.5)" class="eva-happy-twinkle"/>
+          <circle cx="62" cy="40" r="1.5" fill="rgba(255,255,255,0.5)" class="eva-happy-twinkle"/>
         </g>
 
-        <!-- excited: 兴奋大眼 OvO -->
+        <!-- excited: 兴奋大眼 ✨ 圆睁闪烁 -->
         <g v-if="echoMood === 'excited'" class="echo-eyes-g">
-          <ellipse :cx="34 + eyeOffset.x" :cy="43 + eyeOffset.y" rx="9" ry="6" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-eye-excited"/>
-          <ellipse :cx="66 + eyeOffset.x" :cy="43 + eyeOffset.y" rx="9" ry="6" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-eye-excited"/>
-          <ellipse :cx="33 + eyeOffset.x * 0.7" :cy="42 + eyeOffset.y * 0.7" rx="3.5" ry="2" fill="rgba(255,255,255,0.5)"/>
-          <ellipse :cx="65 + eyeOffset.x * 0.7" :cy="42 + eyeOffset.y * 0.7" rx="3.5" ry="2" fill="rgba(255,255,255,0.5)"/>
-          <ellipse cx="50" cy="64" rx="8" ry="5" fill="#06b6d4" opacity="0.6" class="eva-mouth-open"/>
-          <circle cx="18" cy="26" r="2" fill="#22d3ee" class="echo-spark-dot"/><circle cx="84" cy="24" r="1.5" fill="#22d3ee" class="echo-spark-dot-d"/>
+          <ellipse :cx="34 + eyeOffset.x" :cy="43 + eyeOffset.y" rx="10" ry="6.5" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-excited-eye"/>
+          <ellipse :cx="66 + eyeOffset.x" :cy="43 + eyeOffset.y" rx="10" ry="6.5" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-excited-eye"/>
+          <ellipse :cx="32 + eyeOffset.x * 0.6" :cy="41 + eyeOffset.y * 0.6" rx="4" ry="2.5" fill="rgba(255,255,255,0.6)" class="eva-excited-spark"/>
+          <ellipse :cx="64 + eyeOffset.x * 0.6" :cy="41 + eyeOffset.y * 0.6" rx="4" ry="2.5" fill="rgba(255,255,255,0.6)" class="eva-excited-spark"/>
+          <circle cx="17" cy="25" r="1.8" fill="#67e8f9" class="echo-spark-dot"/><circle cx="85" cy="23" r="1.3" fill="#22d3ee" class="echo-spark-dot-d"/>
         </g>
 
-        <!-- mischievous: 调皮眨眼 >_• -->
+        <!-- mischievous: 调皮眨眼 >_• 一只闭一只睁 -->
         <g v-if="echoMood === 'mischievous'" class="echo-eyes-g">
-          <line x1="27" y1="44" x2="41" y2="44" stroke="url(#evaEyeG)" stroke-width="3.5" stroke-linecap="round" filter="url(#evaEyeGlow)"/>
-          <ellipse :cx="66 + eyeOffset.x * 0.9" :cy="44 + eyeOffset.y * 0.9" rx="8" ry="5" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)"/>
-          <ellipse :cx="65 + eyeOffset.x * 0.6" :cy="43 + eyeOffset.y * 0.6" rx="3" ry="1.8" fill="rgba(255,255,255,0.45)"/>
-          <path d="M42 61 Q50 56 58 62" stroke="#06b6d4" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-          <text x="76" y="30" font-size="13" fill="#22d3ee" font-weight="bold" class="echo-float-sym">~</text>
+          <path d="M27 44 Q34 48 41 44" stroke="url(#evaEyeG)" stroke-width="3" fill="none" stroke-linecap="round" filter="url(#evaEyeGlow)" class="eva-misch-wink"/>
+          <ellipse :cx="66 + eyeOffset.x * 0.9" :cy="44 + eyeOffset.y * 0.9" rx="8.5" ry="5.2" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)"/>
+          <ellipse :cx="64.5 + eyeOffset.x * 0.6" :cy="42.5 + eyeOffset.y * 0.6" rx="3" ry="1.8" fill="rgba(255,255,255,0.5)"/>
         </g>
 
-        <!-- sleepy: 困困 💤 -->
+        <!-- sleepy: 困困 💤 半垂暗淡 -->
         <g v-if="echoMood === 'sleepy'" class="echo-eyes-g">
-          <ellipse cx="34" cy="44" rx="8" ry="4" fill="url(#evaEyeG)" opacity="0.35" filter="url(#evaEyeGlow)"/>
-          <ellipse cx="66" cy="44" rx="8" ry="4" fill="url(#evaEyeG)" opacity="0.35" filter="url(#evaEyeGlow)"/>
-          <text x="72" y="30" font-size="14" fill="#67e8f9" opacity="0.5" font-weight="300" letter-spacing="1" class="echo-zzz">💤</text>
-          <text x="82" y="22" font-size="10" fill="#06b6d4" opacity="0.25" class="echo-zzz-d1">💤</text>
+          <ellipse cx="34" cy="45" rx="9" ry="2.8" fill="url(#evaEyeG)" opacity="0.3" filter="url(#evaEyeGlow)" class="eva-sleepy-eye"/>
+          <ellipse cx="66" cy="45" rx="9" ry="2.8" fill="url(#evaEyeG)" opacity="0.3" filter="url(#evaEyeGlow)" class="eva-sleepy-eye"/>
+          <text x="66" y="24" font-size="28" fill="#67e8f9" opacity="0.55" font-weight="300" class="echo-zzz">💤</text>
+          <text x="84" y="10" font-size="20" fill="#06b6d4" opacity="0.28" class="echo-zzz-d1">💤</text>
         </g>
 
-        <!-- love: 心心眼 <3 -->
+        <!-- love: 动心眼 ♡ 温柔弯眼+柔光晕 -->
         <g v-if="echoMood === 'love'" class="echo-eyes-g">
-          <path d="M34 42 C31 39 27 39 27 43 C27 47 31 49 34 52 C37 49 41 47 41 43 C41 39 37 39 34 42Z" fill="#22d3ee" class="echo-heart-pulse"/>
-          <path d="M64 42 C61 39 57 39 57 43 C57 47 61 49 64 52 C67 49 71 47 71 43 C71 39 67 39 64 42Z" fill="#22d3ee" class="echo-heart-pulse"/>
-          <path d="M44 61 Q50 66 56 61" stroke="#06b6d4" stroke-width="2" fill="none" stroke-linecap="round"/>
-          <text x="14" y="25" font-size="12" class="echo-float-hrt">&hearts;</text>
-          <text x="82" y="31" font-size="8" class="echo-float-hrt-d1">&hearts;</text>
+          <ellipse cx="34" cy="44" rx="10" ry="4" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-love-eye" transform="rotate(-6 34 44)"/>
+          <ellipse cx="66" cy="44" rx="10" ry="4" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-love-eye" transform="rotate(6 66 44)"/>
+          <ellipse cx="32" cy="43" rx="3.5" ry="1.5" fill="rgba(255,255,255,0.5)" class="eva-love-spark"/>
+          <ellipse cx="64" cy="43" rx="3.5" ry="1.5" fill="rgba(255,255,255,0.5)" class="eva-love-spark"/>
+          <circle cx="16" cy="26" r="1.5" fill="#a5f3fc" opacity="0.6" class="eva-love-orb"/><circle cx="86" cy="24" r="1" fill="#67e8f9" opacity="0.35" class="eva-love-orb-d"/>
         </g>
 
-        <!-- surprised: 惊讶 O_O -->
+        <!-- surprised: 惊讶 O_O 圆瞪 -->
         <g v-if="echoMood === 'surprised'" class="echo-eyes-g">
-          <ellipse cx="34" cy="43" rx="10" ry="7" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-eye-surprised"/>
-          <ellipse cx="66" cy="43" rx="10" ry="7" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-eye-surprised"/>
-          <ellipse cx="33" cy="41" rx="4" ry="2.5" fill="rgba(255,255,255,0.55)"/>
-          <ellipse cx="65" cy="41" rx="4" ry="2.5" fill="rgba(255,255,255,0.55)"/>
-          <text x="79" y="27" font-size="15" fill="#22d3ee" font-weight="bold" class="echo-bang">!</text>
+          <ellipse cx="34" cy="43" rx="11" ry="8" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-surprised-eye"/>
+          <ellipse cx="66" cy="43" rx="11" ry="8" fill="url(#evaEyeG)" filter="url(#evaEyeGlow)" class="eva-surprised-eye"/>
+          <ellipse cx="32" cy="40" rx="4.5" ry="2.8" fill="rgba(255,255,255,0.58)"/>
+          <ellipse cx="64" cy="40" rx="4.5" ry="2.8" fill="rgba(255,255,255,0.58)"/>
+          <text x="80" y="26" font-size="16" fill="#22d3ee" font-weight="bold" class="echo-bang">!</text>
         </g>
 
-        <!-- thinking: 思考中 •_• -->
+        <!-- thinking: 思考中 •_• 聚焦小眼 -->
         <g v-if="echoMood === 'thinking'" class="echo-eyes-g">
-          <ellipse cx="34" cy="44" rx="7" ry="4.5" fill="url(#evaEyeG)" opacity="0.7" filter="url(#evaEyeGlow)"/>
-          <ellipse cx="66" cy="44" rx="7" ry="4.5" fill="url(#evaEyeG)" opacity="0.7" filter="url(#evaEyeGlow)"/>
-          <line x1="43" y1="63" x2="57" y2="63" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+          <ellipse cx="34" cy="44" rx="7" ry="4" fill="url(#evaEyeG)" opacity="0.65" filter="url(#evaEyeGlow)" class="eva-think-eye"/>
+          <ellipse cx="66" cy="44" rx="7" ry="4" fill="url(#evaEyeG)" opacity="0.65" filter="url(#evaEyeGlow)" class="eva-think-eye"/>
           <g class="echo-thought">
             <circle cx="82" cy="29" r="3" fill="#22d3ee" opacity="0.25"/>
             <circle cx="88" cy="21" r="5" fill="#22d3ee" opacity="0.16"/>
@@ -581,84 +580,114 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
 /* 眼睛通用过渡 */
 .echo-eyes-g { transition: opacity .3s ease; }
 
-/* EVA 眼睛动画 */
-@keyframes eva-eye-shimmer {
+/* ====== EVA 眼睛灵动动画系统 ====== */
+
+/* idle: 温柔呼吸 + 眨眼 */
+@keyframes eva-idle-breathe {
   0%, 100% { opacity: 1; filter: brightness(1); }
-  50% { opacity: 0.85; filter: brightness(1.2); }
+  50% { opacity: 0.88; filter: brightness(1.08); }
 }
-@keyframes eva-eye-blink {
-  0%, 90%, 100% { transform: scaleY(1); }
-  95% { transform: scaleY(0.15); }
+@keyframes eva-idle-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  96% { transform: scaleY(0.12); }
 }
-.eva-eye-ellipse { animation: eva-eye-shimmer 3s ease-in-out infinite, eva-eye-blink 5s ease-in-out infinite; }
+@keyframes eva-idle-spark-twinkle {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.15); }
+}
+.eva-idle-eye { animation: eva-idle-breathe 3.5s ease-in-out infinite, eva-idle-blink 5.5s ease-in-out infinite; }
+.eva-idle-spark { animation: eva-idle-spark-twinkle 2.8s ease-in-out infinite; }
 
-@keyframes eva-happy-wiggle {
-  0%, 100% { d: path('M27 43 Q34 36 41 43'); }
-  50% { d: path('M27 43 Q34 34 41 43'); }
+/* happy: 弯弯笑眼闪烁 */
+@keyframes eva-happy-glow {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 3px rgba(6,182,212,0.4)); }
+  50% { filter: brightness(1.15) drop-shadow(0 0 6px rgba(6,182,212,0.6)); }
 }
-.eva-eye-happy { animation: eva-eye-shimmer 3s ease-in-out infinite; }
+@keyframes eva-happy-twinkle-pop {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.3); }
+}
+.eva-happy-curve { animation: eva-happy-glow 3s ease-in-out infinite; }
+.eva-happy-twinkle { animation: eva-happy-twinkle-pop 2s ease-in-out infinite; }
 
+/* excited: 兴奋大眼脉冲 */
 @keyframes eva-excited-pulse {
-  0%, 100% { opacity: 1; rx: 9px; ry: 6px; }
-  50% { opacity: 0.88; rx: 10px; ry: 6.5px; }
+  0%, 100% { opacity: 1; }
+  30% { opacity: 0.9; }
+  60% { opacity: 1; }
 }
-.eva-eye-excited { animation: eva-excited-pulse 2s ease-in-out infinite; }
-
-@keyframes eva-mouth-open-bounce {
-  0%, 100% { transform: scaleY(1); }
-  50% { transform: scaleY(1.12); }
+@keyframes eva-excited-spark-glow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
 }
-.eva-mouth-open { animation: eva-mouth-open-bounce 1.8s ease-in-out infinite; transform-origin: center top; }
+.eva-excited-eye { animation: eva-excited-pulse 1.5s ease-in-out infinite; }
+.eva-excited-spark { animation: eva-excited-spark-glow 1.2s ease-in-out infinite; }
 
+/* mischievous: 眨眼弧线微弹 */
+@keyframes eva-misch-wink-bounce {
+  0%, 100% { d: path('M27 44 Q34 48 41 44'); }
+  50% { d: path('M27 44 Q34 46 41 44'); }
+}
+.eva-misch-wink { animation: eva-misch-wink-bounce 2s ease-in-out infinite; }
+
+/* sleepy: 困眼缓慢眨动 */
+@keyframes eva-sleepy-drowse {
+  0%, 100% { opacity: 0.3; ry: 2.8px; }
+  50% { opacity: 0.2; ry: 2px; }
+}
+.eva-sleepy-eye { animation: eva-sleepy-drowse 4s ease-in-out infinite; }
+
+/* love: 动心眼温柔颤动 */
+@keyframes eva-love-shimmer {
+  0%, 100% { opacity: 1; filter: brightness(1) drop-shadow(0 0 4px rgba(34,211,238,0.3)); }
+  50% { opacity: 0.92; filter: brightness(1.12) drop-shadow(0 0 7px rgba(34,211,238,0.5)); }
+}
+@keyframes eva-love-spark-soft {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.75; }
+}
+@keyframes eva-love-orb-float {
+  0% { opacity: 0.6; transform: translateY(0) scale(1); }
+  50% { opacity: 0.3; transform: translateY(-6px) scale(0.85); }
+  100% { opacity: 0.6; transform: translateY(0) scale(1); }
+}
+.eva-love-eye { animation: eva-love-shimmer 2.5s ease-in-out infinite; }
+.eva-love-spark { animation: eva-love-spark-soft 2s ease-in-out infinite; }
+.eva-love-orb { animation: eva-love-orb-float 2.8s ease-in-out infinite; }
+.eva-love-orb-d { animation: eva-love-orb-float 2.8s ease-in-out infinite 0.4s; }
+
+/* surprised: 惊讶大眼弹跳 */
 @keyframes eva-surprised-pop {
-  0%, 100% { rx: 10px; ry: 7px; }
-  30% { rx: 11.5px; ry: 8px; }
+  0%, 100% { rx: 11px; ry: 8px; }
+  20% { rx: 12px; ry: 8.5px; }
+  40% { rx: 11px; ry: 8px; }
 }
-.eva-eye-surprised { animation: eva-surprised-pop 1.2s ease-in-out infinite; }
+.eva-surprised-eye { animation: eva-surprised-pop 1s ease-in-out infinite; }
 
-/* 星星闪烁 */
-@keyframes twinkle { 0%,100%{transform:scale(1);filter:brightness(1)} 50%{transform:scale(1.15);filter:brightness(1.3)} }
-.echo-star { animation: twinkle 2s ease-in-out infinite; transform-origin:center; }
-.echo-star:nth-last-child(2) { animation-delay:.35s; }
-.echo-star-fast { animation: twinkle 1.4s ease-in-out infinite; transform-origin:center; }
-.echo-star-fast:nth-last-child(2) { animation-delay:.2s; }
+/* thinking: 聚焦眼微微收缩 */
+@keyframes eva-think-focus {
+  0%, 100% { opacity: 0.65; rx: 7px; ry: 4px; }
+  50% { opacity: 0.55; rx: 6.5px; ry: 3.5px; }
+}
+.eva-think-eye { animation: eva-think-focus 2.5s ease-in-out infinite; }
 
-/* 嘴巴弹跳 */
-@keyframes mouth-bounce { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(1.08)} }
-.echo-mouth-w { animation: mouth-bounce 2.2s ease-in-out infinite; transform-origin:center top; }
-.echo-mouth-bounce { animation: mouth-bounce 1.5s ease-in-out infinite; transform-origin:center top; }
-
-/* 心跳 */
-@keyframes hb { 0%,100%{transform:scale(1)} 15%{transform:scale(1.22)} 30%{transform:scale(1)} 45%{transform:scale(1.15)} 60%{transform:scale(1)} }
-.echo-heart-pulse { animation: hb 1.1s ease-in-out infinite; }
-.echo-heart-pulse:last-child { animation-delay:.15s; }
-
-/* 飘浮符号 */
-@keyframes float-sym { 0%{opacity:0;transform:translateY(4px) scale(.7)} 30%{opacity:.85;transform:translateY(0) scale(1)} 80%{opacity:.5;transform:translateY(-10px) scale(.88)} 100%{opacity:0;transform:translateY(-14px) scale(.65)} }
-.echo-float-sym { animation:float-sym 2.5s ease-in-out infinite; display:inline-block; }
-.echo-float-hrt { animation:float-sym 2.8s ease-in-out infinite .3s; display:inline-block; }
-.echo-float-hrt-d1 { animation:float-sym 2.6s ease-in-out infinite 1s; display:inline-block; }
+/* 星星闪烁 - 已移除EVA不需要星星动画 */
 
 /* 火花点 */
 @keyframes spark-fade { 0%{opacity:0;transform:scale(0)} 40%{opacity:1;transform:scale(1.2)} 100%{opacity:0;transform:scale(0)} }
 .echo-spark-dot { animation:spark-fade 2s ease-in-out infinite; }
 .echo-spark-dot-d { animation:spark-fade 2.2s ease-in-out infinite .5s; }
 
-/* ZZZ */
-@keyframes z-drift { 0%{opacity:0;transform:translate(0,0)} 40%{opacity:.7;transform:translate(4px,-5px)} 100%{opacity:0;transform:translate(10px,-14px)} }
-.echo-z { animation:z-drift 2.5s ease-in-out infinite; display:inline-block; }
-.echo-z-d1 { animation:z-drift 2.5s ease-in-out infinite .7s; display:inline-block; }
-
-/* 💤 困困飘浮 */
+/* 💤 困困飘浮 - 加大版 */
 @keyframes zzz-float {
-  0% { opacity: 0; transform: translate(0, 2px) scale(0.8) rotate(-5deg); }
-  25% { opacity: 0.6; transform: translate(3px, -3px) scale(1) rotate(3deg); }
-  50% { opacity: 0.45; transform: translate(6px, -7px) scale(0.95) rotate(-2deg); }
-  75% { opacity: 0.25; transform: translate(9px, -11px) scale(0.88) rotate(4deg); }
-  100% { opacity: 0; transform: translate(12px, -15px) scale(0.75) rotate(-3deg); }
+  0% { opacity: 0; transform: translate(0, 4px) scale(0.7) rotate(-8deg); }
+  20% { opacity: 0.7; transform: translate(4px, -2px) scale(1) rotate(4deg); }
+  50% { opacity: 0.5; transform: translate(8px, -9px) scale(0.95) rotate(-3deg); }
+  80% { opacity: 0.25; transform: translate(12px, -16px) scale(0.85) rotate(5deg); }
+  100% { opacity: 0; transform: translate(16px, -22px) scale(0.7) rotate(-4deg); }
 }
-.echo-zzz { animation: zzz-float 3s ease-in-out infinite; display: inline-block; }
-.echo-zzz-d1 { animation: zzz-float 3s ease-in-out infinite 1s; display: inline-block; }
+.echo-zzz { animation: zzz-float 3.2s ease-in-out infinite; display: inline-block; }
+.echo-zzz-d1 { animation: zzz-float 3.2s ease-in-out infinite 1s; display: inline-block; }
 
 /* 感叹号 */
 @keyframes bang-pop { 0%,100%{transform:translateY(0) scale(1)} 25%{transform:translateY(-3px) scale(1.15)} 50%{transform:translateY(1px) scale(.93)} 75%{transform:translateY(-2px) scale(1.05)} }
@@ -667,10 +696,6 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
 /* 思考泡泡 */
 @keyframes thought-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
 .echo-thought { animation:thought-float 2.2s ease-in-out infinite; }
-
-/* 腮红脉冲 */
-@keyframes blush-p { 0%,100%{opacity:.35} 50%{opacity:.6} }
-.echo-blush-group ellipse { animation:blush-p 3s ease-in-out infinite; }
 
 /* 配置提示徽章 */
 @keyframes badge-p { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.5)} 50%{box-shadow:0 0 0 5px rgba(239,68,68,0)} }
