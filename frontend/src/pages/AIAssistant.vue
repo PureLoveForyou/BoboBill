@@ -225,7 +225,7 @@ const handleKeydown = (e) => {
 // 格式化时间
 const formatTime = (ts) => {
   if (!ts) return ''
-  const d = new Date(ts * 1000) // 后端存的是 Unix timestamp
+  let d = new Date(ts * 1000) // 后端存的是 Unix timestamp
   if (isNaN(d.getTime())) d = new Date(ts)
   const now = new Date()
   const isToday = d.toDateString() === now.toDateString()
