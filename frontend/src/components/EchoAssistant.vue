@@ -33,6 +33,29 @@ const windowWidth = ref(window.innerWidth)
 const windowHeight = ref(window.innerHeight)
 const panelMaxH = 480
 
+// 面板是在球上方还是下方
+const panelAboveBall = computed(() => {
+  const ballY = position.value.y
+  const gap = 12
+  const ballH = 54
+  const panelDefaultH = 480
+  const vh = window.innerHeight
+  const spaceAbove = ballY - gap
+  const spaceBelow = vh - ballY - ballH - gap
+  return !(spaceAbove < panelDefaultH && spaceBelow > spaceAbove)
+})
+
+// 面板 transform-origin：从球的位置展开
+const panelOrigin = computed(() => {
+  const ballX = position.value.x
+  const ballW = 54
+  const ballCenterX = ballX + ballW / 2
+  const panelLeft = parseFloat(panelPosition.value.left) || 0
+  const originX = panelLeft > 0 ? ((ballCenterX - panelLeft) / 360) * 100 : 50
+  const originY = panelAboveBall.value ? '100%' : '0%'
+  return `${Math.max(0, Math.min(100, originX))}% ${originY}`
+})
+
 // 面板位置：水平居中跟随球+clamp，垂直默认上方碰到边界才翻下方
 const panelPosition = computed(() => {
   const ballX = position.value.x
@@ -450,36 +473,35 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
     </div>
 
     <!-- 展开面板 -->
+    <Transition name="echo-panel">
     <div
       v-if="isOpen"
       class="echo-panel"
-      :style="panelPosition"
+      :style="{ ...panelPosition, transformOrigin: panelOrigin }"
       @mousedown.stop="markPanelInteract"
       @touchstart.stop="markPanelInteract"
     >
         <!-- 头部 -->
         <div class="echo-hdr">
           <div class="flex items-center gap-2.5">
-            <div class="echo-ava">
-              <svg viewBox="0 0 100 100"><defs><radialGradient id="avG" cx="38%" cy="32%" r="65%"><stop offset="0%" stop-color="#4a4a4a"/><stop offset="35%" stop-color="#1a1a1a"/><stop offset="70%" stop-color="#0a0a0a"/><stop offset="100%" stop-color="#000000"/></radialGradient><radialGradient id="avEyeG" cx="50%" cy="45%" r="55%"><stop offset="0%" stop-color="#67e8f9"/><stop offset="40%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#0891b2"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#avG)"/><ellipse cx="36" cy="32" rx="15" ry="10" fill="rgba(255,255,255,0.2)" transform="rotate(-22 36 32)"/><ellipse cx="34" cy="44" rx="8" ry="4.5" fill="url(#avEyeG)"/><ellipse cx="66" cy="44" rx="8" ry="4.5" fill="url(#avEyeG)"/><ellipse cx="34" cy="44" rx="3" ry="1.5" fill="rgba(255,255,255,0.45)" transform="translate(-1,-0.5)"/><ellipse cx="66" cy="44" rx="3" ry="1.5" fill="rgba(255,255,255,0.45)" transform="translate(-1,-0.5)"/></svg>
-            </div>
+            <div class="echo-status-dot" :class="isLoading ? 'echo-status--thinking' : 'echo-status--online'"></div>
             <div>
-              <div class="font-semibold text-sm">{{ t('echo.title') || '念溪 Echo' }}</div>
-              <div class="text-[10px] mt-0.5" :class="isLoading ? 'text-primary/70' : 'text-base-content/35'">
-                {{ isLoading ? (t('echo.thinking') || '思考中...') : (t('echo.online') || '在线等你 ~') }}
+              <div class="font-semibold text-[13px] leading-tight">{{ t('echo.title') || '念溪 Echo' }}</div>
+              <div class="text-[10px] text-base-content/35 leading-tight">
+                {{ isLoading ? (t('echo.thinking') || '思考中...') : (t('echo.online') || '在线') }}
               </div>
             </div>
           </div>
           <div class="flex items-center gap-0.5">
-            <button @click.stop="goToFullAI" class="echo-btn" title="\u6253\u5F00\u5B8C\u6574\u5BF9\u8BDD"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg></button>
-            <button @click.stop="isOpen=false" class="echo-btn echo-btn-close" title="\u5173\u95ED"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            <button @click.stop="goToFullAI" class="echo-btn" title="打开完整对话"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg></button>
+            <button @click.stop="closePanel" class="echo-btn echo-btn-close" title="关闭"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
           </div>
         </div>
 
         <!-- 消息区 -->
         <div ref="chatContainer" class="echo-msgs">
           <div v-if="!isConfigured" class="echo-empty">
-            <div class="echo-empty-ic">\u2699\uFE0F</div>
+            <div class="echo-empty-ic">⚙️</div>
             <div class="text-sm opacity-60 mb-3">{{ t('echo.notConfigured') || '\u8FD8\u6CA1\u914D\u7F6E AI \u5462~' }}</div>
             <button @click="goToFullAI" class="btn btn-primary btn-sm btn-xs gap-1.5 shadow-lg"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>{{ t('echo.goSettings') || '\u53BB\u8BBE\u7F6E' }}</button>
           </div>
@@ -495,7 +517,7 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
                       <span v-if="tc.status==='running'" class="loading loading-spinner loading-[8px]"></span>
                       <svg v-else class="w-2.5 h-2.5 flex-shrink-0 text-success/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                       <span>{{ tc.description }}</span>
-                    </div>
+      </div>
                   </div>
                   <div v-if="msg.reasoning" class="mb-1">
                     <details open class="group">
@@ -529,10 +551,11 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
         <!-- 输入区 -->
         <div class="echo-input-row">
           <textarea v-model="inputText" @keydown="handleKeydown" :placeholder="isConfigured?(t('echo.placeholder')||'\u95EE\u5FF5\u6EAF\u70B9\u4EC0\u4E48...'):(t('echo.configFirst')||'\u5148\u914D\u7F6E AI \u5427')" :disabled="!isConfigured||isLoading" rows="1" class="echo-inp"/>
-          <button v-if="isLoading" @click="stopGeneration" class="echo-go echo-go-stop" title="\u505C\u6B62\u751F\u6210"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg></button>
+          <button v-if="isLoading" @click="stopGeneration" class="echo-go echo-go-stop" title="停止生成"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg></button>
           <button v-else @click="handleSend()" :disabled="!inputText.trim()||!isConfigured" class="echo-go" :title="t('echo.send')||'\u53D1\u9001'"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/></svg></button>
         </div>
       </div>
+    </Transition>
   </div>
   </Teleport>
 </template>
@@ -714,36 +737,43 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
 .echo-panel {
   position: fixed;
   width:360px; max-height:calc(100vh - 90px);
-  background: linear-gradient(165deg, hsl(var(--b1)/.88) 0%, hsl(var(--b2)/.82) 100%);
-  backdrop-filter: blur(24px) saturate(1.5);
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  border: 1px solid hsl(var(--bc)/.1);
-  border-radius: 20px;
+  background: linear-gradient(165deg, hsl(var(--b1)/.92) 0%, hsl(var(--b2)/.86) 100%);
+  backdrop-filter: blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  border: 1px solid hsl(var(--bc)/.08);
+  border-radius: 22px;
   box-shadow:
-    0 20px 60px rgba(0,0,0,.1),
-    0 8px 25px rgba(0,0,0,.04),
-    inset 0 1px 0 hsl(var(--bc)/.08);
+    0 24px 72px rgba(0,0,0,.12),
+    0 8px 24px rgba(0,0,0,.04),
+    inset 0 1px 0 hsl(var(--bc)/.06);
   display:flex; flex-direction:column; z-index:9999; overflow:hidden;
-  animation: panel-in .35s cubic-bezier(.34,1.56,.64,1) both;
-}
-@keyframes panel-in {
-  from { opacity:0; transform:scale(.9) translateY(8px); }
-  to { opacity:1; transform:scale(1) translateY(0); }
 }
 
-/* 面板动画 */
-.ep-enter-active { transition: all .4s cubic-bezier(.34,1.56,.64,1); transition-property:opacity,transform; }
-.ep-leave-active { transition: all .25s cubic-bezier(.4,0,1,1); transition-property:opacity,transform; }
-.ep-enter-from { opacity:0; transform:scale(.86) translateY(10px); }
-.ep-leave-to { opacity:0; transform:scale(.96) translateY(5px); }
+/* 面板进场 —— Apple 风格 spring */
+.echo-panel-enter-active {
+  transition: all .45s cubic-bezier(.22,.61,.36,1);
+}
+.echo-panel-leave-active {
+  transition: all .2s cubic-bezier(.4,0,1,1);
+}
+.echo-panel-enter-from {
+  opacity: 0; transform: scale(.92) translateY(8px);
+}
+.echo-panel-leave-to {
+  opacity: 0; transform: scale(.96) translateY(4px);
+}
 
 /* 头部 */
-.echo-hdr { display:flex; align-items:center; justify-content:space-between; padding:13px 16px 10px; border-bottom:1px solid hsl(var(--bc)/.06); flex-shrink:0; }
+.echo-hdr { display:flex; align-items:center; justify-content:space-between; padding:14px 16px 12px; border-bottom:1px solid hsl(var(--bc)/.04); flex-shrink:0; }
 
-/* 头像 */
-.echo-ava { width:36px; height:36px; flex-shrink:0; border-radius:50%; overflow:hidden; box-shadow:0 2px 10px rgba(6,182,212,.2); transition:transform .3s cubic-bezier(.34,1.56,.64,1); }
-.echo-ava:hover { transform:scale(1.08) rotate(-5deg); }
-.echo-ava svg { width:100%;height:100%;display:block; }
+/* 状态指示点 */
+.echo-status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; transition:all .3s ease; }
+.echo-status--online { background:#34c759; box-shadow:0 0 7px rgba(52,199,89,.4); }
+.echo-status--thinking { background:#007aff; box-shadow:0 0 7px rgba(0,122,255,.4); animation:status-pulse .8s ease-in-out infinite; }
+@keyframes status-pulse {
+  0%, 100% { box-shadow:0 0 7px rgba(0,122,255,.4); }
+  50% { box-shadow:0 0 13px rgba(0,122,255,.65); }
+}
 
 /* 按钮 */
 .echo-btn { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:hsl(var(--bc)/.5); background:transparent; border:none; cursor:pointer; transition:all .2s; }
@@ -839,6 +869,6 @@ const renderMd = (text) => { if (!text) return ''; return marked.parse(text) }
 }
 @supports(padding-top:env(safe-area-inset-bottom)){
   .echo-input-row{padding-bottom:calc(12px + env(safe-area-inset-bottom));}
-  .echo-panel{maxHeight:calc(100vh - 90px - env(safe-area-inset-bottom));}
+  .echo-panel{max-height:calc(100vh - 90px - env(safe-area-inset-bottom));}
 }
 </style>

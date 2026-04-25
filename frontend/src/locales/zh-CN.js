@@ -259,7 +259,7 @@ export default {
   },
   echo: {
     title: '念溪',
-    online: '在线等你~',
+    online: '在线',
     thinking: '思考中...',
     notConfigured: '还没配置 AI 呢~',
     goSettings: '去设置',

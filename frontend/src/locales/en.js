@@ -257,7 +257,7 @@ export default {
   },
   echo: {
     title: 'Echo',
-    online: 'Online~',
+    online: 'Online',
     thinking: 'Thinking...',
     notConfigured: 'AI is not configured yet~',
     goSettings: 'Go Settings',
