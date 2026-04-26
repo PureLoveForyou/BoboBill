@@ -2,17 +2,20 @@
 defineOptions({ name: 'Settings' })
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getCurrentTheme, toggleDarkLight } from '../utils/theme.js'
 import { API_BASE } from '../config'
 import { useToast } from '../composables/useToast'
 import { useBudgetApi } from '../composables/useBudgetApi'
 import { useAiApi } from '../composables/useAiApi'
+import { useAuth } from '../composables/useAuth'
 import { CATEGORIES } from '../constants/bill'
 
 const { t, locale } = useI18n()
 const route = useRoute()
+const router = useRouter()
 const { toast, showToast } = useToast()
+const { user, logout } = useAuth()
 const { budget, fetchBudget, saveBudget } = useBudgetApi()
 const {
   aiConfigs, fetchConfigs, saveConfig, updateConfig, deleteConfig,
@@ -25,7 +28,7 @@ const importFile = ref(null)
 const activeSection = ref('appearance')
 
 watch(() => route.query.section, (section) => {
-  if (section && ['appearance', 'finance', 'ai', 'data'].includes(section)) {
+  if (section && ['appearance', 'finance', 'ai', 'data', 'account'].includes(section)) {
     activeSection.value = section
   }
 }, { immediate: true })
@@ -54,6 +57,12 @@ const sections = computed(() => [
     label: t('settings.data'),
     desc: t('settings.dataDesc'),
     icon: 'M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z'
+  },
+  {
+    id: 'account',
+    label: t('settings.account'),
+    desc: t('settings.accountDesc'),
+    icon: 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'
   }
 ])
 
@@ -227,6 +236,11 @@ const confirmImport = async () => {
 }
 
 const cancelImport = () => { showImportConfirm.value = false; importFile.value = null }
+
+const handleLogout = () => {
+  logout()
+  router.push('/login')
+}
 </script>
 
 <template>
@@ -259,7 +273,7 @@ const cancelImport = () => { showImportConfirm.value = false; importFile.value =
         </div>
       </nav>
 
-      <div class="lg:hidden grid grid-cols-4 gap-2">
+      <div class="lg:hidden grid grid-cols-5 gap-2">
         <button v-for="sec in sections" :key="sec.id"
           @click="activeSection = sec.id"
           class="flex flex-col items-center gap-1.5 px-2 py-3 rounded-2xl text-xs font-medium transition-all duration-200"
@@ -550,6 +564,43 @@ const cancelImport = () => { showImportConfirm.value = false; importFile.value =
                 </button>
               </div>
               <input ref="fileInput" type="file" accept=".json" class="hidden" @change="handleImportFile">
+            </div>
+          </div>
+
+          <!-- Account Section -->
+          <div v-else-if="activeSection === 'account'" key="account" class="space-y-4 lg:space-y-5">
+            <div class="rounded-2xl bg-base-100 border border-base-200/60 p-4 lg:p-6">
+              <div class="flex items-center gap-3 mb-4 lg:mb-5">
+                <div class="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center">
+                  <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-base">{{ t('settings.account') }}</h3>
+                  <p class="text-xs text-base-content/50">{{ t('settings.accountDesc') }}</p>
+                </div>
+              </div>
+
+              <div v-if="user" class="flex items-center gap-3 p-4 rounded-xl bg-base-200/30 mb-4">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/80 to-primary/40 flex items-center justify-center text-primary-content font-bold text-base shadow-sm">
+                  {{ user.username.charAt(0).toUpperCase() }}
+                </div>
+                <div>
+                  <div class="font-medium text-sm">{{ user.username }}</div>
+                  <div class="text-[11px] text-base-content/40">{{ t('settings.accountDesc') }}</div>
+                </div>
+              </div>
+
+              <p class="text-xs text-base-content/40 mb-4">{{ t('settings.logoutHint') }}</p>
+
+              <button @click="handleLogout"
+                class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-error/[0.06] hover:bg-error/[0.12] text-error transition-all font-medium text-sm border border-error/10 hover:border-error/20">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                </svg>
+                {{ t('auth.logout') }}
+              </button>
             </div>
           </div>
 
