@@ -1,7 +1,8 @@
 <script setup>
 defineOptions({ name: 'Settings' })
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import { getCurrentTheme, toggleDarkLight } from '../utils/theme.js'
 import { API_BASE } from '../config'
 import { useToast } from '../composables/useToast'
@@ -10,6 +11,7 @@ import { useAiApi } from '../composables/useAiApi'
 import { CATEGORIES } from '../constants/bill'
 
 const { t, locale } = useI18n()
+const route = useRoute()
 const { toast, showToast } = useToast()
 const { budget, fetchBudget, saveBudget } = useBudgetApi()
 const {
@@ -21,6 +23,12 @@ const fileInput = ref(null)
 const showImportConfirm = ref(false)
 const importFile = ref(null)
 const activeSection = ref('appearance')
+
+watch(() => route.query.section, (section) => {
+  if (section && ['appearance', 'finance', 'ai', 'data'].includes(section)) {
+    activeSection.value = section
+  }
+}, { immediate: true })
 
 const sections = computed(() => [
   {

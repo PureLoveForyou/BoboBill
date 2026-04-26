@@ -2,10 +2,12 @@
 defineOptions({ name: 'AIAssistant' })
 import { ref, computed, watch, nextTick, onMounted, onActivated, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { useAiApi } from '../composables/useAiApi'
 import { marked } from 'marked'
 
 const { t } = useI18n()
+const router = useRouter()
 const {
   chatStream, isConfigured, aiConfigs, activeConfigId, activeConfig,
   activeModelName, fetchConfigs, selectConfig,
@@ -222,6 +224,10 @@ const handleKeydown = (e) => {
   }
 }
 
+const goToSettings = () => {
+  router.push({ path: '/settings', query: { section: 'ai' } })
+}
+
 // 格式化时间
 const formatTime = (ts) => {
   if (!ts) return ''
@@ -326,7 +332,7 @@ onActivated(async () => {
           </button>
           <div>
             <h1 class="text-xl font-bold">{{ t('ai.title') }}</h1>
-            <p class="text-xs text-base-content/40 mt-0.5" v-if="!isConfigured">{{ t('ai.notConfigured') }}</p>
+            <p class="text-xs text-base-content/40 mt-0.5" v-if="!isConfigured">{{ t('ai.notConfigured') }} <button @click="goToSettings" class="text-primary hover:underline font-medium">{{ t('echo.goSettings') }}</button></p>
           </div>
         </div>
         <div class="flex items-center gap-2">
@@ -372,7 +378,13 @@ onActivated(async () => {
           </div>
           <h2 class="text-lg font-semibold mb-2">{{ t('ai.welcome') }}</h2>
           <p class="text-sm text-base-content/50 leading-relaxed max-w-md">{{ t('ai.welcomeHint') }}</p>
-          <div class="mt-8 grid gap-2 w-full max-w-md">
+          <div v-if="!isConfigured" class="mt-6">
+            <button @click="goToSettings" class="btn btn-primary btn-sm gap-2 shadow-lg shadow-primary/20">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              {{ t('echo.goSettings') }}
+            </button>
+          </div>
+          <div v-else class="mt-8 grid gap-2 w-full max-w-md">
             <button v-for="suggestion in ['ai.suggest1', 'ai.suggest2', 'ai.suggest3']" :key="suggestion"
               @click="inputText = t(suggestion); handleSend()"
               class="text-left p-3 rounded-xl bg-base-200/60 hover:bg-base-200 transition-all text-sm text-base-content/70 hover:text-base-content">
@@ -465,7 +477,7 @@ onActivated(async () => {
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/></svg>
           </button>
         </div>
-        <p v-if="!isConfigured" class="text-xs text-warning mt-2 text-center">{{ t('ai.configHint') }}</p>
+        <p v-if="!isConfigured" class="text-xs text-warning mt-2 text-center">{{ t('ai.configHint') }} <button @click="goToSettings" class="text-primary hover:underline font-medium">{{ t('echo.goSettings') }}</button></p>
       </div>
     </div>
   </div>

@@ -325,7 +325,10 @@ function handleKeydown(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDef
 function stopGeneration() { if (streamAbortController.value) { streamAbortController.value.abort(); streamAbortController.value = null } isLoading.value = false }
 async function goToFullAI() {
   isOpen.value = false
-  // 先刷新会话列表，确保 AI 助手 TAB 能看到最新会话
+  if (!isConfigured.value) {
+    router.push({ path: '/settings', query: { section: 'ai' } })
+    return
+  }
   await fetchChats().catch(() => {})
   router.push('/ai')
 }
