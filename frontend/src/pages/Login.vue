@@ -55,75 +55,124 @@ const toggleMode = () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-base-200 via-base-100 to-base-200 p-4">
-    <div class="w-full max-w-md">
-      <!-- Logo -->
-      <div class="text-center mb-8">
-        <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/60 flex items-center justify-center shadow-2xl shadow-primary/30 relative overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent"></div>
-          <svg class="w-10 h-10 text-base-100 relative z-10" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 1.5l-9 4.5 9 4.5 9-4.5-9-4.5zM3 10.5l9 4.5 9-4.5M3 15l9 4.5 9-4.5"/>
-          </svg>
+  <div class="min-h-screen flex items-center justify-center relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-mesh opacity-50"></div>
+    
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-soft-pulse"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-soft-pulse" style="animation-delay: 1s;"></div>
+    <div class="absolute top-1/2 right-1/3 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-soft-pulse" style="animation-delay: 2s;"></div>
+    
+    <div class="relative z-10 w-full max-w-md px-6 animate-elegant-in">
+      <div class="text-center mb-10">
+        <div class="relative inline-block">
+          <div class="w-24 h-24 rounded-3xl bg-gradient-elegant flex items-center justify-center shadow-elevated glow-effect relative overflow-hidden group cursor-pointer hover-scale transition-elegant">
+            <div class="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="absolute -inset-1 bg-gradient-to-r from-primary via-purple-500 to-pink-500 rounded-[1.5rem] opacity-30 blur-sm group-hover:opacity-50 transition-opacity duration-300"></div>
+            <svg class="w-12 h-12 text-white relative z-10 drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          </div>
         </div>
-        <h1 class="text-3xl font-bold mt-4 tracking-tight">{{ t('app.brand') }}</h1>
-        <p class="text-base-content/50 mt-1 text-sm font-medium">{{ t('app.subtitle') }}</p>
+        <h1 class="text-4xl font-bold mt-6 mb-2 tracking-tight">
+          <span class="bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">{{ t('app.brand') }}</span>
+        </h1>
+        <p class="text-base-content/50 font-medium text-sm tracking-wide">{{ t('app.subtitle') }}</p>
       </div>
 
-      <!-- Card -->
-      <div class="bg-base-100/80 backdrop-blur-xl rounded-[24px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white/10 p-8">
-        <h2 class="text-xl font-semibold text-center mb-6">
+      <div class="glass-elegant rounded-elegant-xl shadow-elegant-lg p-8 relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-purple-500 to-pink-500"></div>
+        
+        <h2 class="text-2xl font-bold text-center mb-8 tracking-tight">
           {{ isLogin ? t('auth.loginTitle') : t('auth.registerTitle') }}
         </h2>
 
-        <form @submit.prevent="submit" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-base-content/60 mb-1.5">{{ t('auth.username') }}</label>
-            <input
-              v-model="username"
-              type="text"
-              :placeholder="t('auth.usernamePlaceholder')"
-              autocomplete="username"
-              class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm placeholder:text-base-content/30 transition-all"
-            />
+        <form @submit.prevent="submit" class="space-y-5">
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-base-content/70 tracking-tight">{{ t('auth.username') }}</label>
+            <div class="relative group">
+              <input
+                v-model="username"
+                type="text"
+                :placeholder="t('auth.usernamePlaceholder')"
+                autocomplete="username"
+                class="w-full px-4 py-3.5 rounded-elegant bg-base-200/50 border border-transparent group-hover:border-primary/20 focus:border-primary/40 transition-elegant text-sm placeholder:text-base-content/30 shadow-inset"
+              />
+              <div class="absolute inset-0 rounded-elegant bg-gradient-to-r from-primary/5 to-purple-500/5 opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none"></div>
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-base-content/60 mb-1.5">{{ t('auth.password') }}</label>
-            <input
-              v-model="password"
-              type="password"
-              :placeholder="t('auth.passwordPlaceholder')"
-              autocomplete="current-password"
-              class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm placeholder:text-base-content/30 transition-all"
-            />
+          
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-base-content/70 tracking-tight">{{ t('auth.password') }}</label>
+            <div class="relative group">
+              <input
+                v-model="password"
+                type="password"
+                :placeholder="t('auth.passwordPlaceholder')"
+                autocomplete="current-password"
+                class="w-full px-4 py-3.5 rounded-elegant bg-base-200/50 border border-transparent group-hover:border-primary/20 focus:border-primary/40 transition-elegant text-sm placeholder:text-base-content/30 shadow-inset"
+              />
+              <div class="absolute inset-0 rounded-elegant bg-gradient-to-r from-primary/5 to-purple-500/5 opacity-0 group-focus-within:opacity-100 transition-opacity pointer-events-none"></div>
+            </div>
           </div>
 
-          <div v-if="error" class="text-sm text-error bg-error/10 rounded-xl px-4 py-2.5">
-            {{ error }}
-          </div>
+          <Transition name="slide-fade">
+            <div v-if="error" class="relative overflow-hidden rounded-elegant bg-error/10 border border-error/20 px-4 py-3">
+              <div class="flex items-center gap-2 text-sm text-error font-medium">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {{ error }}
+              </div>
+            </div>
+          </Transition>
 
           <button
             type="submit"
             :disabled="isSubmitting"
-            class="w-full py-3.5 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
+            class="relative w-full py-3.5 rounded-elegant font-semibold text-sm tracking-wide transition-elegant disabled:opacity-50 disabled:cursor-not-allowed group overflow-hidden"
           >
-            <span v-if="isSubmitting" class="flex items-center justify-center gap-2">
-              <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <div class="absolute inset-0 bg-gradient-to-r from-primary via-purple-500 to-pink-500 opacity-100 group-hover:opacity-90 transition-opacity"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity transform -skew-x-12"></div>
+            <span class="relative z-10 flex items-center justify-center gap-2">
+              <svg v-if="isSubmitting" class="w-4 h-4 animate-elegant-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              {{ t('common.loading') }}
+              <span v-if="isSubmitting">{{ t('common.loading') }}</span>
+              <span v-else>{{ isLogin ? t('auth.loginBtn') : t('auth.registerBtn') }}</span>
             </span>
-            <span v-else>{{ isLogin ? t('auth.loginBtn') : t('auth.registerBtn') }}</span>
           </button>
         </form>
 
-        <div class="mt-6 text-center text-sm text-base-content/50">
-          {{ isLogin ? t('auth.noAccount') : t('auth.hasAccount') }}
-          <button @click="toggleMode" class="text-primary font-medium hover:underline ml-1">
-            {{ isLogin ? t('auth.goRegister') : t('auth.goLogin') }}
-          </button>
+        <div class="mt-6 text-center">
+          <p class="text-sm text-base-content/50">
+            {{ isLogin ? t('auth.noAccount') : t('auth.hasAccount') }}
+            <button @click="toggleMode" class="font-semibold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent hover:opacity-80 transition-opacity ml-1">
+              {{ isLogin ? t('auth.goRegister') : t('auth.goLogin') }}
+            </button>
+          </p>
         </div>
       </div>
+      
+      <p class="text-center text-xs text-base-content/30 mt-8 font-medium tracking-wide">
+        {{ t('app.copyright') }}
+      </p>
     </div>
   </div>
 </template>
+
+<style scoped>
+.slide-fade-enter-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-fade-leave-active {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+</style>

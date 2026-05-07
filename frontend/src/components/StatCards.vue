@@ -5,26 +5,27 @@ defineProps({
 </script>
 
 <template>
-  <div class="grid gap-4 mb-6" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+  <div class="grid gap-5 mb-6" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
     <div
       v-for="(stat, index) in stats"
       :key="index"
-      class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-base-100 via-base-100 to-base-200/50 border border-base-200/50 backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:shadow-base-300/10 hover:-translate-y-0.5"
+      class="group relative overflow-hidden rounded-2xl glass-elegant hover-lift transition-elegant p-5 animate-elegant-in"
+      :style="{ animationDelay: `${index * 0.1}s` }"
     >
-      <div class="absolute inset-0 bg-gradient-to-br opacity-5" :class="{
+      <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br opacity-10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 transition-opacity duration-300 group-hover:opacity-20" :class="{
         'from-error to-error/50': stat.type === 'expense',
         'from-success to-success/50': stat.type === 'income',
         'from-info to-info/50': stat.type === 'balance',
-        'from-primary to-primary/50': stat.type === 'count'
+        'from-primary to-purple-500': stat.type === 'count'
       }"></div>
 
-      <div class="relative p-4">
-        <div class="flex items-start justify-between mb-2">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110" :class="{
+      <div class="relative">
+        <div class="flex items-start justify-between mb-3">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-lg" :class="{
             'bg-gradient-to-br from-error/20 to-error/5 text-error': stat.type === 'expense',
             'bg-gradient-to-br from-success/20 to-success/5 text-success': stat.type === 'income',
             'bg-gradient-to-br from-info/20 to-info/5 text-info': stat.type === 'balance',
-            'bg-gradient-to-br from-primary/20 to-primary/5 text-primary': stat.type === 'count'
+            'bg-gradient-to-br from-primary/20 to-purple-500/20 text-primary': stat.type === 'count'
           }">
             <svg v-if="stat.type === 'expense'" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -40,7 +41,7 @@ defineProps({
             </svg>
           </div>
 
-          <div v-if="stat.trend !== 'neutral'" class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold" :class="{
+          <div v-if="stat.trend !== 'neutral'" class="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm" :class="{
             'bg-success/10 text-success': (stat.type === 'expense' ? stat.trend === 'down' : stat.trend === 'up'),
             'bg-error/10 text-error': (stat.type === 'expense' ? stat.trend === 'up' : stat.trend === 'down')
           }">
@@ -53,8 +54,8 @@ defineProps({
           </div>
         </div>
 
-        <div class="text-xs font-medium text-base-content/60 mb-1">{{ stat.title }}</div>
-        <div class="text-2xl font-bold tracking-tight mb-1">{{ stat.value }}</div>
+        <div class="text-sm font-semibold text-base-content/60 mb-1.5 tracking-tight">{{ stat.title }}</div>
+        <div class="text-3xl font-bold tracking-tight mb-1.5 bg-gradient-to-r from-base-content to-base-content/80 bg-clip-text text-transparent">{{ stat.value }}</div>
         <div class="text-xs font-medium" :class="{
           'text-error': stat.type === 'expense',
           'text-success': stat.type === 'income',
@@ -65,3 +66,21 @@ defineProps({
     </div>
   </div>
 </template>
+
+<style scoped>
+.animate-elegant-in {
+  opacity: 0;
+  animation: elegantFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes elegantFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>

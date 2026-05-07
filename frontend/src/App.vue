@@ -13,7 +13,6 @@ const currentTheme = ref('light')
 
 const isLoginPage = computed(() => route.path === '/login')
 
-// Theme
 const onThemeChange = (event) => {
   currentTheme.value = event.detail.theme
 }
@@ -33,7 +32,6 @@ const toggleTheme = () => {
   currentTheme.value = newTheme
 }
 
-// Close sidebar on route change (mobile)
 watch(() => router.currentRoute.value.path, () => {
   const drawerCheckbox = document.getElementById('sidebar-drawer')
   if (drawerCheckbox && window.innerWidth < 1024) {
@@ -43,48 +41,48 @@ watch(() => router.currentRoute.value.path, () => {
 </script>
 
 <template>
-  <!-- Login page: no sidebar -->
-  <div v-if="isLoginPage">
+  <div v-if="isLoginPage" class="min-h-screen">
     <router-view />
   </div>
 
-  <!-- Main layout with sidebar -->
-  <div v-else class="drawer lg:drawer-open">
-    <input id="sidebar-drawer" type="checkbox" class="drawer-toggle" />
-    
-    <div class="drawer-content flex flex-col">
-      <!-- Mobile nav bar -->
-      <div class="sticky top-0 z-10 lg:hidden">
-        <div class="flex items-center justify-between bg-base-100 shadow-sm px-4 py-3">
-          <div class="flex items-center">
-            <label for="sidebar-drawer" class="btn btn-ghost p-2">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </label>
-            <h1 class="text-xl font-bold ml-3">{{ t('app.brand') }}</h1>
+  <div v-else class="min-h-screen bg-gradient-mesh">
+    <div class="drawer lg:drawer-open">
+      <input id="sidebar-drawer" type="checkbox" class="drawer-toggle" />
+      
+      <div class="drawer-content flex flex-col">
+        <div class="sticky top-0 z-10 lg:hidden">
+          <div class="glass-elegant border-b border-elegant/50 px-4 py-3">
+            <div class="flex items-center justify-between max-w-7xl mx-auto">
+              <div class="flex items-center gap-3">
+                <label for="sidebar-drawer" class="btn btn-ghost p-2 hover:bg-base-content/5 rounded-xl transition-elegant-fast">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </label>
+                <h1 class="text-lg font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">{{ t('app.brand') }}</h1>
+              </div>
+              <button @click="toggleTheme" class="btn btn-ghost p-2 hover:bg-base-content/5 rounded-xl transition-elegant-fast">
+                <span v-if="currentTheme === 'dark'" class="text-lg">🌙</span>
+                <span v-else class="text-lg">☀️</span>
+              </button>
+            </div>
           </div>
-          <button @click="toggleTheme" class="btn btn-ghost p-2" :title="currentTheme === 'dark' ? t('theme.switchToLight') : t('theme.switchToDark')">
-            <span v-if="currentTheme === 'dark'" class="text-xl">🌙</span>
-            <span v-else class="text-xl">☀️</span>
-          </button>
+        </div>
+        
+        <div class="flex-1 p-4 lg:p-8 relative z-0">
+          <div class="max-w-[1600px] mx-auto">
+            <router-view v-slot="{ Component }">
+              <keep-alive :include="['Dashboard', 'Bills', 'AIAssistant', 'Settings']">
+                <component :is="Component" />
+              </keep-alive>
+            </router-view>
+          </div>
         </div>
       </div>
       
-      <!-- Page content -->
-      <div class="flex-1 p-4 relative z-0">
-        <router-view v-slot="{ Component }">
-          <keep-alive :include="['Dashboard', 'Bills', 'AIAssistant', 'Settings']">
-            <component :is="Component" />
-          </keep-alive>
-        </router-view>
-      </div>
+      <Sidebar />
+      
+      <EchoAssistant />
     </div>
-    
-    <!-- Sidebar -->
-    <Sidebar />
-
-    <!-- 念溪 Echo 悬浮助手（登录后显示） -->
-    <EchoAssistant />
   </div>
 </template>

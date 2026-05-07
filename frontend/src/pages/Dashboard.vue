@@ -24,7 +24,6 @@ import { useBudgetApi } from '../composables/useBudgetApi'
 
 const { t } = useI18n()
 
-// --- Composables ---
 const { toast, showToast } = useToast()
 const { selectedCategory, selectedPlatform, categoryOptions, platformOptions } = useBillFilters()
 
@@ -50,7 +49,6 @@ const {
   processBillsData
 } = useDashboardData({ bills, selectedCategory, selectedPlatform })
 
-// --- Local State ---
 const currentFilterType = ref('monthly')
 const currentRange = ref({ start: dayjs().startOf('month').format('YYYY-MM-DD'), end: dayjs().endOf('month').format('YYYY-MM-DD') })
 const currentTheme = ref(getCurrentTheme())
@@ -64,10 +62,8 @@ const { trendOptions, categoryOptionsChart, comparisonOptions } = useChartConfig
   comparisonCategories
 })
 
-// --- Budget ---
 const { budgetStatus, fetchBudgetStatus } = useBudgetApi()
 
-// --- Theme & Modal ---
 const themeChangeHandler = (e) => {
   currentTheme.value = e.detail.theme
 }
@@ -93,7 +89,6 @@ onUnmounted(() => {
   window.removeEventListener('themechange', themeChangeHandler)
 })
 
-// --- Filtered Bills ---
 const filteredBillsByTime = computed(() => {
   const start = dayjs(currentRange.value.start)
   const end = dayjs(currentRange.value.end)
@@ -132,15 +127,18 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-6 lg:p-8 max-w-[1600px] mx-auto">
-    <div class="flex items-center justify-between mb-6">
+  <div class="space-y-6 animate-elegant-in">
+    <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight">{{ t('dashboard.title') }}</h1>
+        <h1 class="text-3xl font-bold tracking-tight mb-1">
+          <span class="bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">{{ t('dashboard.title') }}</span>
+        </h1>
+        <p class="text-sm text-base-content/50">{{ t('dashboard.subtitle') || '查看您的财务概览' }}</p>
       </div>
       <div class="flex gap-3">
         <button
           @click="showImportModal = true"
-          class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-base-200/80 hover:bg-base-200 text-base-content font-medium text-sm transition-all"
+          class="flex items-center gap-2 px-5 py-2.5 rounded-elegant bg-base-200/60 hover:bg-base-200/80 text-base-content font-medium text-sm transition-elegant hover-lift shadow-elegant"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -149,9 +147,9 @@ onMounted(async () => {
         </button>
         <button
           @click="openAddModal"
-          class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-white font-medium text-sm shadow-lg shadow-primary/25 hover:shadow-xl transition-all"
+          class="flex items-center gap-2 px-5 py-2.5 rounded-elegant bg-gradient-elegant text-white font-medium text-sm shadow-elevated hover-lift transition-elegant group"
         >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg class="w-4 h-4 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
           {{ t('dashboard.addBill') }}
@@ -161,33 +159,36 @@ onMounted(async () => {
 
     <div v-if="isLoading" class="space-y-6">
       <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
-        <div v-for="i in 4" :key="i" class="rounded-2xl border border-base-200/50 p-4 space-y-3">
-          <div class="flex justify-between"><div class="skeleton w-10 h-10"></div><div class="skeleton w-12 h-6"></div></div>
-          <div class="skeleton w-16 h-3"></div>
-          <div class="skeleton w-28 h-7"></div>
-          <div class="skeleton w-20 h-3"></div>
+        <div v-for="i in 4" :key="i" class="glass-elegant rounded-elegant-lg p-5 space-y-4 hover-lift transition-elegant">
+          <div class="flex justify-between"><div class="skeleton w-12 h-12 rounded-xl"></div><div class="skeleton w-16 h-6 rounded-lg"></div></div>
+          <div class="skeleton w-20 h-3 rounded"></div>
+          <div class="skeleton w-32 h-8 rounded-lg"></div>
+          <div class="skeleton w-24 h-3 rounded"></div>
         </div>
       </div>
       <div class="grid gap-6 lg:grid-cols-2">
-        <div class="rounded-2xl border border-base-200/50 p-5"><div class="skeleton w-full h-56"></div></div>
-        <div class="rounded-2xl border border-base-200/50 p-5"><div class="skeleton w-full h-56"></div></div>
+        <div class="glass-elegant rounded-elegant-lg p-6 hover-lift transition-elegant"><div class="skeleton w-full h-56 rounded-xl"></div></div>
+        <div class="glass-elegant rounded-elegant-lg p-6 hover-lift transition-elegant"><div class="skeleton w-full h-56 rounded-xl"></div></div>
       </div>
-      <div class="rounded-2xl border border-base-200/50 p-5"><div class="skeleton w-full h-56"></div></div>
+      <div class="glass-elegant rounded-elegant-lg p-6 hover-lift transition-elegant"><div class="skeleton w-full h-56 rounded-xl"></div></div>
     </div>
 
-    <div v-else-if="bills.length === 0" class="py-16 text-center">
-      <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-        <svg class="w-10 h-10 text-primary/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
+    <div v-else-if="bills.length === 0" class="py-20 text-center">
+      <div class="relative inline-block mb-8">
+        <div class="w-24 h-24 mx-auto rounded-3xl bg-gradient-to-br from-primary/20 via-purple-500/20 to-pink-500/20 flex items-center justify-center hover-lift transition-elegant">
+          <svg class="w-12 h-12 text-primary/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <div class="absolute -inset-4 bg-gradient-to-r from-primary/10 via-purple-500/10 to-pink-500/10 rounded-3xl blur-xl -z-10"></div>
       </div>
-      <h2 class="text-xl font-bold text-base-content/80 mb-2">{{ t('bill.noBills') }}</h2>
-      <p class="text-base-content/50 mb-6">{{ t('bill.noBillsHint') }}</p>
+      <h2 class="text-2xl font-bold text-base-content/80 mb-3">{{ t('bill.noBills') }}</h2>
+      <p class="text-base-content/50 mb-8 max-w-md mx-auto">{{ t('bill.noBillsHint') }}</p>
       <button
         @click="showImportModal = true"
-        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-white font-medium text-sm shadow-lg shadow-primary/25 hover:shadow-xl transition-all"
+        class="inline-flex items-center gap-2 px-6 py-3 rounded-elegant bg-gradient-elegant text-white font-semibold text-sm shadow-elevated hover-lift transition-elegant group"
       >
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <svg class="w-4 h-4 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
         </svg>
         {{ t('dashboard.importBtn') }}
@@ -195,7 +196,7 @@ onMounted(async () => {
     </div>
 
     <template v-else>
-      <div class="flex items-center gap-3 mb-5 flex-wrap">
+      <div class="flex items-center gap-3 flex-wrap">
         <TimeFilter @change="onTimeFilterChange" />
         <AppleSelect
           v-model="selectedCategory"
@@ -205,7 +206,7 @@ onMounted(async () => {
           v-model="selectedPlatform"
           :options="platformOptions"
         />
-        <div v-if="pieSelectedCategory" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium">
+        <div v-if="pieSelectedCategory" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-primary/10 to-purple-500/10 text-primary text-xs font-semibold border border-primary/20 hover-lift transition-elegant">
           <span>{{ pieSelectedCategory }}</span>
           <button @click="clearPieFilter" class="hover:bg-primary/20 rounded-full p-0.5 transition-colors">
             <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -222,40 +223,40 @@ onMounted(async () => {
       </div>
 
       <div class="grid gap-6 lg:grid-cols-2 mb-6">
-        <div class="rounded-2xl bg-gradient-to-br from-base-100 to-base-200/30 border border-base-200/50 p-5">
-          <h3 class="text-base font-bold mb-4">{{ t('dashboard.trendTitle') }}</h3>
-          <VueApexCharts type="area" height="220" :options="trendOptions" :series="trendSeries" />
+        <div class="glass-elegant rounded-elegant-lg p-6 hover-lift transition-elegant group">
+          <h3 class="text-lg font-bold mb-5 group-hover:text-primary transition-colors">{{ t('dashboard.trendTitle') }}</h3>
+          <VueApexCharts type="area" height="240" :options="trendOptions" :series="trendSeries" />
         </div>
 
-        <div class="rounded-2xl bg-gradient-to-br from-base-100 to-base-200/30 border border-base-200/50 p-5">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-base font-bold">{{ t('dashboard.categoryTitle') }}</h3>
-            <div class="flex gap-1 p-0.5 bg-base-200/50 rounded-lg">
+        <div class="glass-elegant rounded-elegant-lg p-6 hover-lift transition-elegant group">
+          <div class="flex items-center justify-between mb-5">
+            <h3 class="text-lg font-bold group-hover:text-primary transition-colors">{{ t('dashboard.categoryTitle') }}</h3>
+            <div class="flex gap-1 p-1 bg-base-200/50 rounded-xl">
               <button
-                class="px-2 py-1 rounded-md text-xs font-medium transition-all"
-                :class="categoryType === 'expense' ? 'bg-base-100 shadow-sm' : 'text-base-content/60'"
+                class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-elegant"
+                :class="categoryType === 'expense' ? 'bg-gradient-elegant text-white shadow-md' : 'text-base-content/60 hover:text-base-content'"
                 @click="categoryType = 'expense'; pieSelectedCategory = null"
               >{{ t('common.expense') }}</button>
               <button
-                class="px-2 py-1 rounded-md text-xs font-medium transition-all"
-                :class="categoryType === 'income' ? 'bg-base-100 shadow-sm' : 'text-base-content/60'"
+                class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-elegant"
+                :class="categoryType === 'income' ? 'bg-gradient-elegant text-white shadow-md' : 'text-base-content/60 hover:text-base-content'"
                 @click="categoryType = 'income'; pieSelectedCategory = null"
               >{{ t('common.income') }}</button>
             </div>
           </div>
-          <div v-if="categorySeries.length === 0" class="py-6 text-center text-base-content/40 text-sm">
+          <div v-if="categorySeries.length === 0" class="py-12 text-center text-base-content/40 text-sm">
             {{ t('common.noData') }}
           </div>
-          <VueApexCharts v-else type="donut" height="220" :options="categoryOptionsChart" :series="categorySeries" />
+          <VueApexCharts v-else type="donut" height="240" :options="categoryOptionsChart" :series="categorySeries" />
         </div>
       </div>
 
-      <div class="rounded-2xl bg-gradient-to-br from-base-100 to-base-200/30 border border-base-200/50 p-5 mb-6">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-2">
-            <h3 class="text-base font-bold">{{ t('dashboard.billDetail') }}</h3>
-            <span class="text-xs text-base-content/40 px-2 py-0.5 rounded-full bg-base-200/50">{{ displayBills.length }}</span>
-            <div v-if="pieSelectedCategory" class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+      <div class="glass-elegant rounded-elegant-lg p-6 mb-6 hover-lift transition-elegant group">
+        <div class="flex items-center justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <h3 class="text-lg font-bold group-hover:text-primary transition-colors">{{ t('dashboard.billDetail') }}</h3>
+            <span class="text-xs text-base-content/40 px-2.5 py-1 rounded-full bg-base-200/50 font-medium">{{ displayBills.length }}</span>
+            <div v-if="pieSelectedCategory" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-primary/10 to-purple-500/10 text-primary text-xs font-semibold border border-primary/20">
               {{ pieSelectedCategory }}
               <button @click="clearPieFilter" class="hover:bg-primary/20 rounded-full p-0.5 transition-colors">
                 <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -266,16 +267,16 @@ onMounted(async () => {
           </div>
           <button
             @click="showBillList = !showBillList"
-            class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-base-200/50 hover:bg-base-200 transition-colors text-xs font-medium text-base-content/60"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-base-200/50 hover:bg-base-200 transition-elegant text-xs font-medium text-base-content/60"
           >
             {{ showBillList ? t('dashboard.collapse') : t('dashboard.expand') }}
-            <svg class="w-3.5 h-3.5 transition-transform duration-300" :class="{ 'rotate-180': !showBillList }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <svg class="w-4 h-4 transition-transform duration-300" :class="{ 'rotate-180': !showBillList }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
         </div>
         
-        <div v-if="showBillList" class="space-y-1.5 max-h-[400px] overflow-y-auto pr-1">
+        <div v-if="showBillList" class="space-y-2 max-h-[450px] overflow-y-auto pr-2">
           <BillItem
             v-for="bill in displayBills"
             :key="bill.id"
@@ -285,58 +286,61 @@ onMounted(async () => {
             @delete="openDeleteModal"
           />
           
-          <div v-if="displayBills.length === 0" class="py-8 text-center text-base-content/40 text-sm">
+          <div v-if="displayBills.length === 0" class="py-12 text-center text-base-content/40 text-sm">
             {{ t('bill.noMatchingBills') }}
           </div>
-          <div v-else class="py-3 text-center text-xs text-base-content/30">
+          <div v-else class="py-4 text-center text-xs text-base-content/30">
             {{ t('bill.onlyShowRecent', { n: 20 }) }}
           </div>
         </div>
       </div>
 
-      <div class="rounded-2xl bg-gradient-to-br from-base-100 to-base-200/30 border border-base-200/50 p-5">
-        <h3 class="text-base font-bold mb-4">{{ t('dashboard.periodComparison') }}</h3>
-        <VueApexCharts type="bar" height="220" :options="comparisonOptions" :series="comparisonSeries" />
+      <div class="glass-elegant rounded-elegant-lg p-6 hover-lift transition-elegant group">
+        <h3 class="text-lg font-bold mb-5 group-hover:text-primary transition-colors">{{ t('dashboard.periodComparison') }}</h3>
+        <VueApexCharts type="bar" height="240" :options="comparisonOptions" :series="comparisonSeries" />
       </div>
     </template>
 
     <div v-if="showImportModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showImportModal = false"></div>
-      <div class="relative w-full max-w-md bg-base-100 rounded-3xl shadow-2xl overflow-hidden">
-        <div class="p-6">
+      <div class="absolute inset-0 bg-black/20 backdrop-blur-md" @click="showImportModal = false"></div>
+      <div class="relative w-full max-w-md glass-elegant rounded-elegant-xl shadow-elegant-lg overflow-hidden animate-elegant-in">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-purple-500 to-pink-500"></div>
+        <div class="p-8">
           <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-bold">{{ t('import.title') }}</h2>
-            <button @click="showImportModal = false" class="p-2 rounded-xl hover:bg-base-200 transition-colors">
+            <h2 class="text-2xl font-bold">{{ t('import.title') }}</h2>
+            <button @click="showImportModal = false" class="p-2 rounded-xl hover:bg-base-200/60 transition-elegant">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
 
-          <div v-if="uploadResult" class="mb-4 p-3 rounded-xl flex items-center justify-between"
-            :class="uploadResult.type === 'success' ? 'bg-success/10 text-success' : 'bg-error/10 text-error'">
-            <span class="text-sm font-medium">{{ uploadResult.message }}</span>
-            <button @click="uploadResult = null" class="p-1 hover:opacity-70">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+          <Transition name="slide-fade">
+            <div v-if="uploadResult" class="mb-5 p-3 rounded-xl flex items-center justify-between"
+              :class="uploadResult.type === 'success' ? 'bg-success/10 text-success border border-success/20' : 'bg-error/10 text-error border border-error/20'">
+              <span class="text-sm font-medium">{{ uploadResult.message }}</span>
+              <button @click="uploadResult = null" class="p-1 hover:opacity-70">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </Transition>
 
           <div class="mb-5">
-            <label class="block text-sm font-medium text-base-content/60 mb-2">{{ t('import.selectPlatform') }}</label>
+            <label class="block text-sm font-semibold text-base-content/70 mb-3">{{ t('import.selectPlatform') }}</label>
             <div class="grid grid-cols-3 gap-3">
               <button
                 v-for="(info, key) in platformInfo"
                 :key="key"
                 @click="importType = key"
-                class="p-3 rounded-xl text-center transition-all"
+                class="p-4 rounded-xl text-center transition-elegant hover-lift"
                 :class="importType === key 
-                  ? 'bg-gradient-to-br ' + info.color + ' text-white shadow-lg' 
+                  ? 'bg-gradient-elegant text-white shadow-elevated' 
                   : 'bg-base-200/50 hover:bg-base-200'"
               >
                 <PlatformIcon :platform="key" size="md" />
-                <div class="text-xs font-medium mt-1">{{ t('platforms.' + key) }}</div>
+                <div class="text-xs font-semibold mt-2">{{ t('platforms.' + key) }}</div>
               </button>
             </div>
           </div>
@@ -345,10 +349,10 @@ onMounted(async () => {
             @dragover="handleDragOver"
             @dragleave="handleDragLeave"
             @drop="handleDrop"
-            class="relative rounded-2xl border-2 border-dashed transition-all cursor-pointer overflow-hidden"
+            class="relative rounded-xl border-2 border-dashed transition-elegant cursor-pointer overflow-hidden group"
             :class="isDragging 
               ? 'border-primary bg-primary/5' 
-              : 'border-base-300/50 hover:border-primary/50 bg-base-200/30'"
+              : 'border-base-300/50 hover:border-primary/50 bg-base-200/30 hover:bg-base-200/50'"
           >
             <input
               type="file"
@@ -356,25 +360,25 @@ onMounted(async () => {
               accept=".csv,.CSV,.xlsx,.xls"
               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
-            <div class="p-6 text-center">
-              <p v-if="!uploadedFile" class="text-sm text-base-content/50">
+            <div class="p-8 text-center">
+              <p v-if="!uploadedFile" class="text-sm text-base-content/50 group-hover:text-base-content/70 transition-colors">
                 {{ t('import.dragHintShort') }}
               </p>
-              <p v-else class="text-sm text-primary font-medium">{{ uploadedFile.name }}</p>
-              <p class="text-xs text-base-content/30 mt-1">{{ t('import.supportedFormatShort') }}</p>
+              <p v-else class="text-sm text-primary font-semibold">{{ uploadedFile.name }}</p>
+              <p class="text-xs text-base-content/30 mt-2">{{ t('import.supportedFormatShort') }}</p>
             </div>
           </div>
 
           <button
             @click="startImport"
             :disabled="!uploadedFile || !importType || isUploading"
-            class="w-full mt-5 py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-40"
+            class="w-full mt-5 py-3.5 rounded-xl font-semibold text-sm transition-elegant disabled:opacity-40 group"
             :class="uploadedFile && importType && !isUploading
-              ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/25 hover:shadow-xl'
+              ? 'bg-gradient-elegant text-white shadow-elevated hover-lift'
               : 'bg-base-200 text-base-content/50'"
           >
             <span v-if="isUploading" class="flex items-center justify-center gap-2">
-              <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <svg class="w-4 h-4 animate-elegant-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
@@ -392,9 +396,41 @@ onMounted(async () => {
 
     <DeleteConfirmModal :visible="showDeleteModal" :bill="deletingBill" @close="closeDeleteModal" @confirm="confirmDelete" />
 
-    <div v-if="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl shadow-lg text-white text-sm font-medium animate-slide-down"
-      :class="toast.type === 'success' ? 'bg-success' : 'bg-error'">
-      {{ toast.message }}
-    </div>
+    <Transition name="slide-down">
+      <div v-if="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl shadow-elevated text-white text-sm font-semibold backdrop-blur-md"
+        :class="toast.type === 'success' ? 'bg-gradient-to-r from-success to-green-500' : 'bg-gradient-to-r from-error to-red-500'">
+        {{ toast.message }}
+      </div>
+    </Transition>
   </div>
 </template>
+
+<style scoped>
+.slide-fade-enter-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-fade-leave-active {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+
+.slide-down-enter-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-down-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-down-enter-from,
+.slide-down-leave-to {
+  transform: translate(-50%, -1.5rem);
+  opacity: 0;
+}
+</style>

@@ -3,29 +3,451 @@
   themes: all;
 }
 
-/* Toast slide-down animation */
-@keyframes slideDown {
-  from { opacity: 0; transform: translate(-50%, -1rem); }
-  to { opacity: 1; transform: translate(-50%, 0); }
-}
-.animate-slide-down {
-  animation: slideDown 0.3s ease-out;
+/* ============================================
+   BoboBill 优雅设计系统
+   灵感来源：Apple / Linear / Stripe
+   ============================================ */
+
+/* ========== 全局动画定义 ========== */
+
+/* 入场动画 - 优雅淡入上浮 */
+@keyframes elegantFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* Skeleton shimmer */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+/* 弹性动画 - 轻微弹性 */
+@keyframes springBounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
 }
+
+/* 柔和脉冲 */
+@keyframes softPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* 渐变流动 */
+@keyframes gradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* 旋转加载 */
+@keyframes elegantSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 骨架屏闪烁 */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Toast 滑入 */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -1.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Toast 滑出 */
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -1.5rem);
+  }
+}
+
+/* 光晕效果 */
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(99, 102, 241, 0.4);
+  }
+}
+
+/* ========== 全局样式类 ========== */
+
+/* Toast 动画 */
+.animate-slide-down {
+  animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 优雅入场动画 */
+.animate-elegant-in {
+  animation: elegantFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 弹性悬停效果 */
+.animate-spring-hover:hover {
+  animation: springBounce 0.3s ease-out;
+}
+
+/* 柔和脉冲 */
+.animate-soft-pulse {
+  animation: softPulse 2s ease-in-out infinite;
+}
+
+/* 渐变背景动画 */
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradientFlow 3s ease infinite;
+}
+
+/* 优雅旋转 */
+.animate-elegant-spin {
+  animation: elegantSpin 1s linear infinite;
+}
+
+/* 骨架屏 */
 .skeleton {
-  background: linear-gradient(90deg, hsl(var(--b2)) 25%, hsl(var(--b3)) 50%, hsl(var(--b2)) 75%);
+  background: linear-gradient(
+    90deg,
+    hsl(var(--b2)) 0%,
+    hsl(var(--b3)) 50%,
+    hsl(var(--b2)) 100%
+  );
   background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
+  animation: shimmer 2s ease-in-out infinite;
+  border-radius: 1rem;
+}
+
+/* 光晕效果 */
+.glow-effect {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+/* ========== 毛玻璃效果 ========== */
+
+/* 精致毛玻璃 */
+.glass-elegant {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-elegant-dark {
+  background: rgba(30, 30, 30, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 轻度毛玻璃 */
+.glass-light {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ========== 精致阴影系统 ========== */
+
+/* 柔和阴影 - 卡片 */
+.shadow-elegant {
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.06),
+    0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* 中度阴影 - 弹窗 */
+.shadow-elegant-md {
+  box-shadow: 
+    0 8px 40px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+/* 深度阴影 - 弹窗 */
+.shadow-elegant-lg {
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+/* 悬浮阴影 - 按钮/卡片 */
+.shadow-elevated {
+  box-shadow: 
+    0 12px 32px rgba(0, 0, 0, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+/* 内阴影 */
+.shadow-inset {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* ========== 精致边框 ========== */
+
+/* 微妙边框 */
+.border-elegant {
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.border-elegant-light {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* 渐变边框效果（需要配合使用） */
+.border-gradient {
+  position: relative;
+}
+
+.border-gradient::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.3));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* ========== 精致圆角系统 ========== */
+
+/* 小圆角 - 标签/徽章 */
+.rounded-elegant-sm {
+  border-radius: 0.5rem;
+}
+
+/* 中圆角 - 按钮/输入框 */
+.rounded-elegant {
   border-radius: 0.75rem;
 }
 
-/* 路由链接激活状态 */
+/* 大圆角 - 卡片 */
+.rounded-elegant-lg {
+  border-radius: 1rem;
+}
+
+/* 超大圆角 - 弹窗/大卡片 */
+.rounded-elegant-xl {
+  border-radius: 1.5rem;
+}
+
+/* ========== 过渡动画 ========== */
+
+/* 快速过渡 - 微交互 */
+.transition-elegant-fast {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 标准过渡 - 按钮/卡片 */
+.transition-elegant {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 慢速过渡 - 弹窗/页面 */
+.transition-elegant-slow {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========== 悬停效果 ========== */
+
+/* 悬浮上浮效果 */
+.hover-lift {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 12px 32px rgba(0, 0, 0, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+/* 悬浮缩放效果 */
+.hover-scale {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* 悬浮发光效果 */
+.hover-glow {
+  transition: box-shadow 0.3s ease;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+}
+
+/* ========== 渐变背景 ========== */
+
+/* 主色渐变 */
+.bg-gradient-elegant {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+/* 柔和渐变 */
+.bg-gradient-soft {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+}
+
+/* 背景渐变 */
+.bg-gradient-mesh {
+  background: 
+    radial-gradient(at 40% 20%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(139, 92, 246, 0.06) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(99, 102, 241, 0.05) 0px, transparent 50%);
+}
+
+/* ========== 文本效果 ========== */
+
+/* 标题渐变文本 */
+.text-gradient {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 微光文本 */
+.text-glow {
+  text-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+}
+
+/* ========== 路由链接状态 ========== */
 .router-link-active {
-  background-color: hsl(var(--bc) / 0.1);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
   font-weight: 600;
+  color: hsl(var(--p));
+}
+
+/* ========== 滚动条美化 ========== */
+
+/* WebKit 浏览器 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+}
+
+/* ========== 输入框焦点效果 ========== */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+/* ========== 选中效果 ========== */
+::selection {
+  background: rgba(99, 102, 241, 0.2);
+  color: inherit;
+}
+
+/* ========== 移动端优化 ========== */
+
+/* 平滑滚动 */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 触摸优化 */
+@media (hover: none) {
+  .hover-lift:hover {
+    transform: none;
+    box-shadow: inherit;
+  }
+  
+  .hover-scale:hover {
+    transform: none;
+  }
+  
+  .hover-glow:hover {
+    box-shadow: inherit;
+  }
+}
+
+/* ========== 无障碍优化 ========== */
+
+/* 焦点可见 */
+:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.5);
+  outline-offset: 2px;
+}
+
+/* 减少动画（尊重用户设置） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
