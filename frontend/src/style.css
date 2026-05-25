@@ -3,6 +3,278 @@
   themes: all;
 }
 
+/* ==================================================================
+   BoboBill Design System — Scheme A
+   ──────────────────────────────────────────────────────────────────
+   Glass‑forward, young, fresh. Soft radial background.
+   ================================================================== */
+
+/* ── Design Tokens ── */
+@layer base {
+  :root {
+    --bb-bg: #f6faf7;
+    --bb-bg-soft: #eef7f4;
+    --bb-surface: rgba(255, 255, 255, 0.78);
+    --bb-surface-solid: #ffffff;
+    --bb-border: rgba(30, 41, 59, 0.075);
+
+    --bb-text: #101828;
+    --bb-text-secondary: #667085;
+    --bb-text-tertiary: #98a2b3;
+
+    --bb-blue: #2478ff;
+    --bb-blue2: #0f6bff;
+    --bb-mint: #36d399;
+    --bb-green: #22c55e;
+    --bb-orange: #ff9f0a;
+    --bb-coral: #ff6b5f;
+    --bb-purple: #8b5cf6;
+
+    --bb-radius-sm: 14px;
+    --bb-radius-md: 20px;
+    --bb-radius-lg: 28px;
+    --bb-radius-xl: 32px;
+
+    --bb-shadow-card: 0 20px 60px rgba(15, 23, 42, 0.055);
+    --bb-shadow-sm: 0 8px 26px rgba(15, 23, 42, 0.045);
+  }
+
+  [data-theme="dark"] {
+    --bb-bg: #0d1116;
+    --bb-bg-soft: #151a21;
+    --bb-surface: rgba(21, 26, 33, 0.92);
+    --bb-surface-solid: #151a21;
+    --bb-border: rgba(148, 163, 184, 0.14);
+    --bb-text: #e6e8ec;
+    --bb-text-secondary: #bcc5d0;
+    --bb-text-tertiary: #8896a8;
+    --bb-shadow-card: 0 20px 60px rgba(0, 0, 0, 0.24);
+    --bb-shadow-sm: 0 8px 26px rgba(0, 0, 0, 0.18);
+  }
+
+  body {
+    background:
+      radial-gradient(circle at 12% 10%, rgba(54,211,153,.24), transparent 28%),
+      radial-gradient(circle at 86% 8%, rgba(36,120,255,.13), transparent 30%),
+      radial-gradient(circle at 66% 88%, rgba(255,159,10,.10), transparent 24%),
+      linear-gradient(135deg, #f8fbf7 0%, #f2faf6 48%, #f7f9ff 100%);
+    color: var(--bb-text);
+    min-height: 100vh;
+  }
+
+  [data-theme="dark"] body {
+    background:
+      radial-gradient(circle at 12% 10%, rgba(54,211,153,.08), transparent 28%),
+      radial-gradient(circle at 86% 8%, rgba(36,120,255,.06), transparent 30%),
+      radial-gradient(circle at 66% 88%, rgba(255,159,10,.05), transparent 24%),
+      linear-gradient(135deg, #0d1116 0%, #111820 48%, #0d1116 100%);
+  }
+
+  html {
+    background-color: var(--bb-bg);
+  }
+}
+
+/* ── Reusable Utility Classes ── */
+@layer components {
+  .bb-page {
+    color: var(--bb-text);
+  }
+
+  /* ── Cards ── */
+  .bb-card {
+    background: var(--bb-surface-solid);
+    border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius-md);
+    box-shadow: var(--bb-shadow-sm);
+  }
+
+  .bb-card-soft {
+    background: var(--bb-surface);
+    border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius-md);
+    box-shadow: var(--bb-shadow-sm);
+  }
+
+  .bb-card-glass {
+    background: var(--bb-surface);
+    border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius-lg);
+    box-shadow: var(--bb-shadow-card);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+  }
+
+  /* ── Buttons ── */
+  .bb-button-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: linear-gradient(145deg, #2478ff, #0f6bff);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    border-radius: 15px;
+    border: 0;
+    height: 42px;
+    padding: 0 18px;
+    transition: all 0.18s ease;
+    box-shadow: 0 14px 28px rgba(36, 120, 255, 0.18);
+    cursor: pointer;
+  }
+
+  .bb-button-primary:hover {
+    box-shadow: 0 18px 36px rgba(36, 120, 255, 0.26);
+    transform: translateY(-0.5px);
+  }
+
+  .bb-button-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .bb-button-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: var(--bb-surface);
+    color: var(--bb-text-secondary);
+    font-weight: 700;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    border-radius: 15px;
+    border: 1px solid var(--bb-border);
+    height: 42px;
+    padding: 0 18px;
+    transition: all 0.18s ease;
+    box-shadow: var(--bb-shadow-sm);
+    cursor: pointer;
+  }
+
+  .bb-button-secondary:hover {
+    background: var(--bb-surface-solid);
+    color: var(--bb-text);
+  }
+
+  /* ── Input ── */
+  .bb-input {
+    width: 100%;
+    background: var(--bb-surface);
+    border: 1px solid var(--bb-border);
+    border-radius: var(--bb-radius-sm);
+    padding: 0.625rem 0.875rem;
+    color: var(--bb-text);
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .bb-input:focus {
+    outline: none;
+    border-color: var(--bb-blue);
+    box-shadow: 0 0 0 3px rgba(36, 120, 255, 0.15);
+  }
+
+  .bb-input::placeholder {
+    color: var(--bb-text-tertiary);
+  }
+
+  /* ── Chip / Badge ── */
+  .bb-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 11px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: var(--bb-surface);
+    color: var(--bb-text-secondary);
+    border: 1px solid var(--bb-border);
+  }
+
+  /* ── Pill (trend / status badge) ── */
+  .bb-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 750;
+    border: 1px solid rgba(30, 41, 59, 0.06);
+    background: var(--bb-surface);
+  }
+
+  .bb-pill-positive {
+    color: #159260;
+    background: rgba(54, 211, 153, 0.1);
+    border-color: rgba(54, 211, 153, 0.15);
+  }
+
+  .bb-pill-warning {
+    color: #d47a00;
+    background: rgba(255, 159, 10, 0.1);
+    border-color: rgba(255, 159, 10, 0.15);
+  }
+
+  /* ── Brand Mark (sidebar logo) ── */
+  .bb-brand-mark {
+    width: 38px;
+    height: 38px;
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-weight: 900;
+    font-size: 1rem;
+    letter-spacing: -0.06em;
+    background: radial-gradient(circle at 75% 18%, rgba(255,255,255,0.7), transparent 18%),
+                linear-gradient(145deg, #2b86ff 0%, #0f6bff 48%, #00b8d9 100%);
+    box-shadow: 0 12px 24px rgba(36, 120, 255, 0.18);
+    flex-shrink: 0;
+  }
+
+  /* ── Section Title ── */
+  .bb-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--bb-text);
+    letter-spacing: -0.025em;
+  }
+
+  /* ── Muted Text ── */
+  .bb-muted {
+    color: var(--bb-text-secondary);
+  }
+
+  /* ── Hero Number (large stat display) ── */
+  .bb-hero-amount {
+    font-size: clamp(48px, 6vw, 76px);
+    font-weight: 880;
+    color: var(--bb-text);
+    letter-spacing: -0.075em;
+    line-height: 0.96;
+  }
+
+  .bb-hero-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--bb-text);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+}
+
+/* ==================================================================
+   Existing Utility Animations (preserved)
+   ================================================================== */
+
 /* Toast slide-down animation */
 @keyframes slideDown {
   from { opacity: 0; transform: translate(-50%, -1rem); }
@@ -24,8 +296,6 @@
   border-radius: 0.75rem;
 }
 
-/* 路由链接激活状态 */
 .router-link-active {
-  background-color: hsl(var(--bc) / 0.1);
   font-weight: 600;
 }

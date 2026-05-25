@@ -244,7 +244,8 @@ export function useDashboardData({ bills, selectedCategory, selectedPlatform }) 
     stats, trendSeries, trendCategories,
     categoryType, categorySeries, categoryLabels,
     pieSelectedCategory, clearPieFilter,
-    expenseLabels, incomeLabels, totalExpense, totalIncome,
+    expenseLabels, expenseSeries, incomeLabels, incomeSeries,
+    totalExpense, totalIncome,
     comparisonSeries, comparisonCategories,
     processBillsData
   }

@@ -300,7 +300,7 @@ onActivated(async () => {
           <svg class="w-4 h-4 flex-shrink-0 opacity-50 group-hover:opacity-70"
                :class="{ '!opacity-100': item.id === activeChatId }"
                fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8 818 8 0 01-6.95-4.06L3 13l3.05-.94A8 8 0 1112 21z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8 8 0 0 1-6.95-4.06L3 13l3.05-.94A8 8 0 1112 21z"/>
           </svg>
           <div class="flex-1 min-w-0">
             <span class="truncate block">{{ item.title }}</span>

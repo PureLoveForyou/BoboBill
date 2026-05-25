@@ -1,7 +1,16 @@
 export default {
+  greeting: {
+    morning: 'Good morning',
+    noon: 'Good afternoon',
+    afternoon: 'Good afternoon',
+    evening: 'Good evening',
+    night: 'Good night',
+    name: 'Bobo 👋',
+    subtitle: 'Your money is neatly organized. Check your overview, import bills, or ask Echo.'
+  },
   app: {
     brand: 'BoboBill',
-    subtitle: 'Bill Manager'
+    subtitle: 'Smart Bill Tracker'
   },
   nav: {
     dashboard: 'Dashboard',
@@ -100,7 +109,13 @@ export default {
     expand: 'Expand',
     thisWeek: 'This Week',
     prevWeeks: '{n}w ago',
-    weekLabel: 'Wk {n}'
+    weekLabel: 'Wk {n}',
+    recentTransactions: 'Recent',
+    viewAll: 'View All',
+    period: 'Period',
+    trendDown: 'steadier than last',
+    trendUp: 'more than last',
+    netWorth: 'Balance'
   },
   import: {
     title: 'Import Bills',
@@ -161,7 +176,9 @@ export default {
     yearOnly: '{year}',
     monthOnly: 'M{month}',
     weekPrefix: 'Wk {week}',
-    range: 'Range {n}'
+    range: 'Range {n}',
+    thisMonth: 'This Month',
+    thisYear: 'This Year'
   },
   bills: {
     title: 'Bills',
@@ -241,6 +258,8 @@ export default {
     chatHistory: 'Chat History',
     toggleHistory: 'Toggle History',
     noChats: 'No chat history',
+    insightTitle: 'Echo Insights',
+    chatWithEcho: 'Chat with Echo',
     provider: 'AI Provider',
     apiKey: 'API Key',
     apiKeyPlaceholder: 'Enter your API Key',

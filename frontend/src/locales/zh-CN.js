@@ -1,7 +1,16 @@
 export default {
+  greeting: {
+    morning: '早上好',
+    noon: '中午好',
+    afternoon: '下午好',
+    evening: '晚上好',
+    night: '夜深了',
+    name: 'Bobo 👋',
+    subtitle: '今天的钱也被整理得很清楚。从这里查看总览、导入账单或问问念溪。'
+  },
   app: {
     brand: 'BoboBill',
-    subtitle: '账单管理系统'
+    subtitle: '清爽账单生活助手'
   },
   nav: {
     dashboard: '仪表盘',
@@ -100,7 +109,13 @@ export default {
     expand: '展开',
     thisWeek: '本周',
     prevWeeks: '前{n}周',
-    weekLabel: '第{n}周'
+    weekLabel: '第{n}周',
+    recentTransactions: '最近交易',
+    viewAll: '查看全部',
+    period: '所选时段',
+    trendDown: '较上月更稳',
+    trendUp: '较上月较多',
+    netWorth: '结余'
   },
   import: {
     title: '导入账单',
@@ -161,7 +176,9 @@ export default {
     yearOnly: '{year}年',
     monthOnly: '{month}月',
     weekPrefix: '第{week}周',
-    range: '区间{n}'
+    range: '区间{n}',
+    thisMonth: '本月',
+    thisYear: '今年'
   },
   bills: {
     title: '账单',
@@ -243,6 +260,8 @@ export default {
     chatHistory: '对话历史',
     toggleHistory: '显示/隐藏历史',
     noChats: '暂无对话记录',
+    insightTitle: '念溪观察',
+    chatWithEcho: '和念溪聊聊',
     provider: 'AI 服务商',
     apiKey: 'API Key',
     apiKeyPlaceholder: '输入你的 API Key',
