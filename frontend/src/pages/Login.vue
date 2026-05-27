@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuth } from '../composables/useAuth'
 import { initTheme, getCurrentTheme } from '../utils/theme.js'
 import { onMounted } from 'vue'
+import BoboBillLogo from '../components/BoboBillLogo.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -59,12 +60,7 @@ const toggleMode = () => {
     <div class="w-full max-w-md">
       <!-- Logo -->
       <div class="text-center mb-8">
-        <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/60 flex items-center justify-center shadow-2xl shadow-primary/30 relative overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent"></div>
-          <svg class="w-10 h-10 text-base-100 relative z-10" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 1.5l-9 4.5 9 4.5 9-4.5-9-4.5zM3 10.5l9 4.5 9-4.5M3 15l9 4.5 9-4.5"/>
-          </svg>
-        </div>
+        <BoboBillLogo :size="80" class="mx-auto" />
         <h1 class="text-3xl font-bold mt-4 tracking-tight">{{ t('app.brand') }}</h1>
         <p class="text-base-content/50 mt-1 text-sm font-medium">{{ t('app.subtitle') }}</p>
       </div>

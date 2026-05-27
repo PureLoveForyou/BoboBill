@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getCurrentTheme, toggleDarkLight } from '../utils/theme.js'
 import { useAuth } from '../composables/useAuth'
+import BoboBillLogo from './BoboBillLogo.vue'
 
 const { t, locale } = useI18n()
 const router = useRouter()
@@ -50,7 +51,7 @@ const isActive = (path) => route.path === path
 
       <div class="px-2 pb-6">
         <div class="flex items-center gap-3">
-          <div class="bb-brand-mark">{{ t('app.brand').charAt(0) }}</div>
+          <BoboBillLogo :size="38" />
           <div class="flex flex-col min-w-0">
             <span class="text-[21px] font-extrabold text-[var(--bb-text)] tracking-[-0.055em] leading-tight">{{ t('app.brand') }}</span>
             <span class="text-[11px] font-semibold text-[var(--bb-text-secondary)] leading-tight mt-0.5">{{ t('app.subtitle') }}</span>
