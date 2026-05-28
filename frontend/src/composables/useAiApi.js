@@ -1,11 +1,10 @@
 import { ref, computed } from 'vue'
 import { API_BASE } from '../config'
+import { getAuthHeaders } from '../utils/api'
 
 // ===== 模块级单例：AI 配置 =====
 const aiConfigs = ref([])
 const activeConfigId = ref(0)
-const isLoading = ref(false)
-
 try { localStorage.removeItem('bobobill_ai_config') } catch {}
 try {
   const savedId = localStorage.getItem('bobobill_ai_active_config')
@@ -16,16 +15,6 @@ try {
 const chats = ref([])
 const activeChatId = ref(null)
 const streamAbortController = ref(null)
-
-function _authHeaders() {
-  const token = localStorage.getItem('bobobill_token')
-  return token ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } : { 'Content-Type': 'application/json' }
-}
-
-function _authGetHeaders() {
-  const token = localStorage.getItem('bobobill_token')
-  return token ? { 'Authorization': `Bearer ${token}` } : {}
-}
 
 export function useAiApi() {
   // ---- AI 配置相关 ----
@@ -39,7 +28,7 @@ export function useAiApi() {
 
   const fetchConfigs = async () => {
     try {
-      const response = await fetch(`${API_BASE}/ai/my-configs`, { headers: _authHeaders() })
+      const response = await fetch(`${API_BASE}/ai/my-configs`, { headers: getAuthHeaders() })
       if (!response.ok) return
       const data = await response.json()
       aiConfigs.value = data
@@ -58,7 +47,7 @@ export function useAiApi() {
   const saveConfig = async (config) => {
     try {
       if (!localStorage.getItem('bobobill_token')) return { success: false, message: '请先登录' }
-      const res = await fetch(`${API_BASE}/ai/save-config`, { method: 'POST', headers: _authHeaders(), body: JSON.stringify(config) })
+      const res = await fetch(`${API_BASE}/ai/save-config`, { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(config) })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         if (res.status === 401 || res.status === 403) return { success: false, message: '登录已过期，请重新登录' }
@@ -74,7 +63,7 @@ export function useAiApi() {
   const updateConfig = async (id, config) => {
     try {
       if (!localStorage.getItem('bobobill_token')) return { success: false, message: '请先登录' }
-      const res = await fetch(`${API_BASE}/ai/update-config/${id}`, { method: 'PUT', headers: _authHeaders(), body: JSON.stringify(config) })
+      const res = await fetch(`${API_BASE}/ai/update-config/${id}`, { method: 'PUT', headers: getAuthHeaders(), body: JSON.stringify(config) })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         if (res.status === 401 || res.status === 403) return { success: false, message: '登录已过期，请重新登录' }
@@ -88,7 +77,7 @@ export function useAiApi() {
   const deleteConfig = async (id) => {
     try {
       if (!localStorage.getItem('bobobill_token')) return { success: false, message: '请先登录' }
-      const res = await fetch(`${API_BASE}/ai/delete-config/${id}`, { method: 'DELETE', headers: _authHeaders() })
+      const res = await fetch(`${API_BASE}/ai/delete-config/${id}`, { method: 'DELETE', headers: getAuthHeaders() })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         if (res.status === 401 || res.status === 403) return { success: false, message: '登录已过期，请重新登录' }
@@ -102,7 +91,7 @@ export function useAiApi() {
   const getConfigDetail = async (id) => {
     try {
       if (!localStorage.getItem('bobobill_token')) return null
-      const res = await fetch(`${API_BASE}/ai/config/${id}`, { headers: _authGetHeaders() })
+      const res = await fetch(`${API_BASE}/ai/config/${id}`, { headers: getAuthHeaders(false) })
       if (!res.ok) return null
       return await res.json()
     } catch { return null }
@@ -113,12 +102,10 @@ export function useAiApi() {
   // 当前活跃对话的消息列表（内存缓存）
   const currentMessages = ref([])
 
-  const activeChat = computed(() => chats.value.find(c => c.id === activeChatId.value) || null)
-
   // 从后端加载所有会话列表
   const fetchChats = async () => {
     try {
-      const res = await fetch(`${API_BASE}/ai/chats`, { headers: _authGetHeaders() })
+      const res = await fetch(`${API_BASE}/ai/chats`, { headers: getAuthHeaders(false) })
       if (!res.ok) return []
       const data = await res.json()
       chats.value = data
@@ -131,7 +118,7 @@ export function useAiApi() {
     try {
       const res = await fetch(`${API_BASE}/ai/chats`, {
         method: 'POST',
-        headers: _authHeaders(),
+        headers: getAuthHeaders(),
         body: JSON.stringify({ title }),
       })
       if (!res.ok) return null
@@ -151,7 +138,7 @@ export function useAiApi() {
     }
     activeChatId.value = chatId
     try {
-      const res = await fetch(`${API_BASE}/ai/chats/${chatId}/messages`, { headers: _authGetHeaders() })
+      const res = await fetch(`${API_BASE}/ai/chats/${chatId}/messages`, { headers: getAuthHeaders(false) })
       if (!res.ok) { currentMessages.value = []; return false }
       const msgs = await res.json()
       // 过滤掉空的 assistant 消息（思考阶段中断产生的空气泡）
@@ -171,7 +158,7 @@ export function useAiApi() {
   // 删除会话
   const deleteChatSession = async (chatId) => {
     try {
-      const res = await fetch(`${API_BASE}/ai/chats/${chatId}`, { method: 'DELETE', headers: _authGetHeaders() })
+      const res = await fetch(`${API_BASE}/ai/chats/${chatId}`, { method: 'DELETE', headers: getAuthHeaders(false) })
       if (!res.ok) return false
       const idx = chats.value.findIndex(c => c.id === chatId)
       if (idx !== -1) chats.value.splice(idx, 1)
@@ -205,7 +192,7 @@ export function useAiApi() {
       if (toolCalls) body.tool_calls = JSON.stringify(toolCalls)
       const res = await fetch(`${API_BASE}/ai/chats/${sessionId}/messages`, {
         method: 'POST',
-        headers: _authHeaders(),
+        headers: getAuthHeaders(),
         body: JSON.stringify(body),
       })
       if (!res.ok) return null
@@ -213,26 +200,12 @@ export function useAiApi() {
     } catch { return null }
   }
 
-  // 更新消息内容（流式完成后调用）
-  const updateMessage = async (sessionId, messageId, content, reasoning) => {
-    try {
-      const body = {}
-      if (content !== undefined) body.content = content
-      if (reasoning !== undefined) body.reasoning = reasoning
-      await fetch(`${API_BASE}/ai/chats/${sessionId}/messages/${messageId}`, {
-        method: 'PUT',
-        headers: _authHeaders(),
-        body: JSON.stringify(body),
-      })
-    } catch {}
-  }
-
   // 更新会话标题
   const updateChatTitle = async (chatId, title) => {
     try {
       await fetch(`${API_BASE}/ai/chats/${chatId}/title`, {
         method: 'PUT',
-        headers: _authHeaders(),
+        headers: getAuthHeaders(),
         body: JSON.stringify({ title }),
       })
       const chat = chats.value.find(c => c.id === chatId)
@@ -242,36 +215,11 @@ export function useAiApi() {
 
   // ---- 聊天功能 ----
 
-  const chat = async (message, history = []) => {
-    if (!isConfigured.value || !activeConfigId.value) return { success: false, message: '请先在设置中配置 AI 服务' }
-    try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 60000)
-      const res = await fetch(`${API_BASE}/ai/chat-full`, {
-        method: 'POST', headers: _authHeaders(),
-        body: JSON.stringify({ message, history: history.map(m => ({ role: m.role, content: m.content })), ai_config_id: activeConfigId.value }),
-        signal: controller.signal,
-      })
-      clearTimeout(timeoutId)
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        let msg = data.detail || 'AI 请求失败'
-        if (res.status === 504) msg = 'AI 响应超时，请稍后再试'
-        return { success: false, message: msg }
-      }
-      const data = await res.json()
-      return { success: true, reply: data.reply }
-    } catch (e) {
-      if (e.name === 'AbortError') return { success: false, message: '请求超时（60秒），请稍后再试' }
-      return { success: false, message: '网络错误，请检查服务是否启动' }
-    }
-  }
-
   const chatStream = async (message, history = [], onChunk = () => {}, signal = null) => {
     if (!isConfigured.value || !activeConfigId.value) return { success: false, message: '请先在设置中配置 AI 服务' }
     try {
       const res = await fetch(`${API_BASE}/ai/chat-stream`, {
-        method: 'POST', headers: _authHeaders(),
+        method: 'POST', headers: getAuthHeaders(),
         body: JSON.stringify({ message, history: history.map(m => ({ role: m.role, content: m.content })), ai_config_id: activeConfigId.value }),
         signal,
       })
@@ -309,26 +257,29 @@ export function useAiApi() {
 
   const testConnection = async (config) => {
     try {
-      const params = new URLSearchParams({
-        provider: config.provider,
-        api_key: config.apiKey || config.api_key || '',
-        api_url: config.apiUrl || config.api_url || '',
-        model: config.model || '',
+      const res = await fetch(`${API_BASE}/ai/test-connection`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          provider: config.provider,
+          api_key: config.apiKey || config.api_key || '',
+          api_url: config.apiUrl || config.api_url || '',
+          model: config.model || '',
+        }),
       })
-      const res = await fetch(`${API_BASE}/ai/test-connection?${params}`)
       return await res.json()
     } catch { return { success: false, message: '网络错误' } }
   }
 
   return {
     // 配置
-    aiConfigs, activeConfigId, activeConfig, isConfigured, isLoading, activeModelName,
+    aiConfigs, activeConfigId, activeConfig, isConfigured, activeModelName,
     fetchConfigs, selectConfig, saveConfig, updateConfig, deleteConfig, getConfigDetail,
     // 对话历史
-    chats, activeChatId, activeChat, currentMessages,
+    chats, activeChatId, currentMessages,
     fetchChats, createChatSession, switchChatSession, deleteChatSession, clearChatSession,
-    addMessage, updateMessage, updateChatTitle,
+    addMessage, updateChatTitle,
     // 聊天
-    chat, chatStream, streamAbortController, testConnection,
+    chatStream, streamAbortController, testConnection,
   }
 }

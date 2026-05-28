@@ -6,12 +6,13 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from typing import Optional
 import json
+import time as time_module
 import httpx
 from datetime import datetime, timedelta, timezone
 
 from database import get_db, Bill, User, UserAIConfig, ChatSession as DBChatSession, ChatMessage as DBChatMessage
 from auth import get_current_user
-from models import (AIConfigCreate, AIConfigUpdate, AIConfigResponse, AIConfigDetail,
+from models import (AIConfigCreate, AIConfigUpdate,
                     ChatSessionCreate, ChatMessageCreate, ChatSessionResponse, ChatMessageResponse)
 
 router = APIRouter(prefix="/ai", tags=["ai"])
@@ -53,9 +54,6 @@ _DEFAULT_SYSTEM_PROMPT_TEMPLATE = """你是 BoboBill 的智能账单助手，一
 - 金额以人民币（¥）为单位
 - 日期格式使用 YYYY-MM-DD"""
 
-
-def _get_system_prompt() -> str:
-    return _DEFAULT_SYSTEM_PROMPT_TEMPLATE
 
 # ===== Function Calling 工具定义 =====
 
@@ -432,21 +430,21 @@ async def _agent_loop_stream(settings: AISettings, messages: list[dict], db: Ses
         "Authorization": f"Bearer {settings.api_key}"
     }
 
-    for round_num in range(max_rounds):
-        payload = {
-            "model": settings.model,
-            "messages": messages,
-            "temperature": 0.7,
-            "max_tokens": 4096,
-            "stream": True,
-            "tools": BILL_TOOLS,
-            "tool_choice": "auto"
-        }
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        for round_num in range(max_rounds):
+            payload = {
+                "model": settings.model,
+                "messages": messages,
+                "temperature": 0.7,
+                "max_tokens": 4096,
+                "stream": True,
+                "tools": BILL_TOOLS,
+                "tool_choice": "auto"
+            }
 
-        # 用于从流式 delta 中累积 tool_calls（LLM 的 tool_calls 也是分多个 chunk 传的）
-        accumulated_tool_calls = {}  # index -> {id, function: {name, arguments}}
+            # 用于从流式 delta 中累积 tool_calls（LLM 的 tool_calls 也是分多个 chunk 传的）
+            accumulated_tool_calls = {}  # index -> {id, function: {name, arguments}}
 
-        async with httpx.AsyncClient(timeout=120.0) as client:
             async with client.stream("POST", endpoint, headers=headers, json=payload) as response:
                 if response.status_code != 200:
                     error_body = await response.aread()
@@ -499,57 +497,57 @@ async def _agent_loop_stream(settings: AISettings, messages: list[dict], db: Ses
                     except json.JSONDecodeError:
                         continue
 
-        # [DONE] 到了，判断这一轮是返回了文本还是要求调工具
-        if accumulated_tool_calls:
-            # === 阶段 1：通知前端即将执行工具 ===
-            for idx in sorted(accumulated_tool_calls.keys()):
-                acc = accumulated_tool_calls[idx]
-                fn_name = acc["function"]["name"]
-                try:
-                    fn_args = json.loads(acc["function"]["arguments"])
-                except json.JSONDecodeError:
-                    fn_args = {}
-                desc = _tool_call_description(fn_name, fn_args)
-                yield f"data: {json.dumps({'type': 'tool_start', 'content': {'name': fn_name, 'description': desc}}, ensure_ascii=False)}\n\n"
+            # [DONE] 到了，判断这一轮是返回了文本还是要求调工具
+            if accumulated_tool_calls:
+                # === 阶段 1：通知前端即将执行工具 ===
+                for idx in sorted(accumulated_tool_calls.keys()):
+                    acc = accumulated_tool_calls[idx]
+                    fn_name = acc["function"]["name"]
+                    try:
+                        fn_args = json.loads(acc["function"]["arguments"])
+                    except json.JSONDecodeError:
+                        fn_args = {}
+                    desc = _tool_call_description(fn_name, fn_args)
+                    yield f"data: {json.dumps({'type': 'tool_start', 'content': {'name': fn_name, 'description': desc}}, ensure_ascii=False)}\n\n"
 
-            # 构造完整的 assistant 消息（含 tool_calls）
-            tool_call_list = []
-            for idx in sorted(accumulated_tool_calls.keys()):
-                acc = accumulated_tool_calls[idx]
-                tool_call_list.append({
-                    "id": acc["id"],
-                    "type": "function",
-                    "function": {
-                        "name": acc["function"]["name"],
-                        "arguments": acc["function"]["arguments"],
-                    }
-                })
-            messages.append({"role": "assistant", "content": None, "tool_calls": tool_call_list})
+                # 构造完整的 assistant 消息（含 tool_calls）
+                tool_call_list = []
+                for idx in sorted(accumulated_tool_calls.keys()):
+                    acc = accumulated_tool_calls[idx]
+                    tool_call_list.append({
+                        "id": acc["id"],
+                        "type": "function",
+                        "function": {
+                            "name": acc["function"]["name"],
+                            "arguments": acc["function"]["arguments"],
+                        }
+                    })
+                messages.append({"role": "assistant", "content": None, "tool_calls": tool_call_list})
 
-            # === 阶段 2：逐个执行工具并通知结果 ===
-            for idx in sorted(accumulated_tool_calls.keys()):
-                acc = accumulated_tool_calls[idx]
-                fn_name = acc["function"]["name"]
-                try:
-                    fn_args = json.loads(acc["function"]["arguments"])
-                except json.JSONDecodeError:
-                    fn_args = {}
-                tool_result = _execute_tool(db, user_id, fn_name, fn_args)
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": acc["id"],
-                    "content": tool_result
-                })
-                # 通知前端该工具已完成
-                yield f"data: {json.dumps({'type': 'tool_end', 'content': {'name': fn_name, 'description': _tool_call_description(fn_name, fn_args)}}, ensure_ascii=False)}\n\n"
+                # === 阶段 2：逐个执行工具并通知结果 ===
+                for idx in sorted(accumulated_tool_calls.keys()):
+                    acc = accumulated_tool_calls[idx]
+                    fn_name = acc["function"]["name"]
+                    try:
+                        fn_args = json.loads(acc["function"]["arguments"])
+                    except json.JSONDecodeError:
+                        fn_args = {}
+                    tool_result = _execute_tool(db, user_id, fn_name, fn_args)
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": acc["id"],
+                        "content": tool_result
+                    })
+                    # 通知前端该工具已完成
+                    yield f"data: {json.dumps({'type': 'tool_end', 'content': {'name': fn_name, 'description': _tool_call_description(fn_name, fn_args)}}, ensure_ascii=False)}\n\n"
 
-            # 继续下一轮循环（再次发起流式请求）
-            continue
-        else:
-            # 没有 tool_calls：说明 LLM 已经在上方流式发出了最终的 text content
-            # 直接结束即可，内容已经通过上面的 content delta 逐 token 发给前端了
-            yield f"data: {json.dumps({'type': 'done'}, ensure_ascii=False)}\n\n"
-            return
+                # 继续下一轮循环（再次发起流式请求）
+                continue
+            else:
+                # 没有 tool_calls：说明 LLM 已经在上方流式发出了最终的 text content
+                # 直接结束即可，内容已经通过上面的 content delta 逐 token 发给前端了
+                yield f"data: {json.dumps({'type': 'done'}, ensure_ascii=False)}\n\n"
+                return
 
     # 超过最大轮数兜底
     yield f"data: {json.dumps({'type': 'content', 'content': '抱歉，处理过程超出了最大调用次数。'}, ensure_ascii=False)}\n\n"
@@ -589,7 +587,7 @@ def _resolve_settings(req: ConfiguredChatRequest, db: Session, user: User) -> AI
 
 def _build_messages(req, system_prompt: str = None) -> list[dict]:
     """构建消息列表（不再注入全量账单数据，由 AI 通过工具按需查询）"""
-    messages = [{"role": "system", "content": system_prompt or _get_system_prompt()}]
+    messages = [{"role": "system", "content": system_prompt or _DEFAULT_SYSTEM_PROMPT_TEMPLATE}]
 
     # 加入历史对话
     for msg in req.history[-12:]:
@@ -626,8 +624,6 @@ async def chat_full(req: ConfiguredChatRequest, db: Session = Depends(get_db), c
         return {"reply": reply}
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="AI 服务响应超时，请稍后再试")
-    except HTTPException:
-        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI 服务错误: {str(e)}")
 
@@ -661,18 +657,25 @@ async def chat_stream(req: ConfiguredChatRequest, db: Session = Depends(get_db),
     )
 
 
-@router.get("/test-connection")
-async def test_connection(provider: str, api_key: str, api_url: str = "", model: str = ""):
+class TestConnectionRequest(BaseModel):
+    provider: str = "deepseek"
+    api_key: str
+    api_url: str = ""
+    model: str = ""
+
+
+@router.post("/test-connection")
+async def test_connection(req: TestConnectionRequest):
     """测试 AI 连接"""
-    if not api_key:
+    if not req.api_key:
         raise HTTPException(status_code=400, detail="API Key 不能为空")
 
-    actual_model = model or ("deepseek-chat" if provider == "deepseek" else "gpt-3.5-turbo")
+    actual_model = req.model or ("deepseek-chat" if req.provider == "deepseek" else "gpt-3.5-turbo")
 
     settings = AISettings(
-        provider=provider,
-        api_key=api_key,
-        api_url=api_url,
+        provider=req.provider,
+        api_key=req.api_key,
+        api_url=req.api_url,
         model=actual_model
     )
 
@@ -740,7 +743,7 @@ async def update_config(config_id: int, req: AIConfigUpdate, db: Session = Depen
     if not config:
         raise HTTPException(status_code=404, detail="配置不存在")
 
-    update_data = req.dict(exclude_unset=True)
+    update_data = req.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(config, key, value)
     db.commit()
@@ -801,7 +804,7 @@ async def get_chat_sessions(db: Session = Depends(get_db), current_user: User = 
 @router.post("/chats", response_model=ChatSessionResponse)
 async def create_chat_session(req: ChatSessionCreate = ChatSessionCreate(), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """创建新对话"""
-    now = __import__('time').time()
+    now = time_module.time()
     session = DBChatSession(
         user_id=current_user.id,
         title=req.title,
@@ -857,7 +860,7 @@ async def add_chat_message(session_id: int, req: ChatMessageCreate, db: Session 
     session = db.query(DBChatSession).filter_by(id=session_id, user_id=current_user.id).first()
     if not session:
         raise HTTPException(status_code=404, detail="对话不存在")
-    now = __import__('time').time()
+    now = time_module.time()
     message = DBChatMessage(
         session_id=session_id,
         role=req.role,

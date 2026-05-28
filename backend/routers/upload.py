@@ -94,7 +94,5 @@ async def upload_bills(
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except HTTPException:
-        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"导入失败: {str(e)}")

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Optional, Dict
 import json as json_lib
+from datetime import datetime
 from sqlalchemy.orm import Session
 from database import get_db, Budget, Bill, User
 from auth import get_current_user
@@ -62,8 +63,6 @@ def update_budget(budget: BudgetModel, db: Session = Depends(get_db), current_us
 @router.get("/status")
 def get_budget_status(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """获取当月预算使用情况"""
-    from datetime import datetime
-
     doc = _get_budget(db, current_user.id)
     monthly_total = doc.monthly_total or 0
     try:

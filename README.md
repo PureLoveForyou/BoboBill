@@ -191,7 +191,6 @@ BoboBill/
 │   │   │   ├── BillItem.vue      # 账单列表项
 │   │   │   ├── BillFormModal.vue # 账单编辑弹窗
 │   │   │   ├── BudgetCard.vue    # 预算卡片
-│   │   │   ├── StatCards.vue     # 统计卡片
 │   │   │   ├── TimeFilter.vue    # 时间筛选器
 │   │   │   ├── PlatformIcon.vue  # 平台图标
 │   │   │   ├── AppleSelect.vue   # 自定义选择器
@@ -225,8 +224,8 @@ BoboBill/
 │   ├── index.html            # HTML 模板
 │   ├── package.json          # 前端依赖
 │   └── vite.config.js        # Vite 配置
-├── start_frontend.sh         # 前端启动脚本（Linux/macOS）
-├── start_frontend.bat        # 前端启动脚本（Windows）
+├── start.sh                # 全栈启动脚本（Linux/macOS）
+├── start.bat               # 全栈启动脚本（Windows）
 ├── LICENSE                   # 开源协议
 └── README.md                 # 项目说明文档
 ```

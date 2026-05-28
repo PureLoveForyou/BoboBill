@@ -3,13 +3,16 @@ import io
 from openpyxl import load_workbook
 from .base import build_col_map, find_csv_header, find_excel_header, parse_csv_rows, parse_excel_rows
 
-_HEADER_CHECK = lambda line: '交易时间' in line and '交易类型' in line
-_HEADER_CHECK_EXCEL = lambda vals: '交易时间' in str(vals) and '交易类型' in str(vals)
+def _header_check(line):
+    return '交易时间' in line and '交易类型' in line
+
+def _header_check_excel(vals):
+    return '交易时间' in str(vals) and '交易类型' in str(vals)
 
 
 def parse_wechat_csv(content_str: str) -> list:
     lines = content_str.strip().split('\n')
-    header_idx = find_csv_header(lines, _HEADER_CHECK)
+    header_idx = find_csv_header(lines, _header_check)
     if header_idx == -1:
         raise ValueError("无法识别微信账单格式：找不到表头")
 
@@ -22,7 +25,7 @@ def parse_wechat_csv(content_str: str) -> list:
 def parse_wechat_excel(content: bytes) -> list:
     wb = load_workbook(io.BytesIO(content))
     ws = wb.active
-    header_idx, headers = find_excel_header(ws, _HEADER_CHECK_EXCEL)
+    header_idx, headers = find_excel_header(ws, _header_check_excel)
     if header_idx is None:
         raise ValueError("无法识别微信账单格式：找不到表头")
     return parse_excel_rows(ws, header_idx, build_col_map(headers), 'wechat')

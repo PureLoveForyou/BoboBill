@@ -2,6 +2,22 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import dayjs from 'dayjs'
 
+function isBillInRange(bill, start, end) {
+  const billDate = dayjs(bill.date)
+  return billDate.isAfter(start.subtract(1, 'day')) && billDate.isBefore(end.add(1, 'day'))
+}
+
+function applyFilters(bills, category, platform) {
+  let result = bills
+  if (category !== 'all') {
+    result = result.filter(bill => (bill.category || '其他') === category)
+  }
+  if (platform !== 'all') {
+    result = result.filter(bill => bill.platform === platform)
+  }
+  return result
+}
+
 export function useDashboardData({ bills, selectedCategory, selectedPlatform }) {
   const { t } = useI18n()
 
@@ -41,17 +57,8 @@ export function useDashboardData({ bills, selectedCategory, selectedPlatform }) 
     const start = dayjs(range.start)
     const end = dayjs(range.end)
 
-    let filteredBills = bills.value.filter(bill => {
-      const billDate = dayjs(bill.date)
-      return billDate.isAfter(start.subtract(1, 'day')) && billDate.isBefore(end.add(1, 'day'))
-    })
-
-    if (selectedCategory.value !== 'all') {
-      filteredBills = filteredBills.filter(bill => (bill.category || '其他') === selectedCategory.value)
-    }
-    if (selectedPlatform.value !== 'all') {
-      filteredBills = filteredBills.filter(bill => bill.platform === selectedPlatform.value)
-    }
+    let filteredBills = bills.value.filter(bill => isBillInRange(bill, start, end))
+    filteredBills = applyFilters(filteredBills, selectedCategory.value, selectedPlatform.value)
 
     const periodExpense = filteredBills.filter(b => b.amount < 0).reduce((sum, b) => sum + Math.abs(b.amount), 0)
     const periodIncome = filteredBills.filter(b => b.amount >= 0).reduce((sum, b) => sum + b.amount, 0)
@@ -60,17 +67,8 @@ export function useDashboardData({ bills, selectedCategory, selectedPlatform }) 
 
     const prevStart = start.subtract(end.diff(start, 'day') + 1, 'day')
     const prevEnd = start.subtract(1, 'day')
-    let prevBills = bills.value.filter(bill => {
-      const billDate = dayjs(bill.date)
-      return billDate.isAfter(prevStart.subtract(1, 'day')) && billDate.isBefore(prevEnd.add(1, 'day'))
-    })
-
-    if (selectedCategory.value !== 'all') {
-      prevBills = prevBills.filter(bill => (bill.category || '其他') === selectedCategory.value)
-    }
-    if (selectedPlatform.value !== 'all') {
-      prevBills = prevBills.filter(bill => bill.platform === selectedPlatform.value)
-    }
+    let prevBills = bills.value.filter(bill => isBillInRange(bill, prevStart, prevEnd))
+    prevBills = applyFilters(prevBills, selectedCategory.value, selectedPlatform.value)
 
     const prevExpense = prevBills.filter(b => b.amount < 0).reduce((sum, b) => sum + Math.abs(b.amount), 0)
     const prevIncome = prevBills.filter(b => b.amount >= 0).reduce((sum, b) => sum + b.amount, 0)
@@ -225,10 +223,7 @@ export function useDashboardData({ bills, selectedCategory, selectedPlatform }) 
     const expenseData = []
 
     periods.forEach(period => {
-      const periodBills = bills.value.filter(bill => {
-        const billDate = dayjs(bill.date)
-        return billDate.isAfter(period.start.subtract(1, 'day')) && billDate.isBefore(period.end.add(1, 'day'))
-      })
+      const periodBills = bills.value.filter(bill => isBillInRange(bill, period.start, period.end))
       incomeData.push(periodBills.filter(b => b.amount >= 0).reduce((sum, b) => sum + b.amount, 0))
       expenseData.push(periodBills.filter(b => b.amount < 0).reduce((sum, b) => sum + Math.abs(b.amount), 0))
     })

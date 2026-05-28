@@ -12,7 +12,7 @@ const {
   chatStream, isConfigured,
   activeChatId, currentMessages, fetchChats, createChatSession, fetchConfigs,
   switchChatSession,
-  addMessage, updateMessage, streamAbortController,
+  addMessage, streamAbortController,
 } = useAiApi()
 
 // AI 助手页面不显示悬浮球
@@ -219,7 +219,6 @@ function onBallClick() {
   if (_dragDist > dragThreshold * 2 || Date.now() - _lastClickTime < 300) return
   _lastClickTime = Date.now()
   _dragDist = 0
-  console.log('[Echo] ball clicked, toggle:', !isOpen.value) // DEBUG
   isOpen.value = !isOpen.value
   if (isOpen.value) {
     ensureSession(); scrollToBottom()
@@ -238,19 +237,6 @@ function onDocClick(e) {
   if (Date.now() - _panelInteractedAt < 300) return
   if (isOpen.value && !e.target.closest('.echo-panel') && !e.target.closest('.echo-ball')) {
     isOpen.value = false
-  }
-}
-
-// 点击打开/关闭（保留作为备用，但主要靠 pointer up 判断）
-let clickTime = 0
-function toggleOpen() {
-  if (Date.now() - clickTime < 200) return
-  clickTime = Date.now()
-  isOpen.value = !isOpen.value
-  if (isOpen.value) {
-    ensureSession(); scrollToBottom()
-    switchMood('excited')
-    setTimeout(() => { if (isOpen.value) switchMood('happy') }, 800)
   }
 }
 

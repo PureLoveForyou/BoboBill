@@ -43,7 +43,7 @@ def _bill_to_dict(bill: Bill) -> dict:
     }
 
 
-def _apply_filters(query, category=None, platform=None, start_date=None, end_date=None, min_amount=None, max_amount=None):
+def _apply_filters(query, category=None, platform=None, start_date=None, end_date=None, min_amount=None, max_amount=None, search=None):
     if category:
         query = query.filter(Bill.category == category)
     if platform:
@@ -56,6 +56,14 @@ def _apply_filters(query, category=None, platform=None, start_date=None, end_dat
         query = query.filter(func.abs(Bill.amount) >= min_amount)
     if max_amount is not None:
         query = query.filter(func.abs(Bill.amount) <= max_amount)
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            Bill.name.ilike(search_term) |
+            Bill.note.ilike(search_term) |
+            Bill.merchant.ilike(search_term) |
+            Bill.category.ilike(search_term)
+        )
     return query
 
 
@@ -74,37 +82,17 @@ def get_bills(
     current_user: User = Depends(get_current_user),
 ):
     query = db.query(Bill).filter(Bill.user_id == current_user.id, Bill.type != "budget")
-    query = _apply_filters(query, category, platform, start_date, end_date, min_amount, max_amount)
-
-    all_bills = query.all()
-    result = []
-    search_lower = (search or "").lower()
-
-    for bill in all_bills:
-        if search_lower:
-            bill_category = bill.category or ""
-            searchable_text = " ".join([
-                bill.name or "", bill.note or "", bill.merchant or "", bill_category,
-            ]).lower()
-            text_match = search_lower in searchable_text
-            alias_match = False
-            if not text_match and bill_category in CATEGORY_ALIASES:
-                alias_match = any(
-                    search_lower in alias or alias in search_lower
-                    for alias in CATEGORY_ALIASES[bill_category]
-                )
-            if not text_match and not alias_match:
-                continue
-        result.append(_bill_to_dict(bill))
-
-    result.sort(key=lambda x: x.get("date", ""), reverse=True)
-    total = len(result)
+    query = _apply_filters(query, category, platform, start_date, end_date, min_amount, max_amount, search)
+    query = query.order_by(Bill.date.desc())
 
     if page > 0 and page_size > 0:
-        start = (page - 1) * page_size
-        items = result[start:start + page_size]
+        total = query.count()
+        bills = query.offset((page - 1) * page_size).limit(page_size).all()
+        items = [_bill_to_dict(b) for b in bills]
     else:
-        items = result
+        bills = query.all()
+        items = [_bill_to_dict(b) for b in bills]
+        total = len(items)
 
     return {"items": items, "total": total, "page": page, "page_size": page_size}
 
@@ -159,26 +147,27 @@ def clear_all_bills(db: Session = Depends(get_db), current_user: User = Depends(
 
 @router.get("/stats")
 def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    bills_query = db.query(Bill).filter(Bill.user_id == current_user.id, Bill.type != "budget").all()
+    base = db.query(Bill).filter(Bill.user_id == current_user.id, Bill.type != "budget")
 
-    total_income = sum(b.amount for b in bills_query if b.amount > 0)
-    total_expense = sum(abs(b.amount) for b in bills_query if b.amount < 0)
+    total_income = base.filter(Bill.amount > 0).with_entities(func.sum(Bill.amount)).scalar() or 0
+    total_expense = base.filter(Bill.amount < 0).with_entities(func.abs(func.sum(Bill.amount))).scalar() or 0
+    total_count = base.count()
 
-    category_stats = {}
-    platform_stats = {}
-    for bill in bills_query:
-        amount = abs(bill.amount)
-        if bill.amount < 0:
-            cat = bill.category or '其他'
-            category_stats[cat] = category_stats.get(cat, 0) + amount
-        plat = bill.platform or 'unknown'
-        platform_stats[plat] = platform_stats.get(plat, 0) + 1
+    cat_rows = base.filter(Bill.amount < 0, Bill.category.isnot(None)).with_entities(
+        Bill.category, func.sum(func.abs(Bill.amount))
+    ).group_by(Bill.category).all()
+    category_stats = {cat or '其他': round(amt, 2) for cat, amt in cat_rows}
+
+    plat_rows = base.with_entities(
+        Bill.platform, func.count(Bill.id)
+    ).group_by(Bill.platform).all()
+    platform_stats = {plat or 'unknown': cnt for plat, cnt in plat_rows}
 
     return {
-        "total_count": len(bills_query),
-        "total_income": total_income,
-        "total_expense": total_expense,
-        "balance": total_income - total_expense,
+        "total_count": total_count,
+        "total_income": round(total_income, 2),
+        "total_expense": round(total_expense, 2),
+        "balance": round(total_income - total_expense, 2),
         "category_stats": category_stats,
         "platform_stats": platform_stats,
     }
@@ -200,39 +189,26 @@ def export_bills(
     current_user: User = Depends(get_current_user_from_query),
 ):
     query = db.query(Bill).filter(Bill.user_id == current_user.id, Bill.type != "budget")
-    query = _apply_filters(query, category, platform, start_date, end_date, min_amount, max_amount)
-
-    all_bills = query.all()
-    search_lower = (search or "").lower()
-
-    result = []
-    for bill in all_bills:
-        if search_lower:
-            searchable_text = " ".join([
-                bill.name or "", bill.note or "", bill.merchant or "", bill.category or ""
-            ]).lower()
-            if search_lower not in searchable_text:
-                continue
-        result.append(_bill_to_dict(bill))
-
-    result.sort(key=lambda x: x.get("date", ""), reverse=True)
+    query = _apply_filters(query, category, platform, start_date, end_date, min_amount, max_amount, search)
+    query = query.order_by(Bill.date.desc())
 
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["日期", "名称", "分类", "平台", "金额", "类型", "备注"])
 
-    for bill in result:
-        amount = bill.get("amount", 0)
+    for bill in query.all():
+        bd = _bill_to_dict(bill)
+        amount = bd.get("amount", 0)
         bill_type = "收入" if amount >= 0 else "支出"
-        plat_name = PLATFORM_NAMES.get(bill.get("platform", ""), bill.get("platform", ""))
+        plat_name = PLATFORM_NAMES.get(bd.get("platform", ""), bd.get("platform", ""))
         writer.writerow([
-            bill.get("date", ""),
-            bill.get("name", ""),
-            bill.get("category", "其他"),
+            bd.get("date", ""),
+            bd.get("name", ""),
+            bd.get("category", "其他"),
             plat_name,
             abs(amount),
             bill_type,
-            bill.get("note", ""),
+            bd.get("note", ""),
         ])
 
     output.seek(0)

@@ -10,11 +10,11 @@ const { t } = useI18n()
 const router = useRouter()
 const {
   chatStream, isConfigured, aiConfigs, activeConfigId, activeConfig,
-  activeModelName, fetchConfigs, selectConfig,
-  chats, activeChatId, activeChat, currentMessages,
+  fetchConfigs, selectConfig,
+  chats, activeChatId, currentMessages,
   fetchChats, createChatSession, switchChatSession,
-  deleteChatSession: deleteChat, clearChatSession, addMessage, updateMessage,
-  streamAbortController,
+  deleteChatSession: deleteChat, clearChatSession, addMessage,
+  updateChatTitle, streamAbortController,
 } = useAiApi()
 
 // ====== EVA 眼睛跟踪 ======

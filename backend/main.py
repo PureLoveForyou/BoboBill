@@ -27,4 +27,4 @@ app.include_router(ai_router)
 
 @app.get("/")
 def read_root():
-    return {"message": "欢迎使用 BoboBill API! 访问 /docs 查看文档", "version": "0.3.0", "db": "sqlite"}
+    return {"message": "欢迎使用 BoboBill API! 访问 /docs 查看文档", "version": "0.4.0", "db": "sqlite"}

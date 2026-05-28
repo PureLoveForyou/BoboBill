@@ -2,13 +2,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { API_BASE } from '../config'
 import { DEFAULT_BILL } from '../constants/bill'
-
-function getAuthHeaders() {
-  const token = localStorage.getItem('bobobill_token')
-  const headers = { 'Content-Type': 'application/json' }
-  if (token) headers['Authorization'] = `Bearer ${token}`
-  return headers
-}
+import { getAuthHeaders } from '../utils/api'
 
 function buildQuery(params) {
   const qs = new URLSearchParams()

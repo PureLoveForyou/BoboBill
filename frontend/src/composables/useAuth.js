@@ -90,18 +90,11 @@ export function useAuth() {
     localStorage.removeItem('bobobill_user')
   }
 
-  const authHeaders = computed(() => ({
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token.value}`
-  }))
-
   return {
     user,
-    token,
     isLoggedIn,
     register,
     login,
     logout,
-    authHeaders
   }
 }

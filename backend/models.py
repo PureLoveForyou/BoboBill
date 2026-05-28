@@ -67,25 +67,6 @@ class AIConfigUpdate(BaseModel):
     model: Optional[str] = None
 
 
-class AIConfigResponse(BaseModel):
-    id: int
-    name: str
-    provider: str
-    api_key: str  # 脱敏：仅返回后4位
-    api_url: str
-    model: str
-
-
-class AIConfigDetail(BaseModel):
-    """完整配置（仅保存时使用，不对外暴露完整 key）"""
-    id: int
-    name: str
-    provider: str
-    api_key: str
-    api_url: str
-    model: str
-
-
 # ===== AI 对话历史模型 =====
 
 class ChatSessionCreate(BaseModel):
