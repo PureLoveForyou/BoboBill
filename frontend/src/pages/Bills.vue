@@ -174,14 +174,14 @@ onMounted(doFetch)
     <div class="mb-10 flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold tracking-tight">{{ t('bills.title') }}</h1>
-        <p class="text-sm text-base-content/50 mt-2 font-medium">{{ t('bills.subtitle') }}</p>
+        <p class="text-sm text-[var(--bb-text-secondary)] mt-2 font-medium">{{ t('bills.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-3">
         <!-- 批量操作模式 -->
         <template v-if="isSelectMode">
           <button
             @click="isAllSelected ? deselectAll() : selectAll()"
-            class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-base-200/60 text-base-content/70 font-medium text-sm hover:bg-base-200 transition-all"
+            class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-[var(--bb-bg-soft)] text-[var(--bb-text-secondary)] font-medium text-sm hover:bg-base-200 transition-all"
           >
             <div class="w-4 h-4 rounded border-2 flex items-center justify-center" :class="isAllSelected ? 'bg-primary border-primary' : 'border-base-content/30'">
               <svg v-if="isAllSelected" class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
@@ -202,7 +202,7 @@ onMounted(doFetch)
           </button>
           <button
             @click="toggleSelectMode"
-            class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-base-200/60 text-base-content/70 font-medium text-sm hover:bg-base-200 transition-all"
+            class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-[var(--bb-bg-soft)] text-[var(--bb-text-secondary)] font-medium text-sm hover:bg-base-200 transition-all"
           >
             {{ t('common.cancel') }}
           </button>
@@ -210,7 +210,7 @@ onMounted(doFetch)
         <template v-else>
           <button
             @click="toggleSelectMode"
-            class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-base-200/60 text-base-content/70 font-medium text-sm hover:bg-base-200 hover:text-base-content/90 transition-all duration-300"
+            class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-[var(--bb-bg-soft)] text-[var(--bb-text-secondary)] font-medium text-sm hover:bg-base-200 hover:text-base-content/90 transition-all duration-300"
           >
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -219,7 +219,7 @@ onMounted(doFetch)
           </button>
           <button
             @click="doExport"
-            class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-base-200/60 text-base-content/70 font-medium text-sm hover:bg-base-200 hover:text-base-content/90 transition-all duration-300"
+            class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-[var(--bb-bg-soft)] text-[var(--bb-text-secondary)] font-medium text-sm hover:bg-base-200 hover:text-base-content/90 transition-all duration-300"
           >
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -243,8 +243,8 @@ onMounted(doFetch)
       v-if="uploadResult"
       class="mb-6 p-4 rounded-2xl flex items-center justify-between animate-[fadeIn_0.3s_ease-out]"
       :class="uploadResult.type === 'success' 
-        ? 'bg-success/10 border border-success/20 text-success' 
-        : 'bg-error/10 border border-error/20 text-error'"
+        ? 'bg-[var(--bb-mint)]/10 border border-[var(--bb-mint)]/20 text-[var(--bb-mint)]' 
+        : 'bg-[var(--bb-coral)]/10 border border-[var(--bb-coral)]/20 text-[var(--bb-coral)]'"
     >
       <div class="flex items-center gap-3">
         <svg v-if="uploadResult.type === 'success'" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -277,13 +277,13 @@ onMounted(doFetch)
                 </div>
                 <div>
                   <h2 class="text-lg font-semibold tracking-tight">{{ t('import.title') }}</h2>
-                  <p class="text-xs text-base-content/50">{{ t('import.platformSupport') }}</p>
+                  <p class="text-xs text-[var(--bb-text-secondary)]">{{ t('import.platformSupport') }}</p>
                 </div>
               </div>
 
               <div class="mb-6">
                 <div class="flex items-center justify-between mb-3">
-                  <span class="text-sm font-medium text-base-content/60">{{ t('import.selectPlatform') }}</span>
+                  <span class="text-sm font-medium text-[var(--bb-text-secondary)]">{{ t('import.selectPlatform') }}</span>
                   <span v-if="uploadedFile && importType" class="text-xs text-success font-medium">
                     {{ t('import.autoDetected') }}
                   </span>
@@ -296,10 +296,10 @@ onMounted(doFetch)
                     class="group relative overflow-hidden rounded-2xl p-4 transition-all duration-300"
                     :class="importType === key 
                       ? 'bg-gradient-to-br ' + info.color + ' text-white shadow-lg scale-[1.02]'
-                      : 'bg-base-200/50 hover:bg-base-200/80'"
+                      : 'bg-[var(--bb-bg-soft)] hover:bg-base-200/80'"
                   >
                     <PlatformIcon :platform="key" size="md" />
-                    <div class="text-xs font-medium mt-1" :class="importType === key ? 'text-white' : 'text-base-content/70'">
+                    <div class="text-xs font-medium mt-1" :class="importType === key ? 'text-white' : 'text-[var(--bb-text-secondary)]'">
                       {{ t('platforms.' + key) }}
                     </div>
                   </button>
@@ -313,7 +313,7 @@ onMounted(doFetch)
                 class="relative rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer overflow-hidden"
                 :class="isDragging 
                   ? 'border-primary bg-primary/5 scale-[1.01]' 
-                  : 'border-base-300/50 hover:border-primary/50 bg-base-200/30'"
+                  : 'border-base-300/50 hover:border-primary/50 bg-[var(--bb-bg-soft)]'"
               >
                 <input
                   type="file"
@@ -323,17 +323,17 @@ onMounted(doFetch)
                 />
                 <div class="p-8 text-center">
                   <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-base-200 to-base-300/50 flex items-center justify-center">
-                    <svg class="w-7 h-7 text-base-content/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <svg class="w-7 h-7 text-[var(--bb-text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
-                  <p v-if="!uploadedFile" class="text-sm text-base-content/50 font-medium">
+                  <p v-if="!uploadedFile" class="text-sm text-[var(--bb-text-secondary)] font-medium">
                     {{ t('import.dragHint') }}
                   </p>
                   <p v-else class="text-sm text-primary font-medium">
                     {{ uploadedFile.name }}
                   </p>
-                  <p class="text-xs text-base-content/30 mt-2">{{ t('import.supportedFormat') }}</p>
+                  <p class="text-xs text-[var(--bb-text-tertiary)] mt-2">{{ t('import.supportedFormat') }}</p>
                 </div>
               </div>
 
@@ -343,7 +343,7 @@ onMounted(doFetch)
                 class="w-full mt-5 py-3.5 rounded-2xl font-semibold text-sm tracking-wide transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                 :class="uploadedFile && importType && !isUploading
                   ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5'
-                  : 'bg-base-200 text-base-content/50'"
+                  : 'bg-base-200 text-[var(--bb-text-secondary)]'"
               >
                 <span v-if="isUploading" class="flex items-center justify-center gap-2">
                   <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -364,14 +364,14 @@ onMounted(doFetch)
           <div class="p-6">
             <div class="flex flex-col sm:flex-row gap-4 mb-6">
               <div class="relative flex-1">
-                <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--bb-text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <input
                   v-model="searchQuery"
                   type="text"
                   :placeholder="t('bill.searchPlaceholder')"
-                  class="w-full pl-11 pr-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm placeholder:text-base-content/30 transition-all"
+                  class="w-full pl-11 pr-4 py-3 rounded-xl bg-[var(--bb-bg-soft)] border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm placeholder:text-[var(--bb-text-tertiary)] transition-all"
                 />
               </div>
               <div class="flex gap-3">
@@ -387,24 +387,24 @@ onMounted(doFetch)
             </div>
 
             <div class="flex items-center gap-3 mb-6 text-sm">
-              <svg class="w-4 h-4 text-base-content/30 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <svg class="w-4 h-4 text-[var(--bb-text-tertiary)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               <input
                 v-model="startDate"
                 type="date"
-                class="px-3 py-2 rounded-lg bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm text-base-content/70"
+                class="px-3 py-2 rounded-lg bg-[var(--bb-bg-soft)] border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm text-[var(--bb-text-secondary)]"
               />
-              <span class="text-base-content/30">—</span>
+              <span class="text-[var(--bb-text-tertiary)]">—</span>
               <input
                 v-model="endDate"
                 type="date"
-                class="px-3 py-2 rounded-lg bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm text-base-content/70"
+                class="px-3 py-2 rounded-lg bg-[var(--bb-bg-soft)] border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm text-[var(--bb-text-secondary)]"
               />
               <button
                 v-if="startDate || endDate || minAmount || maxAmount"
                 @click="clearDateFilter"
-                class="px-2 py-1 rounded-lg text-xs text-base-content/40 hover:text-base-content/60 hover:bg-base-200/60 transition-all"
+                class="px-2 py-1 rounded-lg text-xs text-[var(--bb-text-tertiary)] hover:text-[var(--bb-text-secondary)] hover:bg-[var(--bb-bg-soft)] transition-all"
               >
                 {{ t('common.clear') }}
               </button>
@@ -412,28 +412,28 @@ onMounted(doFetch)
 
             <!-- Amount Range Filter -->
             <div class="flex items-center gap-3 mb-6 text-sm">
-              <svg class="w-4 h-4 text-base-content/30 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <svg class="w-4 h-4 text-[var(--bb-text-tertiary)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.822l.894-.894a1.5 1.5 0 01-.894-.784V10.5m0 5.25V15m0-4.5V9m0 4.5h3M3 21h18M3 7h18M5 10h14" />
               </svg>
-              <span class="text-base-content/40 text-xs">{{ t('bill.amountRange') }}</span>
+              <span class="text-[var(--bb-text-tertiary)] text-xs">{{ t('bill.amountRange') }}</span>
               <input
                 v-model.number="minAmount"
                 type="number"
                 :placeholder="t('bill.minAmount')"
                 step="100"
                 min="0"
-                class="px-3 py-2 w-28 rounded-lg bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm text-base-content/70 placeholder:text-base-content/30"
+                class="px-3 py-2 w-28 rounded-lg bg-[var(--bb-bg-soft)] border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm text-[var(--bb-text-secondary)] placeholder:text-[var(--bb-text-tertiary)]"
               />
-              <span class="text-base-content/30">—</span>
+              <span class="text-[var(--bb-text-tertiary)]">—</span>
               <input
                 v-model.number="maxAmount"
                 type="number"
                 :placeholder="t('bill.maxAmount')"
                 step="100"
                 min="0"
-                class="px-3 py-2 w-28 rounded-lg bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm text-base-content/70 placeholder:text-base-content/30"
+                class="px-3 py-2 w-28 rounded-lg bg-[var(--bb-bg-soft)] border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm text-[var(--bb-text-secondary)] placeholder:text-[var(--bb-text-tertiary)]"
               />
-              <span class="text-xs text-base-content/30">{{ t('common.currency') }}</span>
+              <span class="text-xs text-[var(--bb-text-tertiary)]">{{ t('common.currency') }}</span>
             </div>
 
             <div v-if="isLoading" class="py-16 text-center">
@@ -441,7 +441,7 @@ onMounted(doFetch)
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <p class="text-sm text-base-content/40 mt-4">{{ t('common.loading') }}</p>
+              <p class="text-sm text-[var(--bb-text-tertiary)] mt-4">{{ t('common.loading') }}</p>
             </div>
 
             <div v-else-if="bills.length > 0" class="space-y-2">
@@ -458,23 +458,23 @@ onMounted(doFetch)
             </div>
 
             <div v-else class="py-16 text-center">
-              <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-base-200/50 flex items-center justify-center">
+              <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--bb-bg-soft)] flex items-center justify-center">
                 <svg class="w-8 h-8 text-base-content/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <p class="text-sm text-base-content/40">{{ t('bill.noBills') }}</p>
-              <p class="text-xs text-base-content/30 mt-1">{{ t('bill.noBillsHint') }}</p>
+              <p class="text-sm text-[var(--bb-text-tertiary)]">{{ t('bill.noBills') }}</p>
+              <p class="text-xs text-[var(--bb-text-tertiary)] mt-1">{{ t('bill.noBillsHint') }}</p>
             </div>
 
             <div v-if="!isLoading && bills.length > 0" class="mt-6 pt-4 border-t border-base-200/50">
               <div class="flex items-center justify-between text-sm">
-                <span class="text-base-content/40">{{ t('bill.loadedOf', { loaded: bills.length, total }) }}</span>
+                <span class="text-[var(--bb-text-tertiary)]">{{ t('bill.loadedOf', { loaded: bills.length, total }) }}</span>
                 <button
                   v-if="hasMore"
                   @click="doLoadMore"
                   :disabled="isLoadingMore"
-                  class="px-4 py-2 rounded-xl bg-base-200/60 hover:bg-base-200 text-sm font-medium text-base-content/60 hover:text-base-content/80 transition-all disabled:opacity-50"
+                  class="px-4 py-2 rounded-xl bg-[var(--bb-bg-soft)] hover:bg-base-200 text-sm font-medium text-[var(--bb-text-secondary)] hover:text-base-content/80 transition-all disabled:opacity-50"
                 >
                   <svg v-if="isLoadingMore" class="w-4 h-4 animate-spin inline-block mr-1" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -482,7 +482,7 @@ onMounted(doFetch)
                   </svg>
                   {{ isLoadingMore ? t('common.loading') : t('bill.loadMore') }}
                 </button>
-                <span v-else class="text-base-content/30">{{ t('bill.allLoaded') }}</span>
+                <span v-else class="text-[var(--bb-text-tertiary)]">{{ t('bill.allLoaded') }}</span>
               </div>
             </div>
           </div>
@@ -499,7 +499,7 @@ onMounted(doFetch)
     <!-- 批量删除确认弹窗 -->
     <div v-if="showBatchDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center">
       <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="closeBatchDeleteConfirm"></div>
-      <div class="relative bg-base-100 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl animate-[scaleIn_0.2s_ease-out]">
+      <div class="relative bg-[var(--bb-surface-solid)] rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl animate-[scaleIn_0.2s_ease-out]">
         <div class="text-center">
           <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-error/10 flex items-center justify-center">
             <svg class="w-7 h-7 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -507,9 +507,9 @@ onMounted(doFetch)
             </svg>
           </div>
           <h3 class="text-lg font-semibold mb-2">{{ t('bill.batchDeleteTitle') }}</h3>
-          <p class="text-sm text-base-content/60 mb-6">{{ t('bill.batchDeleteConfirm', { n: selectedIds.size }) }}</p>
+          <p class="text-sm text-[var(--bb-text-secondary)] mb-6">{{ t('bill.batchDeleteConfirm', { n: selectedIds.size }) }}</p>
           <div class="flex gap-3">
-            <button @click="closeBatchDeleteConfirm" class="flex-1 py-2.5 rounded-xl bg-base-200 text-base-content/70 font-medium text-sm hover:bg-base-300 transition-all">
+            <button @click="closeBatchDeleteConfirm" class="flex-1 py-2.5 rounded-xl bg-base-200 text-[var(--bb-text-secondary)] font-medium text-sm hover:bg-base-300 transition-all">
               {{ t('common.cancel') }}
             </button>
             <button @click="confirmBatchDelete" class="flex-1 py-2.5 rounded-xl bg-error text-white font-medium text-sm hover:bg-error/90 transition-all">
@@ -523,7 +523,7 @@ onMounted(doFetch)
 
   <!-- Toast -->
   <div v-if="toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl shadow-lg text-white text-sm font-medium animate-bounce"
-    :class="toast.type === 'success' ? 'bg-success' : 'bg-error'">
+    :class="toast.type === 'success' ? 'bg-[var(--bb-mint)]' : 'bg-[var(--bb-coral)]'">
     {{ toast.message }}
   </div>
 </template>

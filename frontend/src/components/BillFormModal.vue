@@ -123,7 +123,7 @@ const platformInfo = PLATFORM_INFO
           <button
             @click="$emit('save')"
             :disabled="!bill.name || !bill.amount || !bill.date || isSaving"
-            class="flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-white font-semibold text-sm shadow-lg shadow-primary/25 hover:shadow-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            class="flex-1 bb-button-primary disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <span v-if="isSaving" class="flex items-center justify-center gap-2">
               <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

@@ -257,7 +257,7 @@ const handleLogout = () => {
             @click="activeSection = sec.id"
             class="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all duration-200 group"
             :class="activeSection === sec.id
-              ? 'bg-primary/10 text-primary'
+              ? 'bg-[var(--bb-blue)]/10 text-[var(--bb-blue)]'
               : 'text-base-content/50 hover:text-base-content/80 hover:bg-base-200/40'">
             <div class="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200"
               :class="activeSection === sec.id ? 'bg-primary/15' : 'bg-base-200/60 group-hover:bg-base-200'">
@@ -278,7 +278,7 @@ const handleLogout = () => {
           @click="activeSection = sec.id"
           class="flex flex-col items-center gap-1.5 px-2 py-3 rounded-2xl text-xs font-medium transition-all duration-200"
           :class="activeSection === sec.id
-            ? 'bg-primary text-primary-content shadow-lg shadow-primary/20'
+            ? 'bg-[var(--bb-blue)] text-white shadow-lg'
             : 'bg-base-200/60 text-base-content/60 hover:bg-base-200'">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
             <path :d="sec.icon" />
@@ -308,8 +308,8 @@ const handleLogout = () => {
                 <button v-for="opt in localeOptions" :key="opt.value" @click="switchLocale(opt.value)"
                   class="flex-1 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200"
                   :class="locale === opt.value
-                    ? 'bg-primary text-primary-content shadow-md shadow-primary/20'
-                    : 'bg-base-200/50 text-base-content/60 hover:bg-base-200 hover:text-base-content/80'">
+                    ? 'bg-[var(--bb-blue)] text-white shadow-md'
+                    : 'bg-[var(--bb-bg-soft)] text-[var(--bb-text-secondary)] hover:bg-[var(--bb-border)]'">
                   {{ opt.label }}
                 </button>
               </div>
@@ -397,7 +397,7 @@ const handleLogout = () => {
               </div>
               <div class="mt-5">
                 <button @click="handleSaveBudget" :disabled="isSavingBudget"
-                  class="btn btn-primary btn-sm w-full rounded-xl shadow-lg shadow-primary/15">
+                  class="bb-button-primary text-sm w-full rounded-xl shadow-lg">
                   <span v-if="isSavingBudget" class="loading loading-spinner loading-xs"></span>
                   {{ t('common.save') }}
                 </button>
@@ -461,7 +461,7 @@ const handleLogout = () => {
               </div>
 
               <button v-if="!showAiForm" @click="handleAddConfig"
-                class="btn btn-outline btn-sm w-full border-dashed rounded-xl hover:border-primary/40 hover:text-primary group">
+                class="bb-button-secondary text-sm w-full border-dashed rounded-xl hover:border-[var(--bb-blue)]/40 hover:text-[var(--bb-blue)]">
                 <svg class="w-4 h-4 transition-transform group-hover:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
                 {{ t('ai.addConfig') }}
               </button>
@@ -583,7 +583,7 @@ const handleLogout = () => {
               </div>
 
               <div v-if="user" class="flex items-center gap-3 p-4 rounded-xl bg-base-200/30 mb-4">
-                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/80 to-primary/40 flex items-center justify-center text-primary-content font-bold text-base shadow-sm">
+                <div class="w-11 h-11 rounded-xl bg-[var(--bb-blue)] flex items-center justify-center text-white font-bold text-base">
                   {{ user.username.charAt(0).toUpperCase() }}
                 </div>
                 <div>
@@ -620,8 +620,8 @@ const handleLogout = () => {
             <h3 class="text-base font-semibold mb-1.5">{{ t('settings.importConfirmTitle') }}</h3>
             <p class="text-sm text-base-content/50 mb-5">{{ t('settings.importConfirmDesc') }}</p>
             <div class="flex gap-2.5">
-              <button @click="cancelImport" class="flex-1 py-2.5 rounded-xl bg-base-200/60 text-base-content/60 font-medium text-sm hover:bg-base-200 transition-all">{{ t('common.cancel') }}</button>
-              <button @click="confirmImport" class="flex-1 py-2.5 rounded-xl bg-primary text-primary-content font-medium text-sm hover:bg-primary/90 transition-all shadow-lg shadow-primary/15">{{ t('common.confirm') }}</button>
+              <button @click="cancelImport" class="flex-1 py-2.5 rounded-xl bb-button-secondary text-sm">{{ t('common.cancel') }}</button>
+              <button @click="confirmImport" class="flex-1 py-2.5 rounded-xl bb-button-primary text-sm">{{ t('common.confirm') }}</button>
             </div>
           </div>
         </div>

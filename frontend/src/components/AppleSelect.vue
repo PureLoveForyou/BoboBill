@@ -103,7 +103,7 @@ onUnmounted(() => {
           :key="index"
           @click="selectOption(option)"
           class="w-full px-4 py-2.5 text-left text-sm hover:bg-base-200/50 transition-colors flex items-center justify-between"
-          :class="{ 'bg-primary/10 text-primary': modelValue === (typeof option === 'string' ? option : option.value) }"
+          :class="{ 'bg-[var(--bb-blue)]/10 text-[var(--bb-blue)]': modelValue === (typeof option === 'string' ? option : option.value) }"
         >
           <span>{{ typeof option === 'string' ? option : option.label }}</span>
           <svg 

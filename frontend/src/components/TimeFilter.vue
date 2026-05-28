@@ -266,7 +266,7 @@ watch([selectedReportType, selectedYear, selectedMonth, selectedWeek, selectedQu
         :clearable="false"
         style="width: 180px;"
       />
-      <button @click="confirmCustomRange" class="btn btn-primary rounded-xl px-5 text-sm font-semibold">{{ t('timeFilter.confirm') }}</button>
+      <button @click="confirmCustomRange" class="bb-button-primary rounded-xl px-5 text-sm">{{ t('timeFilter.confirm') }}</button>
     </template>
   </div>
 </template>

@@ -56,51 +56,49 @@ const toggleMode = () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-base-200 via-base-100 to-base-200 p-4">
+  <div class="min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-md">
-      <!-- Logo -->
       <div class="text-center mb-8">
-        <BoboBillLogo :size="80" class="mx-auto" />
-        <h1 class="text-3xl font-bold mt-4 tracking-tight">{{ t('app.brand') }}</h1>
-        <p class="text-base-content/50 mt-1 text-sm font-medium">{{ t('app.subtitle') }}</p>
+        <BoboBillLogo :size="72" class="mx-auto" />
+        <h1 class="text-3xl font-extrabold text-[var(--bb-text)] mt-4 tracking-[-0.04em]">{{ t('app.brand') }}</h1>
+        <p class="text-sm text-[var(--bb-text-secondary)] mt-1 font-medium">{{ t('app.subtitle') }}</p>
       </div>
 
-      <!-- Card -->
-      <div class="bg-base-100/80 backdrop-blur-xl rounded-[24px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-white/10 p-8">
-        <h2 class="text-xl font-semibold text-center mb-6">
+      <div class="bb-card-glass p-8 rounded-[var(--bb-radius-lg)]">
+        <h2 class="text-xl font-bold text-[var(--bb-text)] text-center mb-6">
           {{ isLogin ? t('auth.loginTitle') : t('auth.registerTitle') }}
         </h2>
 
         <form @submit.prevent="submit" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-base-content/60 mb-1.5">{{ t('auth.username') }}</label>
+            <label class="block text-sm font-semibold text-[var(--bb-text-secondary)] mb-1.5">{{ t('auth.username') }}</label>
             <input
               v-model="username"
               type="text"
               :placeholder="t('auth.usernamePlaceholder')"
               autocomplete="username"
-              class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm placeholder:text-base-content/30 transition-all"
+              class="bb-input"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-base-content/60 mb-1.5">{{ t('auth.password') }}</label>
+            <label class="block text-sm font-semibold text-[var(--bb-text-secondary)] mb-1.5">{{ t('auth.password') }}</label>
             <input
               v-model="password"
               type="password"
               :placeholder="t('auth.passwordPlaceholder')"
               autocomplete="current-password"
-              class="w-full px-4 py-3 rounded-xl bg-base-200/50 border-0 focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm placeholder:text-base-content/30 transition-all"
+              class="bb-input"
             />
           </div>
 
-          <div v-if="error" class="text-sm text-error bg-error/10 rounded-xl px-4 py-2.5">
+          <div v-if="error" class="text-sm bg-[var(--bb-coral)]/10 text-[var(--bb-coral)] rounded-xl px-4 py-2.5 font-medium">
             {{ error }}
           </div>
 
           <button
             type="submit"
             :disabled="isSubmitting"
-            class="w-full py-3.5 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
+            class="bb-button-primary w-full"
           >
             <span v-if="isSubmitting" class="flex items-center justify-center gap-2">
               <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -113,9 +111,9 @@ const toggleMode = () => {
           </button>
         </form>
 
-        <div class="mt-6 text-center text-sm text-base-content/50">
+        <div class="mt-6 text-center text-sm text-[var(--bb-text-secondary)]">
           {{ isLogin ? t('auth.noAccount') : t('auth.hasAccount') }}
-          <button @click="toggleMode" class="text-primary font-medium hover:underline ml-1">
+          <button @click="toggleMode" class="text-primary font-semibold hover:underline ml-1">
             {{ isLogin ? t('auth.goRegister') : t('auth.goLogin') }}
           </button>
         </div>
