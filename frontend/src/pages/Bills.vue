@@ -436,12 +436,13 @@ onMounted(doFetch)
               <span class="text-xs text-[var(--bb-text-tertiary)]">{{ t('common.currency') }}</span>
             </div>
 
-            <div v-if="isLoading" class="py-16 text-center">
-              <svg class="w-8 h-8 mx-auto animate-spin text-primary" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <p class="text-sm text-[var(--bb-text-tertiary)] mt-4">{{ t('common.loading') }}</p>
+            <div v-if="isLoading" class="flex flex-col items-center justify-center py-32 gap-4">
+              <div class="loader-dots">
+                <span class="loader-dot"></span>
+                <span class="loader-dot"></span>
+                <span class="loader-dot"></span>
+              </div>
+              <p class="text-sm font-semibold text-[var(--bb-text-secondary)] tracking-wide">{{ t('common.loading') }}</p>
             </div>
 
             <div v-else-if="bills.length > 0" class="space-y-2">

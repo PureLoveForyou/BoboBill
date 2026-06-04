@@ -17,7 +17,7 @@ export function useBillApi({ showToast, onBillsChanged }) {
   const { t } = useI18n()
   const bills = ref([])
   const total = ref(0)
-  const isLoading = ref(false)
+  const isLoading = ref(true)
 
   const fetchBills = async (params = {}) => {
     isLoading.value = true

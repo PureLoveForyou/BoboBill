@@ -155,16 +155,13 @@ onMounted(async () => {
 <template>
   <div class="bb-page min-h-full p-6 lg:p-8 max-w-[1400px] mx-auto">
 
-    <div v-if="isLoading" class="space-y-6">
-      <div class="text-center py-12">
-        <div class="skeleton w-40 h-10 mx-auto mb-4 rounded-xl"></div>
-        <div class="skeleton w-56 h-6 mx-auto mb-8 rounded-lg"></div>
-        <div class="grid gap-4 max-w-md mx-auto" style="grid-template-columns: repeat(3, 1fr);">
-          <div class="skeleton w-full h-16 rounded-xl"></div>
-          <div class="skeleton w-full h-16 rounded-xl"></div>
-          <div class="skeleton w-full h-16 rounded-xl"></div>
-        </div>
+    <div v-if="isLoading" class="flex flex-col items-center justify-center py-32 gap-4">
+      <div class="loader-dots">
+        <span class="loader-dot"></span>
+        <span class="loader-dot"></span>
+        <span class="loader-dot"></span>
       </div>
+      <p class="text-sm font-semibold text-[var(--bb-text-secondary)] tracking-wide">{{ t('common.loading') }}</p>
     </div>
 
     <div v-else-if="bills.length === 0" class="py-20 text-center">
@@ -243,12 +240,12 @@ onMounted(async () => {
         <button v-if="pieSelectedCategory" @click="clearPieFilter" class="bb-chip text-[var(--bb-blue)] bg-[var(--bb-blue)]/8 border-[var(--bb-blue)]/20">{{ pieSelectedCategory }} ✕</button>
       </div>
 
-      <div class="mb-6"><BudgetCard :status="budgetStatus" /></div>
+      <div v-if="!isLoading" class="mb-6"><BudgetCard :status="budgetStatus" /></div>
 
       <div class="grid gap-5 lg:grid-cols-2 mb-5">
         <div class="bb-card-glass p-5">
           <h3 class="bb-section-title mb-4">{{ t('dashboard.trendTitle') }}</h3>
-          <VueApexCharts type="area" height="220" :options="trendOptions" :series="trendSeries" />
+          <div v-if="!isLoading"><VueApexCharts type="area" height="220" :options="trendOptions" :series="trendSeries" /></div>
         </div>
         <div class="bb-card-glass p-5">
           <div class="flex items-center justify-between mb-4">
@@ -258,14 +255,16 @@ onMounted(async () => {
               <button class="px-2 py-1 rounded-md text-xs font-medium transition-colors" :class="categoryType === 'income' ? 'bg-white shadow-sm text-[var(--bb-text)]' : 'bb-muted'" @click="categoryType = 'income'; pieSelectedCategory = null">{{ t('common.income') }}</button>
             </div>
           </div>
-          <div v-if="categorySeries.length === 0" class="py-6 text-center bb-muted text-sm">{{ t('common.noData') }}</div>
-          <VueApexCharts v-else type="donut" height="220" :options="categoryOptionsChart" :series="categorySeries" />
+          <div v-if="!isLoading">
+            <div v-if="categorySeries.length === 0" class="py-6 text-center bb-muted text-sm">{{ t('common.noData') }}</div>
+            <VueApexCharts v-else type="donut" height="220" :options="categoryOptionsChart" :series="categorySeries" />
+          </div>
         </div>
       </div>
 
       <div class="bb-card-glass p-5 mb-5">
         <h3 class="bb-section-title mb-4">{{ t('dashboard.periodComparison') }}</h3>
-        <VueApexCharts type="bar" height="220" :options="comparisonOptions" :series="comparisonSeries" />
+        <div v-if="!isLoading"><VueApexCharts type="bar" height="220" :options="comparisonOptions" :series="comparisonSeries" /></div>
       </div>
 
       <div class="bb-card-glass p-5">

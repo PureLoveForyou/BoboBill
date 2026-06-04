@@ -291,3 +291,35 @@
 .router-link-active {
   font-weight: 600;
 }
+
+/* Loading dots */
+@keyframes loader-dot-bounce {
+  0%, 80%, 100% { transform: scale(0.35); opacity: 0.3; }
+  40% { transform: scale(1); opacity: 1; }
+}
+.loader-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+.loader-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  animation: loader-dot-bounce 1.4s ease-in-out infinite both;
+}
+.loader-dot:nth-child(1) {
+  background: #2478ff;
+  box-shadow: 0 0 14px rgba(36, 120, 255, 0.45);
+}
+.loader-dot:nth-child(2) {
+  animation-delay: 0.16s;
+  background: #23c7d9;
+  box-shadow: 0 0 14px rgba(35, 199, 217, 0.45);
+}
+.loader-dot:nth-child(3) {
+  animation-delay: 0.32s;
+  background: #36d399;
+  box-shadow: 0 0 14px rgba(54, 211, 153, 0.45);
+}
